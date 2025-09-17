@@ -1,0 +1,33 @@
+# robots.txt voor SecuryFlex
+# Beveiliging platform voor ZZP'ers, bedrijven en opdrachtgevers
+
+User-agent: *
+Allow: /
+
+# Sta belangrijke SEO pagina's toe
+Allow: /beveiligers
+Allow: /beveiligingsbedrijven
+Allow: /opdrachtgevers
+Allow: /over-ons
+Allow: /contact
+Allow: /blog
+Allow: /faq
+
+# Blokkeer private/admin gebieden
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /wireframes/
+Disallow: /test/
+
+# Blokkeer tijdelijke/dev pagina's
+Disallow: /responsive-test
+Disallow: /responsive-demo
+
+# Sta sitemap toe
+Sitemap: https://securyflex.nl/sitemap.xml
+
+# Crawl delay (behoudend voor server resources)
+Crawl-delay: 1

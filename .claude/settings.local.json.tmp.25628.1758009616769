@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Read(//c/Users/svdwe/Documents/boiler-plate-securyflex/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

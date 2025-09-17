@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Read(//c/Users/svdwe/Documents/boiler-plate-securyflex/**)",
+      "Bash(pnpm add:*)",
+      "Bash(npx prisma:*)",
+      "Bash(node:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(taskkill:*)",
+      "WebFetch(domain:youngones.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

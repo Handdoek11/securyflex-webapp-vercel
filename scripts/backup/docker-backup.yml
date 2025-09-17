@@ -1,0 +1,140 @@
+# Docker Compose service for automated database backups
+# This can be used in production to run backups in a separate container
+
+version: '3.8'
+
+services:
+  securyflex-backup:
+    image: postgres:15-alpine
+    container_name: securyflex-backup
+    restart: unless-stopped
+
+    environment:
+      # Database connection (use same as main app)
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+
+      # Backup configuration
+      - BACKUP_SCHEDULE_ENABLED=true
+      - BACKUP_CRON=0 2 * * *  # Daily at 2 AM
+      - BACKUP_TIMEZONE=Europe/Amsterdam
+      - BACKUP_RETENTION_DAYS=30
+      - BACKUP_COMPRESSION=true
+      - BACKUP_ENCRYPTION=true
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
+
+      # Storage configuration
+      - BACKUP_DIR=/backups
+      - BACKUP_CLOUD_PROVIDER=${BACKUP_CLOUD_PROVIDER}
+      - BACKUP_CLOUD_BUCKET=${BACKUP_CLOUD_BUCKET}
+      - BACKUP_CLOUD_REGION=${BACKUP_CLOUD_REGION}
+
+      # Notification configuration
+      - BACKUP_WEBHOOK_URL=${BACKUP_WEBHOOK_URL}
+      - BACKUP_EMAIL=${BACKUP_EMAIL}
+
+    volumes:
+      # Local backup storage
+      - ./backups:/backups
+
+      # Mount the backup scripts
+      - ./scripts/backup:/app/scripts
+
+      # Node.js for running TypeScript backup scripts
+      - node_modules:/app/node_modules
+
+    working_dir: /app
+
+    # Install Node.js and dependencies, then run scheduler
+    command: >
+      sh -c "
+        apk add --no-cache nodejs npm &&
+        npm install -g ts-node typescript &&
+        npm install &&
+        ts-node scripts/backup/backup-scheduler.ts start
+      "
+
+    # Health check to ensure backup scheduler is running
+    healthcheck:
+      test: ["CMD", "ts-node", "scripts/backup/backup-scheduler.ts", "status"]
+      interval: 1h
+      timeout: 30s
+      retries: 3
+      start_period: 30s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Network (if needed for cloud storage access)
+    networks:
+      - backup-network
+
+  # Optional: Monitoring service for backup health
+  backup-monitor:
+    image: alpine:latest
+    container_name: securyflex-backup-monitor
+    restart: unless-stopped
+
+    depends_on:
+      - securyflex-backup
+
+    environment:
+      - MONITOR_INTERVAL=3600  # Check every hour
+      - WEBHOOK_URL=${BACKUP_WEBHOOK_URL}
+
+    volumes:
+      - ./scripts/backup:/app/scripts
+      - ./backups:/backups:ro
+
+    working_dir: /app
+
+    command: >
+      sh -c "
+        apk add --no-cache nodejs npm curl &&
+        npm install -g ts-node typescript &&
+        npm install &&
+        while true; do
+          echo 'Checking backup health...'
+          ts-node scripts/backup/backup-scheduler.ts health || {
+            echo 'Backup health check failed, sending alert'
+            curl -X POST $$WEBHOOK_URL -H 'Content-Type: application/json' -d '{\"text\":\"❌ SecuryFlex backup health check failed\",\"type\":\"alert\"}'
+          }
+          sleep $$MONITOR_INTERVAL
+        done
+      "
+
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.1'
+
+networks:
+  backup-network:
+    driver: bridge
+
+# Example usage:
+# docker-compose -f docker-backup.yml up -d
+#
+# View backup logs:
+# docker-compose -f docker-backup.yml logs -f securyflex-backup
+#
+# Execute manual backup:
+# docker-compose -f docker-backup.yml exec securyflex-backup ts-node scripts/backup/backup-scheduler.ts backup
+#
+# Check backup health:
+# docker-compose -f docker-backup.yml exec securyflex-backup ts-node scripts/backup/backup-scheduler.ts health

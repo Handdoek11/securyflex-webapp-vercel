@@ -1,0 +1,5 @@
+# Ignore everything in .admin folder
+*
+!.gitignore
+
+# This ensures admin documentation never gets committed

@@ -1,0 +1,92 @@
+# SecuryFlex Project Configuration
+# This file contains all project-specific validation gates, performance targets, and business rules
+
+validation_gates:
+  gps_accuracy_meters: 50
+  payment_sla_hours: 24
+  payment_webhook_ms: 2000
+  mobile_load_time_ms: 3000
+  translation_coverage_percent: 100
+  gps_checkin_success_rate: 95
+  payment_success_rate: 99.5
+  shift_assignment_rate: 80
+  mobile_retention_monthly: 70
+
+performance_targets:
+  # Critical User Journeys
+  zzp_gps_checkin_ms: 2000
+  company_shift_creation_ms: 30000
+  client_service_request_ms: 45000
+  mobile_app_install_ms: 10000
+
+  # Mobile Performance
+  first_contentful_paint_ms: 1800
+  time_to_interactive_ms: 3500
+  gps_lock_time_ms: 5000
+  photo_compression_ms: 2000
+
+  # Additional Metrics
+  shift_list_loading_ms: 1000
+  photo_upload_ms: 5000
+  search_results_ms: 500
+  realtime_updates_latency_ms: 50
+
+business_rules:
+  # GPS Configuration
+  gps_checkin_radius_default: 100
+  photo_required_for_checkin: true
+  photo_not_required_for_checkout: true
+  gps_accuracy_required_meters: 50
+
+  # Payment Configuration (Finqle)
+  vat_percentage: 21
+  factoring_fee_percentage: 2.5
+  payment_deadline_hours: 24
+
+  # Mobile Optimization
+  min_touch_target_px: 44
+  max_photo_width: 1920
+  max_photo_height: 1080
+  photo_compression_quality: 0.8
+
+  # User Roles
+  user_roles:
+    - company
+    - client
+    - zzp
+
+  # Shift Status
+  shift_statuses:
+    - draft
+    - published
+    - assigned
+    - active
+    - completed
+    - cancelled
+
+monitoring:
+  # Sentry
+  error_tracking: true
+  performance_monitoring: true
+
+  # Better Stack
+  uptime_monitoring: true
+  incident_management: true
+
+  # Checkly
+  synthetic_monitoring: true
+  api_checks: true
+
+compliance:
+  gdpr_avp: true
+  wpbr_required: true
+  data_retention_days: 365
+  encryption_at_rest: true
+  encryption_in_transit: true
+
+testing_requirements:
+  unit_test_coverage: 80
+  integration_test_coverage: 70
+  e2e_test_coverage: 60
+  security_scan_frequency: weekly
+  performance_test_frequency: daily

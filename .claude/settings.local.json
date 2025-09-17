@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Read(//c/Users/svdwe/Documents/boiler-plate-securyflex/**)",
+      "Bash(pnpm add:*)",
+      "Bash(npx prisma:*)",
+      "Bash(node:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(taskkill:*)",
+      "WebFetch(domain:youngones.com)",
+      "Bash(pnpm prisma:*)",
+      "Bash(move \"favicon(512x512).ico\" favicon.ico)",
+      "Bash(copy \"favicon(512x512).ico\" favicon.ico)",
+      "Bash(cp:*)",
+      "Bash(npm run build:*)",
+      "Bash(pnpm test:*)",
+      "Bash(npm install:*)",
+      "Bash(mkdir:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "WebFetch(domain:www.secusoft.nl)",
+      "WebFetch(domain:www.justis.nl)",
+      "WebFetch(domain:uitspraken.rechtspraak.nl)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm:*)",
+      "Bash(next dev:*)",
+      "Bash(npx next:*)",
+      "Bash(npm run dev:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
