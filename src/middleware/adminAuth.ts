@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { getAdminEmails, isAdminEmail } from "@/lib/admin/auth";
+import { isAdminEmail } from "@/lib/admin/auth";
 
 // Admin protected routes
 const ADMIN_ROUTES = [

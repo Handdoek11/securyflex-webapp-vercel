@@ -1,6 +1,6 @@
 import { PrismaClient, UserRole } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import type { ZodIssue, z } from "zod";
 import { hashPassword } from "@/lib/auth";
 import { generateVerificationToken, logSecurityEvent } from "@/lib/auth/tokens";
 import { sendVerificationEmail } from "@/lib/email/service";
@@ -75,6 +75,9 @@ export async function POST(request: NextRequest) {
             data: {
               userId: user.id,
               // Initialize with minimal data - rest will be filled during onboarding
+              voornaam: validatedData.name.split(" ")[0] || "Onbekend",
+              achternaam:
+                validatedData.name.split(" ").slice(1).join(" ") || "Onbekend",
               kvkNummer: `TEMP_${user.id}`, // Temporary unique value - will be filled during onboarding
               specialisaties: [],
               certificaten: [],
@@ -168,7 +171,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Ongeldige invoer",
-          details: zodError.errors.map((err) => ({
+          details: zodError.issues.map((err: ZodIssue) => ({
             field: err.path.join("."),
             message: err.message,
           })),

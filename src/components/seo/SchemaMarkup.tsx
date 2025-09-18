@@ -2,9 +2,17 @@
 
 import Script from "next/script";
 
+interface JobPostingData {
+  title: string;
+  description: string;
+  location: string;
+  hourlyRate: number;
+  datePosted: string;
+}
+
 interface SchemaMarkupProps {
   type: "organization" | "service" | "faq" | "jobPosting" | "localBusiness";
-  data?: any;
+  data?: JobPostingData;
 }
 
 export function SchemaMarkup({ type, data }: SchemaMarkupProps) {

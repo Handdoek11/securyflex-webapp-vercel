@@ -3,9 +3,9 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
-interface UseApiDataOptions {
+interface UseApiDataOptions<T = unknown> {
   endpoint: string;
-  fallbackData?: any;
+  fallbackData?: T;
   requireAuth?: boolean;
   params?: Record<string, string>;
   enabled?: boolean;
@@ -24,14 +24,14 @@ interface UseApiDataReturn<T> {
  * Generic hook for fetching data from API endpoints
  * Automatically handles loading states, errors, and fallback to mock data
  */
-export function useApiData<T = any>({
+export function useApiData<T = unknown>({
   endpoint,
   fallbackData = null,
   requireAuth = true,
   params = {},
   enabled = true,
   refreshInterval = 0,
-}: UseApiDataOptions): UseApiDataReturn<T> {
+}: UseApiDataOptions<T>): UseApiDataReturn<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -490,7 +490,7 @@ export function useUpdateShift(shiftId: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateShift = async (data: any) => {
+  const updateShift = async (data: Record<string, unknown>) => {
     try {
       setLoading(true);
       setError(null);
@@ -632,12 +632,12 @@ export function useUpdateNotifications() {
 /**
  * Hook for posting data to an API endpoint
  */
-export function useApiMutation<T = any>(endpoint: string) {
+export function useApiMutation<T = unknown>(endpoint: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const mutate = async (
-    data: any,
+    data: Record<string, unknown>,
   ): Promise<{ success: boolean; data?: T; error?: string }> => {
     try {
       setLoading(true);

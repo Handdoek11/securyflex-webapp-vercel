@@ -227,7 +227,7 @@ test.describe("ZZP User Flow", () => {
         // Mock GPS coordinates (Amsterdam)
         Object.defineProperty(navigator.geolocation, "getCurrentPosition", {
           writable: true,
-          value: (success: (pos: any) => void) => {
+          value: (success: (pos: GeolocationPosition) => void) => {
             success({
               coords: {
                 latitude: 52.3676,
@@ -445,7 +445,10 @@ test.describe("ZZP User Flow", () => {
       await page.addInitScript(() => {
         Object.defineProperty(navigator.geolocation, "getCurrentPosition", {
           writable: true,
-          value: (_success: any, error: (err: any) => void) => {
+          value: (
+            _success: PositionCallback,
+            error: (err: GeolocationPositionError) => void,
+          ) => {
             error({
               code: 1, // PERMISSION_DENIED
               message: "User denied geolocation",

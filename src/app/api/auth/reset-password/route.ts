@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { type ZodIssue, z } from "zod";
 import { hashPassword } from "@/lib/auth";
 import {
   markPasswordResetTokenUsed,
@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Ongeldige invoer",
-          details: validationResult.error.errors
-            .map((err) => err.message)
+          details: validationResult.error.issues
+            .map((err: ZodIssue) => err.message)
             .join(", "),
         },
         { status: 400 },

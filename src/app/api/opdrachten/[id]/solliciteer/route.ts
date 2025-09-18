@@ -1,3 +1,4 @@
+import type { NDNummerStatus } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -300,7 +301,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           bedrijfProfileId: user.bedrijfProfile?.id,
           ndNummer: user.zzpProfile?.ndNummer || user.bedrijfProfile?.ndNummer,
           action: "VERIFICATIE",
-          newStatus: ndNummerStatus as any,
+          newStatus: ndNummerStatus as NDNummerStatus,
           verificationSource: "Job Application",
           complianceNotes: `ND-nummer gebruikt voor sollicitatie op opdracht ${opdracht.titel}`,
           performedBy: session.user.id,
@@ -524,7 +525,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 // PATCH /api/opdrachten/[id]/solliciteer - Accept/reject sollicitatie
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params: _params }: RouteParams) {
   try {
     const session = await auth();
 

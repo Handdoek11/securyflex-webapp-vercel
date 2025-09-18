@@ -88,11 +88,11 @@ export async function GET(request: NextRequest) {
           {
             creatorType: "BEDRIJF",
             creatorBedrijfId: bedrijfProfile.id,
-            status: { in: ["OPEN", "IN_PROGRESS", "ASSIGNED"] },
+            status: { in: ["OPEN", "BEZIG", "TOEGEWEZEN"] },
           },
           {
             acceptedBedrijfId: bedrijfProfile.id,
-            status: { in: ["IN_PROGRESS", "ASSIGNED"] },
+            status: { in: ["BEZIG", "TOEGEWEZEN"] },
           },
         ],
         startDatum: {
@@ -106,11 +106,10 @@ export async function GET(request: NextRequest) {
             status: "ACCEPTED",
           },
           include: {
-            zzpProfile: {
+            zzp: {
               select: {
                 voornaam: true,
                 achternaam: true,
-                telefoon: true,
                 user: {
                   select: {
                     email: true,
@@ -153,7 +152,6 @@ export async function GET(request: NextRequest) {
         id: true,
         voornaam: true,
         achternaam: true,
-        telefoon: true,
         specialisaties: true,
         ervaring: true,
         beschikbaarheid: true,
@@ -182,10 +180,10 @@ export async function GET(request: NextRequest) {
       // Assigned team
       assignedTeam: opdracht.sollicitaties.map((sollicitatie) => ({
         id: sollicitatie.id,
-        zzpId: sollicitatie.zzpProfileId,
-        name: `${sollicitatie.zzpProfile.voornaam} ${sollicitatie.zzpProfile.achternaam}`,
-        phone: sollicitatie.zzpProfile.telefoon,
-        email: sollicitatie.zzpProfile.user.email,
+        zzpId: sollicitatie.zzpId,
+        name: `${sollicitatie.zzp.voornaam} ${sollicitatie.zzp.achternaam}`,
+        phone: sollicitatie.zzp.user.phone || null,
+        email: sollicitatie.zzp.user.email,
         status: sollicitatie.status,
       })),
 
@@ -310,7 +308,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing assignments that would conflict
-    const existingAssignments = await prisma.sollicitatie.findMany({
+    const existingAssignments = await prisma.opdrachtSollicitatie.findMany({
       where: {
         opdrachtId,
         zzpProfileId: { in: zzpProfileIds },
@@ -331,7 +329,7 @@ export async function POST(request: NextRequest) {
     // Create planning assignments (as sollicitaties with ACCEPTED status)
     const assignments = await Promise.all(
       zzpProfileIds.map((zzpProfileId) =>
-        prisma.sollicitatie.create({
+        prisma.opdrachtSollicitatie.create({
           data: {
             opdrachtId,
             zzpProfileId,
@@ -342,11 +340,10 @@ export async function POST(request: NextRequest) {
             eindTijd: eindTijd ? new Date(eindTijd) : undefined,
           },
           include: {
-            zzpProfile: {
+            zzp: {
               select: {
                 voornaam: true,
                 achternaam: true,
-                telefoon: true,
                 user: {
                   select: {
                     email: true,
@@ -360,7 +357,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Update opdracht status if now fully staffed
-    const totalAssigned = await prisma.sollicitatie.count({
+    const totalAssigned = await prisma.opdrachtSollicitatie.count({
       where: {
         opdrachtId,
         status: "ACCEPTED",
@@ -373,7 +370,7 @@ export async function POST(request: NextRequest) {
     ) {
       await prisma.opdracht.update({
         where: { id: opdrachtId },
-        data: { status: "ASSIGNED" },
+        data: { status: "TOEGEWEZEN" },
       });
     }
 
@@ -382,7 +379,7 @@ export async function POST(request: NextRequest) {
       ...opdracht,
       status:
         totalAssigned >= opdracht.aantalBeveiligers
-          ? "ASSIGNED"
+          ? "TOEGEWEZEN"
           : opdracht.status,
     });
 
@@ -392,9 +389,9 @@ export async function POST(request: NextRequest) {
       data: {
         assignments: assignments.map((assignment) => ({
           id: assignment.id,
-          zzpName: `${assignment.zzpProfile.voornaam} ${assignment.zzpProfile.achternaam}`,
-          zzpPhone: assignment.zzpProfile.telefoon,
-          zzpEmail: assignment.zzpProfile.user.email,
+          zzpName: `${assignment.zzp.voornaam} ${assignment.zzp.achternaam}`,
+          zzpPhone: assignment.zzp.user.phone || null,
+          zzpEmail: assignment.zzp.user.email,
           startTijd: assignment.startTijd,
           eindTijd: assignment.eindTijd,
         })),

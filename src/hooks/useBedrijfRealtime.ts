@@ -11,7 +11,7 @@ export interface RealtimeUpdate {
     | "payment_updated"
     | "team_updated"
     | "planning_updated";
-  data: any;
+  data: Record<string, unknown>;
   timestamp: string;
   userId?: string;
   bedrijfId?: string;

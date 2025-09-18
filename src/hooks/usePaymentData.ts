@@ -267,7 +267,7 @@ export function usePaymentRealtime(userId?: string) {
   const [paymentEvents, setPaymentEvents] = useState<
     Array<{
       type: string;
-      data: any;
+      data: Record<string, unknown>;
       timestamp: Date;
     }>
   >([]);

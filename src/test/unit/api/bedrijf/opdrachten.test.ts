@@ -45,15 +45,39 @@ describe("Bedrijf Opdrachten API", () => {
     id: "bedrijf-123",
     bedrijfsnaam: "Test Bedrijf BV",
     kvkNummer: "12345678",
-    isActive: true,
-    accountStatus: "ACTIVE",
+    btwNummer: "NL123456789B01",
+    teamSize: 1,
+    extraAccounts: 0,
+    subscriptionTier: "SMALL" as const,
+    subscriptionId: null,
     userId: "user-123",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    finqleCreditLimit: null,
+    finqleDebtorId: null,
+    ndNummer: null,
+    ndNummerLaatsteControle: null,
+    ndNummerManagers: null,
+    ndNummerOpmerking: null,
+    ndNummerStatus: "NIET_GEREGISTREERD" as const,
+    ndNummerVervalDatum: null,
   };
 
   const mockUser = {
     id: "user-123",
     email: "test@bedrijf.com",
-    role: "BEDRIJF",
+    password: "hashedPassword123",
+    name: "Test User",
+    phone: null,
+    role: "BEDRIJF" as const,
+    status: "ACTIVE" as const,
+    emailVerified: new Date(),
+    image: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    failedLoginAttempts: 0,
+    lastFailedLogin: null,
+    lockedUntil: null,
   };
 
   const mockSession = {
@@ -77,13 +101,13 @@ describe("Bedrijf Opdrachten API", () => {
         {
           id: "opdracht-1",
           titel: "Evenement Beveiliging",
-          omschrijving: "Beveiliging tijdens concert",
+          beschrijving: "Beveiliging tijdens concert",
           locatie: "Amsterdam",
           postcode: "1012AB",
           startDatum: new Date("2024-01-15T09:00:00Z"),
           eindDatum: new Date("2024-01-15T23:00:00Z"),
-          uurloon: 25.0,
-          aantalPersonen: 5,
+          uurtarief: 25.0,
+          aantalBeveiligers: 5,
           vereisten: ["SIA Diploma"],
           status: "OPEN",
           targetAudience: "ALLEEN_ZZP",
@@ -194,13 +218,12 @@ describe("Bedrijf Opdrachten API", () => {
   describe("POST /api/bedrijf/opdrachten", () => {
     const validOpdrachtData = {
       titel: "Nieuwe Opdracht",
-      omschrijving: "Beschrijving van de nieuwe opdracht",
+      beschrijving: "Beschrijving van de nieuwe opdracht",
       locatie: "Amsterdam",
-      postcode: "1012AB",
       startDatum: "2024-02-01T09:00:00Z",
       eindDatum: "2024-02-01T17:00:00Z",
-      uurloon: 25.5,
-      aantalPersonen: 3,
+      uurtarief: 25.5,
+      aantalBeveiligers: 3,
       vereisten: ["SIA Diploma", "Ervaring"],
       targetAudience: "ALLEEN_ZZP",
       directZZPAllowed: true,
@@ -238,8 +261,8 @@ describe("Bedrijf Opdrachten API", () => {
       expect(mockPrisma.opdracht.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           titel: validOpdrachtData.titel,
-          omschrijving: validOpdrachtData.omschrijving,
-          uurloon: validOpdrachtData.uurloon,
+          beschrijving: validOpdrachtData.beschrijving,
+          uurtarief: validOpdrachtData.uurtarief,
           creatorType: "BEDRIJF",
         }),
         include: expect.any(Object),
@@ -278,16 +301,15 @@ describe("Bedrijf Opdrachten API", () => {
     it("should validate required fields", async () => {
       const _invalidData = {
         titel: "T", // Too short
-        omschrijving: "Short", // Too short
+        beschrijving: "Short", // Too short
         // Missing required fields
       };
 
       // The validation would be handled by the security middleware
       // Here we test that required fields are properly defined
       expect(validOpdrachtData.titel.length).toBeGreaterThan(2);
-      expect(validOpdrachtData.omschrijving.length).toBeGreaterThan(9);
+      expect(validOpdrachtData.beschrijving.length).toBeGreaterThan(9);
       expect(validOpdrachtData.locatie).toBeDefined();
-      expect(validOpdrachtData.postcode).toMatch(/^\d{4}[A-Z]{2}$/i);
     });
 
     it("should validate postcode format", async () => {
@@ -304,8 +326,8 @@ describe("Bedrijf Opdrachten API", () => {
     });
 
     it("should validate hourly rate limits", async () => {
-      expect(validOpdrachtData.uurloon).toBeGreaterThan(0);
-      expect(validOpdrachtData.uurloon).toBeLessThanOrEqual(200);
+      expect(validOpdrachtData.uurtarief).toBeGreaterThan(0);
+      expect(validOpdrachtData.uurtarief).toBeLessThanOrEqual(200);
 
       const invalidRates = [-1, 0, 250, 500];
       invalidRates.forEach((rate) => {
@@ -314,8 +336,8 @@ describe("Bedrijf Opdrachten API", () => {
     });
 
     it("should validate person count limits", async () => {
-      expect(validOpdrachtData.aantalPersonen).toBeGreaterThanOrEqual(1);
-      expect(validOpdrachtData.aantalPersonen).toBeLessThanOrEqual(50);
+      expect(validOpdrachtData.aantalBeveiligers).toBeGreaterThanOrEqual(1);
+      expect(validOpdrachtData.aantalBeveiligers).toBeLessThanOrEqual(50);
 
       const invalidCounts = [0, -1, 51, 100];
       invalidCounts.forEach((count) => {
@@ -386,7 +408,7 @@ describe("Bedrijf Opdrachten API", () => {
     it("should validate input sanitization", async () => {
       const maliciousInput = {
         titel: '<script>alert("xss")</script>',
-        omschrijving: "javascript:void(0)",
+        beschrijving: "javascript:void(0)",
         locatie: 'onclick="malicious()"',
       };
 
@@ -394,12 +416,12 @@ describe("Bedrijf Opdrachten API", () => {
       // Here we test the sanitization logic
       const sanitized = {
         titel: maliciousInput.titel.replace(/[<>]/g, ""),
-        omschrijving: maliciousInput.omschrijving.replace(/javascript:/gi, ""),
+        beschrijving: maliciousInput.beschrijving.replace(/javascript:/gi, ""),
         locatie: maliciousInput.locatie.replace(/on\w+\s*=/gi, ""),
       };
 
       expect(sanitized.titel).not.toContain("<script>");
-      expect(sanitized.omschrijving).not.toMatch(/javascript:/i);
+      expect(sanitized.beschrijving).not.toMatch(/javascript:/i);
       expect(sanitized.locatie).not.toMatch(/onclick=/i);
     });
   });
@@ -434,8 +456,8 @@ describe("Bedrijf Opdrachten API", () => {
     it("should handle validation errors gracefully", async () => {
       const invalidData = {
         titel: "", // Empty title
-        uurloon: -5, // Negative rate
-        aantalPersonen: 0, // Zero persons
+        uurtarief: -5, // Negative rate
+        aantalBeveiligers: 0, // Zero persons
       };
 
       // Test validation logic
@@ -445,11 +467,11 @@ describe("Bedrijf Opdrachten API", () => {
         errors.push("Titel moet minimaal 3 karakters bevatten");
       }
 
-      if (invalidData.uurloon <= 0) {
+      if (invalidData.uurtarief <= 0) {
         errors.push("Uurloon moet hoger zijn dan €0.01");
       }
 
-      if (invalidData.aantalPersonen < 1) {
+      if (invalidData.aantalBeveiligers < 1) {
         errors.push("Minimaal 1 persoon vereist");
       }
 

@@ -3,11 +3,11 @@
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
@@ -105,5 +105,27 @@ export default function VerifyEmailPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md p-8 shadow-lg">
+            <div className="text-center">
+              <Loader2 className="h-16 w-16 mx-auto mb-4 text-primary animate-spin" />
+              <h1 className="text-2xl font-bold mb-2">Laden...</h1>
+              <p className="text-muted-foreground">
+                Even geduld alstublieft...
+              </p>
+            </div>
+          </Card>
+        </div>
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

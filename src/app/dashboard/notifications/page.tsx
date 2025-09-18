@@ -63,40 +63,6 @@ export default function NotificationsPage() {
     {},
   );
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchNotifications();
-    }
-  }, [session, fetchNotifications]);
-
-  useEffect(() => {
-    // Apply filters
-    let filtered = notifications;
-
-    // Category filter
-    if (selectedCategory !== "ALL") {
-      filtered = filtered.filter((n) => n.category === selectedCategory);
-    }
-
-    // Read status filter
-    if (filterRead === "UNREAD") {
-      filtered = filtered.filter((n) => !n.isRead);
-    } else if (filterRead === "READ") {
-      filtered = filtered.filter((n) => n.isRead);
-    }
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (n) =>
-          n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          n.message.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-    }
-
-    setFilteredNotifications(filtered);
-  }, [notifications, selectedCategory, filterRead, searchQuery]);
-
   const fetchNotifications = async () => {
     try {
       setLoading(true);
@@ -128,6 +94,40 @@ export default function NotificationsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchNotifications();
+    }
+  }, [session]);
+
+  useEffect(() => {
+    // Apply filters
+    let filtered = notifications;
+
+    // Category filter
+    if (selectedCategory !== "ALL") {
+      filtered = filtered.filter((n) => n.category === selectedCategory);
+    }
+
+    // Read status filter
+    if (filterRead === "UNREAD") {
+      filtered = filtered.filter((n) => !n.isRead);
+    } else if (filterRead === "READ") {
+      filtered = filtered.filter((n) => n.isRead);
+    }
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (n) =>
+          n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          n.message.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    }
+
+    setFilteredNotifications(filtered);
+  }, [notifications, selectedCategory, filterRead, searchQuery]);
 
   const markAsRead = async (notificationIds?: string[]) => {
     try {

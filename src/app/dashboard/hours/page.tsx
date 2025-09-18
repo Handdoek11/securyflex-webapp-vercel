@@ -64,6 +64,14 @@ interface TimeEntry {
   status: string;
   project: string;
   description: string;
+  dayName?: string;
+  company?: string;
+  isGPSVerified?: boolean;
+  totalHours?: number;
+  breakTime?: number;
+  hourlyRate?: number;
+  totalEarned?: number;
+  location?: string;
 }
 
 export default function HoursPage() {
@@ -86,7 +94,7 @@ export default function HoursPage() {
     if (session) {
       fetchHours();
     }
-  }, [session, fetchHours]);
+  }, [session, currentWeek]);
 
   const getWeekBounds = (date: Date) => {
     const monday = new Date(date);
@@ -262,7 +270,7 @@ export default function HoursPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
                       <span className="font-medium text-sm">
-                        {entry.dayName}
+                        {entry.dayName || "Day"}
                       </span>
                     </div>
                     <div>
@@ -289,13 +297,13 @@ export default function HoursPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
                         <span className="font-medium text-sm text-primary">
-                          {entry.dayName}
+                          {entry.dayName || "Day"}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{entry.project}</p>
                         <p className="text-sm text-muted-foreground truncate">
-                          {entry.company}
+                          {entry.company || "Company"}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -332,20 +340,20 @@ export default function HoursPage() {
                       <p className="text-xs text-muted-foreground">
                         Gewerkte uren
                       </p>
-                      <p className="font-medium">{entry.totalHours}u</p>
+                      <p className="font-medium">{entry.totalHours || 0}u</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Pauze</p>
-                      <p className="font-medium">{entry.breakTime}min</p>
+                      <p className="font-medium">{entry.breakTime || 0}min</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Uurtarief</p>
-                      <p className="font-medium">€{entry.hourlyRate}</p>
+                      <p className="font-medium">€{entry.hourlyRate || 0}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Totaal</p>
                       <p className="font-medium text-green-600">
-                        €{entry.totalEarned.toFixed(2)}
+                        €{(entry.totalEarned || 0).toFixed(2)}
                       </p>
                     </div>
                   </div>

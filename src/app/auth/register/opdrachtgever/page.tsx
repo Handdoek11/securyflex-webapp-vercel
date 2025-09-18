@@ -82,7 +82,9 @@ export default function OpdrachtgeverRegistrationPage() {
           setError(firstError?.message || result.error || "Ongeldige invoer");
         } else {
           // General error
-          setError(result.error || "Er is iets misgegaan tijdens de registratie");
+          setError(
+            result.error || "Er is iets misgegaan tijdens de registratie",
+          );
         }
         return;
       }

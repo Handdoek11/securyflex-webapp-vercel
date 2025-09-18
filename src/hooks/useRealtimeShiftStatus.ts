@@ -55,8 +55,8 @@ export function useRealtimeShiftStatus(shiftId: string | undefined) {
         console.log("Presence sync:", state);
 
         // Process presence data for active guards
-        const activeGuards = Object.values(state).flatMap((presences: any) =>
-          presences.map((presence: any) => ({
+        const activeGuards = Object.values(state).flatMap((presences: Record<string, unknown>[]) =>
+          presences.map((presence: Record<string, unknown>) => ({
             guardId: presence.guard_id,
             guardName: presence.guard_name,
             checkedInAt: presence.checked_in_at,

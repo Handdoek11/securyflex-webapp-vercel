@@ -55,32 +55,26 @@ export default function JobsPage() {
     type: string;
     vereisten: string[];
     beschrijving: string;
+    // Optional UI properties
+    image?: string;
+    distance?: string;
+    isUrgent?: boolean;
+    spotsRemaining?: number;
+    applicantCount?: number;
+    applicationStatus?: string;
   }
   interface Application {
     id: string;
     status: string;
     appliedAt: string;
-    opdracht: Job;
+    jobId: string;
+    job: Job;
   }
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [loadingApplications, setLoadingApplications] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (activeTab === "browse" && session) {
-      fetchJobs();
-    } else if (activeTab === "applications" && session) {
-      fetchApplications();
-    }
-  }, [activeTab, session, fetchApplications, fetchJobs]);
-
-  useEffect(() => {
-    if (session && activeTab === "browse") {
-      fetchJobs();
-    }
-  }, [session, activeTab, fetchJobs]);
 
   const fetchJobs = async () => {
     if (!session) return;
@@ -134,6 +128,20 @@ export default function JobsPage() {
       setLoadingApplications(false);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === "browse" && session) {
+      fetchJobs();
+    } else if (activeTab === "applications" && session) {
+      fetchApplications();
+    }
+  }, [activeTab, session]);
+
+  useEffect(() => {
+    if (session && activeTab === "browse") {
+      fetchJobs();
+    }
+  }, [session, activeTab]);
 
   const toggleFavorite = async (jobId: string) => {
     const isFavorited = favorites.includes(jobId);
@@ -290,8 +298,8 @@ export default function JobsPage() {
             ) : (
               <div className="space-y-4">
                 {filteredJobs.map((job) => {
-                  const startDate = new Date(job.startDate);
-                  const endDate = new Date(job.endDate);
+                  const startDate = new Date(job.startDatum);
+                  const endDate = new Date(job.eindDatum);
                   const startTime = startDate.toLocaleTimeString("nl-NL", {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -309,7 +317,7 @@ export default function JobsPage() {
                           src={
                             job.image || "/images/jobs/default-beveiliging.jpg"
                           }
-                          alt={job.title}
+                          alt={job.titel}
                           fill
                           className="object-cover"
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -345,12 +353,12 @@ export default function JobsPage() {
                         <div className="absolute bottom-3 left-3 right-3 text-white">
                           <div className="flex items-center gap-1 font-semibold text-lg mb-1">
                             <Euro className="h-4 w-4" />
-                            <span>{job.hourlyRate.toFixed(2)}/uur</span>
+                            <span>{job.tarief.toFixed(2)}/uur</span>
                           </div>
                           <div className="flex items-center gap-4 text-sm">
                             <div className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
-                              <span>{job.location}</span>
+                              <span>{job.locatie}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -365,31 +373,30 @@ export default function JobsPage() {
                       {/* Job Content */}
                       <div className="p-4 space-y-4">
                         <div className="space-y-2">
-                          <h3 className="font-semibold text-lg">{job.title}</h3>
+                          <h3 className="font-semibold text-lg">{job.titel}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {job.company} {job.distance && `• ${job.distance}`}
+                            {job.opdrachtgever?.bedrijfsnaam}{" "}
+                            {job.distance && `• ${job.distance}`}
                           </p>
                         </div>
 
                         {/* Job Description */}
                         <p className="text-sm text-foreground">
-                          {job.description}
+                          {job.beschrijving}
                         </p>
 
                         {/* Requirements */}
-                        {job.requirements && job.requirements.length > 0 && (
+                        {job.vereisten && job.vereisten.length > 0 && (
                           <div className="flex flex-wrap gap-2">
-                            {job.requirements.map(
-                              (req: string, index: number) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
-                                  {req}
-                                </Badge>
-                              ),
-                            )}
+                            {job.vereisten.map((req: string, index: number) => (
+                              <Badge
+                                key={index}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {req}
+                              </Badge>
+                            ))}
                           </div>
                         )}
 
@@ -531,10 +538,11 @@ export default function JobsPage() {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h3 className="font-semibold">
-                          {application.job.title}
+                          {application.job.titel}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          {application.job.company} • {application.job.location}
+                          {application.job.opdrachtgever?.bedrijfsnaam} •{" "}
+                          {application.job.locatie}
                         </p>
                       </div>
                       <Badge
@@ -561,20 +569,20 @@ export default function JobsPage() {
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                       <div className="flex items-center gap-1">
                         <Euro className="h-3 w-3" />
-                        <span>€{application.job.hourlyRate}/uur</span>
+                        <span>€{application.job.tarief}/uur</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         <span>
                           {new Date(
-                            application.job.startDate,
+                            application.job.startDatum,
                           ).toLocaleDateString("nl-NL")}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
                         <span>
-                          {application.job.totalApplicants} sollicitanten
+                          {application.job.applicantCount || 0} sollicitanten
                         </span>
                       </div>
                     </div>

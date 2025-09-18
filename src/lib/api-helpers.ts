@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import type { User } from "next-auth";
 import { auth } from "./auth";
 import {
   checkRateLimit,
@@ -41,7 +42,7 @@ export function withRateLimit(
  * Wrapper for API routes with authentication and rate limiting
  */
 export function withAuthAndRateLimit(
-  handler: (req: NextRequest, user: any) => Promise<NextResponse>,
+  handler: (req: NextRequest, user: User) => Promise<NextResponse>,
 ) {
   return async (req: NextRequest): Promise<NextResponse> => {
     try {
@@ -86,7 +87,7 @@ export function withAuthAndRateLimit(
 export function withUserActionLimit(
   action: string,
   options: { points: number; duration: number; blockDuration?: number },
-  handler: (req: NextRequest, user: any) => Promise<NextResponse>,
+  handler: (req: NextRequest, user: User) => Promise<NextResponse>,
 ) {
   return async (req: NextRequest): Promise<NextResponse> => {
     try {
@@ -157,7 +158,7 @@ export function errorResponse(
  * Standard success response
  */
 export function successResponse(
-  data: any = null,
+  data: Record<string, unknown> | null = null,
   message?: string,
 ): NextResponse {
   return NextResponse.json({
@@ -186,7 +187,7 @@ export function validationError(errors: string[]): NextResponse {
  */
 export async function parseJsonBody(
   req: NextRequest,
-): Promise<{ data: any; error?: NextResponse }> {
+): Promise<{ data: Record<string, unknown> | null; error?: NextResponse }> {
   try {
     const body = await req.json();
     return { data: body };

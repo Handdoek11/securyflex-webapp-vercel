@@ -12,7 +12,6 @@ import {
   RefreshCw,
   Shield,
   Users,
-  XCircle,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
@@ -45,6 +44,19 @@ export default function AdminToolsPage() {
   const [resetEmail, setResetEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
 
+  // Fetch quick stats
+  const fetchStats = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/actions/stats");
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch stats:", error);
+    }
+  }, []);
+
   // Check admin status
   useEffect(() => {
     if (status === "loading") return;
@@ -74,20 +86,7 @@ export default function AdminToolsPage() {
     };
 
     checkAdminStatus();
-  }, [status]);
-
-  // Fetch quick stats
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await fetch("/api/admin/actions/stats");
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch stats:", error);
-    }
-  }, []);
+  }, [status, fetchStats]);
 
   // Quick action: Unlock user
   const handleUnlockUser = async () => {
@@ -111,7 +110,7 @@ export default function AdminToolsPage() {
         const error = await response.json();
         toast.error(error.message || "Fout bij deblokkeren");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Er is een fout opgetreden");
     }
   };
@@ -142,7 +141,7 @@ export default function AdminToolsPage() {
         const error = await response.json();
         toast.error(error.message || "Fout bij wachtwoord reset");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Er is een fout opgetreden");
     }
   };
@@ -158,7 +157,7 @@ export default function AdminToolsPage() {
       a.download = `users-export-${new Date().toISOString().split("T")[0]}.csv`;
       a.click();
       toast.success("Users geëxporteerd");
-    } catch (error) {
+    } catch (_error) {
       toast.error("Export mislukt");
     }
   };
@@ -173,7 +172,7 @@ export default function AdminToolsPage() {
       a.download = `transactions-${new Date().toISOString().split("T")[0]}.csv`;
       a.click();
       toast.success("Transacties geëxporteerd");
-    } catch (error) {
+    } catch (_error) {
       toast.error("Export mislukt");
     }
   };
@@ -207,27 +206,39 @@ export default function AdminToolsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totaal Gebruikers</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Totaal Gebruikers
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.totalUsers.reduce((acc, u) => acc + Number(u.count), 0) || 0}
+              {stats?.totalUsers.reduce((acc, u) => acc + Number(u.count), 0) ||
+                0}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats?.totalUsers.reduce((acc, u) => acc + Number(u.active_count), 0) || 0} actief
+              {stats?.totalUsers.reduce(
+                (acc, u) => acc + Number(u.active_count),
+                0,
+              ) || 0}{" "}
+              actief
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Actieve Opdrachten</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Actieve Opdrachten
+            </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.activeOpdrachten.reduce((acc, o) => acc + Number(o.count), 0) || 0}
+              {stats?.activeOpdrachten.reduce(
+                (acc, o) => acc + Number(o.count),
+                0,
+              ) || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Open, toegewezen, bezig
@@ -237,7 +248,9 @@ export default function AdminToolsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Geblokkeerde Accounts</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Geblokkeerde Accounts
+            </CardTitle>
             <Lock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -252,16 +265,16 @@ export default function AdminToolsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Revenue (Maand)</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Revenue (Maand)
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               €{stats?.monthlyRevenue?.toLocaleString("nl-NL") || "0"}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Huidige maand
-            </p>
+            <p className="text-xs text-muted-foreground">Huidige maand</p>
           </CardContent>
         </Card>
       </div>
@@ -271,7 +284,9 @@ export default function AdminToolsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Veelgebruikte administratieve taken</CardDescription>
+            <CardDescription>
+              Veelgebruikte administratieve taken
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Unlock User */}
@@ -307,7 +322,11 @@ export default function AdminToolsPage() {
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
               />
-              <Button onClick={handleResetPassword} variant="outline" className="w-full">
+              <Button
+                onClick={handleResetPassword}
+                variant="outline"
+                className="w-full"
+              >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Reset Wachtwoord
               </Button>
@@ -326,13 +345,19 @@ export default function AdminToolsPage() {
               Export Gebruikers (CSV)
             </Button>
 
-            <Button onClick={exportTransactions} variant="outline" className="w-full">
+            <Button
+              onClick={exportTransactions}
+              variant="outline"
+              className="w-full"
+            >
               <Download className="h-4 w-4 mr-2" />
               Export Transacties (CSV)
             </Button>
 
             <Button
-              onClick={() => window.location.href = "/admin/auth-monitor"}
+              onClick={() => {
+                window.location.href = "/admin/auth-monitor";
+              }}
               variant="outline"
               className="w-full"
             >
@@ -341,7 +366,9 @@ export default function AdminToolsPage() {
             </Button>
 
             <Button
-              onClick={() => window.location.href = "/admin/document-review"}
+              onClick={() => {
+                window.location.href = "/admin/document-review";
+              }}
               variant="outline"
               className="w-full"
             >
@@ -356,14 +383,18 @@ export default function AdminToolsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Externe Dashboards</CardTitle>
-          <CardDescription>Quick links naar externe management tools</CardDescription>
+          <CardDescription>
+            Quick links naar externe management tools
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             <Button
               variant="outline"
               className="justify-start"
-              onClick={() => window.open("https://supabase.com/dashboard", "_blank")}
+              onClick={() =>
+                window.open("https://supabase.com/dashboard", "_blank")
+              }
             >
               <Database className="h-4 w-4 mr-2" />
               Supabase Dashboard
@@ -373,7 +404,9 @@ export default function AdminToolsPage() {
             <Button
               variant="outline"
               className="justify-start"
-              onClick={() => window.open("https://vercel.com/dashboard", "_blank")}
+              onClick={() =>
+                window.open("https://vercel.com/dashboard", "_blank")
+              }
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               Vercel Deployments
@@ -393,7 +426,9 @@ export default function AdminToolsPage() {
             <Button
               variant="outline"
               className="justify-start"
-              onClick={() => toast.info("Prisma Studio: Run 'npx prisma studio' locally")}
+              onClick={() =>
+                toast.info("Prisma Studio: Run 'npx prisma studio' locally")
+              }
             >
               <Database className="h-4 w-4 mr-2" />
               Prisma Studio

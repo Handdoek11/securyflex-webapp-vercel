@@ -27,9 +27,8 @@ const testBedrijf = {
 
 const testOpdrachtData = {
   titel: "E2E Test Evenement Beveiliging",
-  omschrijving: "Beveiliging tijdens test evenement in Amsterdam Arena",
+  beschrijving: "Beveiliging tijdens test evenement in Amsterdam Arena",
   locatie: "Amsterdam Arena",
-  postcode: "1101AX",
   startDatum: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     .toISOString()
     .slice(0, 16), // 1 week from now
@@ -38,8 +37,8 @@ const testOpdrachtData = {
   )
     .toISOString()
     .slice(0, 16), // +10 hours
-  uurloon: 28.5,
-  aantalPersonen: 8,
+  uurtarief: 28.5,
+  aantalBeveiligers: 8,
   vereisten: ["SIA Diploma", "Ervaring met evenementen", "Fysiek fit"],
 };
 
@@ -142,19 +141,20 @@ test.describe("Bedrijf Complete User Flow", () => {
 
     // Fill opdracht form
     await page.getByLabel(/titel/i).fill(testOpdrachtData.titel);
-    await page.getByLabel(/omschrijving/i).fill(testOpdrachtData.omschrijving);
+    await page.getByLabel(/beschrijving/i).fill(testOpdrachtData.beschrijving);
     await page.getByLabel(/locatie/i).fill(testOpdrachtData.locatie);
-    await page.getByLabel(/postcode/i).fill(testOpdrachtData.postcode);
 
     // Fill datetime fields
     await page.getByLabel(/startdatum/i).fill(testOpdrachtData.startDatum);
     await page.getByLabel(/einddatum/i).fill(testOpdrachtData.eindDatum);
 
     // Fill numeric fields
-    await page.getByLabel(/uurloon/i).fill(testOpdrachtData.uurloon.toString());
     await page
-      .getByLabel(/aantal personen/i)
-      .fill(testOpdrachtData.aantalPersonen.toString());
+      .getByLabel(/uurtarief/i)
+      .fill(testOpdrachtData.uurtarief.toString());
+    await page
+      .getByLabel(/aantal beveiligers/i)
+      .fill(testOpdrachtData.aantalBeveiligers.toString());
 
     // Add requirements
     for (const vereiste of testOpdrachtData.vereisten) {
@@ -174,9 +174,11 @@ test.describe("Bedrijf Complete User Flow", () => {
 
     // Verify opdracht appears in list
     await expect(page.getByText(testOpdrachtData.titel)).toBeVisible();
-    await expect(page.getByText(`€${testOpdrachtData.uurloon}`)).toBeVisible();
     await expect(
-      page.getByText(`${testOpdrachtData.aantalPersonen} personen`),
+      page.getByText(`€${testOpdrachtData.uurtarief}`),
+    ).toBeVisible();
+    await expect(
+      page.getByText(`${testOpdrachtData.aantalBeveiligers} beveiligers`),
     ).toBeVisible();
   });
 
@@ -295,7 +297,7 @@ test.describe("Bedrijf Complete User Flow", () => {
 
     // Form should be responsive
     await expect(page.getByLabel(/titel/i)).toBeVisible();
-    await expect(page.getByLabel(/omschrijving/i)).toBeVisible();
+    await expect(page.getByLabel(/beschrijving/i)).toBeVisible();
   });
 
   test("should handle error scenarios gracefully", async ({ page }) => {
@@ -332,21 +334,18 @@ test.describe("Bedrijf Complete User Flow", () => {
     await page.getByRole("button", { name: /opdracht plaatsen/i }).click();
 
     await expect(page.getByText(/titel is verplicht/i)).toBeVisible();
-    await expect(page.getByText(/omschrijving is verplicht/i)).toBeVisible();
+    await expect(page.getByText(/beschrijving is verplicht/i)).toBeVisible();
     await expect(page.getByText(/locatie is verplicht/i)).toBeVisible();
 
     // Test field format validation
     await page.getByLabel(/titel/i).fill("Te"); // Too short
     await expect(page.getByText(/minimaal 3 karakters/i)).toBeVisible();
 
-    await page.getByLabel(/postcode/i).fill("123AB"); // Invalid format
-    await expect(page.getByText(/ongeldige postcode/i)).toBeVisible();
-
-    await page.getByLabel(/uurloon/i).fill("-5"); // Negative amount
+    await page.getByLabel(/uurtarief/i).fill("-5"); // Negative amount
     await expect(page.getByText(/moet hoger zijn dan €0/i)).toBeVisible();
 
-    await page.getByLabel(/aantal personen/i).fill("0"); // Zero persons
-    await expect(page.getByText(/minimaal 1 persoon/i)).toBeVisible();
+    await page.getByLabel(/aantal beveiligers/i).fill("0"); // Zero persons
+    await expect(page.getByText(/minimaal 1 beveiliger/i)).toBeVisible();
 
     // Test date validation
     const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000)
@@ -491,9 +490,8 @@ test.describe("Bedrijf Advanced Workflows", () => {
 
     // Fill minimal form
     await page.getByLabel(/titel/i).fill("Real-time Test Opdracht");
-    await page.getByLabel(/omschrijving/i).fill("Testing real-time updates");
+    await page.getByLabel(/beschrijving/i).fill("Testing real-time updates");
     await page.getByLabel(/locatie/i).fill("Test Location");
-    await page.getByLabel(/postcode/i).fill("1234AB");
 
     const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
       .toISOString()
@@ -501,8 +499,8 @@ test.describe("Bedrijf Advanced Workflows", () => {
     await page.getByLabel(/startdatum/i).fill(futureDate);
     await page.getByLabel(/einddatum/i).fill(futureDate);
 
-    await page.getByLabel(/uurloon/i).fill("25");
-    await page.getByLabel(/aantal personen/i).fill("1");
+    await page.getByLabel(/uurtarief/i).fill("25");
+    await page.getByLabel(/aantal beveiligers/i).fill("1");
 
     await page.getByRole("button", { name: /opdracht plaatsen/i }).click();
 

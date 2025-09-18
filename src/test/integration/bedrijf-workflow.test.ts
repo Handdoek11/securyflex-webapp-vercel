@@ -64,8 +64,10 @@ describe("Bedrijf Integration Workflow Tests", () => {
       data: {
         id: "test-user-bedrijf",
         email: "test@bedrijf.com",
-        emailVerified: new Date(),
+        password: "hashedPassword123",
         name: "Test Bedrijf User",
+        role: "BEDRIJF",
+        emailVerified: new Date(),
       },
     });
 
@@ -76,17 +78,18 @@ describe("Bedrijf Integration Workflow Tests", () => {
         bedrijfsnaam: "Test Beveiligingsbedrijf BV",
         kvkNummer: "12345678",
         btwNummer: "NL123456789B01",
-        contactpersoon: "Jan Bakker",
-        telefoon: "+31612345678",
-        email: "info@testbedrijf.nl",
-        adres: "Teststraat 123",
-        postcode: "1234AB",
-        plaats: "Amsterdam",
-        specialisaties: ["Evenementbeveiliging", "Objectbeveiliging"],
-        ervaring: "Meer dan 10 jaar",
-        beschikbaarheid: {},
-        isActive: true,
-        accountStatus: "ACTIVE",
+        teamSize: 1,
+        extraAccounts: 0,
+        subscriptionTier: "SMALL",
+        subscriptionId: null,
+        finqleCreditLimit: null,
+        finqleDebtorId: null,
+        ndNummer: null,
+        ndNummerLaatsteControle: null,
+        ndNummerManagers: null,
+        ndNummerOpmerking: null,
+        ndNummerStatus: "NIET_GEREGISTREERD",
+        ndNummerVervalDatum: null,
       },
     });
 
@@ -95,8 +98,10 @@ describe("Bedrijf Integration Workflow Tests", () => {
       data: {
         id: "test-user-opdrachtgever",
         email: "test@opdrachtgever.com",
-        emailVerified: new Date(),
+        password: "hashedPassword123",
         name: "Test Opdrachtgever",
+        role: "OPDRACHTGEVER",
+        emailVerified: new Date(),
       },
     });
 
@@ -106,10 +111,10 @@ describe("Bedrijf Integration Workflow Tests", () => {
         bedrijfsnaam: "Test Events BV",
         kvkNummer: "87654321",
         contactpersoon: "Marie de Wit",
-        telefoon: "+31687654321",
-        adres: "Eventplein 456",
-        postcode: "5678CD",
-        plaats: "Rotterdam",
+        totalHoursBooked: 0,
+        totalSpent: 0,
+        finqleCreditLimit: null,
+        finqleDebtorId: null,
       },
     });
 
@@ -118,37 +123,46 @@ describe("Bedrijf Integration Workflow Tests", () => {
       data: {
         id: "test-user-zzp",
         email: "test@zzp.com",
-        emailVerified: new Date(),
+        password: "hashedPassword123",
         name: "Test ZZP Beveiliger",
+        role: "ZZP_BEVEILIGER",
+        emailVerified: new Date(),
       },
     });
 
     testZZPProfile = await prisma.zZPProfile.create({
       data: {
         userId: zzpUser.id,
+        kvkNummer: "87654321",
+        btwNummer: "NL987654321B01",
+        specialisaties: ["SIA Diploma", "Evenementbeveiliging"],
+        certificaten: [],
+        werkgebied: ["Utrecht", "Amsterdam"],
+        beschikbaarheid: {},
+        uurtarief: 22.5,
+        rating: null,
+        totalReviews: 0,
+        subscriptionId: null,
+        trialEndsAt: null,
+        finqleMerchantId: null,
+        finqleOnboarded: false,
+        ndNummer: null,
+        ndNummerLaatsteControle: null,
+        ndNummerOpmerking: null,
+        ndNummerStatus: "NIET_GEREGISTREERD",
+        ndNummerVervalDatum: null,
         voornaam: "Piet",
         achternaam: "Jansen",
-        telefoon: "+31698765432",
-        geboortedatum: new Date("1990-01-01"),
-        bsn: "123456789",
-        adres: "Beveiligersstraat 789",
-        postcode: "9012EF",
-        plaats: "Utrecht",
-        specialisaties: ["SIA Diploma", "Evenementbeveiliging"],
-        ervaring: "5 jaar ervaring",
-        beschikbaarheid: {},
-        tarief: 22.5,
-        kycStatus: "VERIFIED",
       },
     });
   }
 
   async function cleanupTestData() {
     // Delete in correct order to respect foreign keys
-    await prisma.sollicitatie.deleteMany({
+    await prisma.opdrachtSollicitatie.deleteMany({
       where: {
         OR: [
-          { zzpProfileId: testZZPProfile?.id },
+          { zzpId: testZZPProfile?.id },
           { bedrijfId: testBedrijfProfile?.id },
         ],
       },
@@ -163,12 +177,8 @@ describe("Bedrijf Integration Workflow Tests", () => {
       },
     });
 
-    await prisma.betalingsAanvraag.deleteMany({
-      where: { zzpProfileId: testZZPProfile?.id },
-    });
-
-    await prisma.werkuren.deleteMany({
-      where: { zzpProfileId: testZZPProfile?.id },
+    await prisma.werkuur.deleteMany({
+      where: { zzpId: testZZPProfile?.id },
     });
 
     await prisma.zZPProfile.deleteMany({
@@ -229,19 +239,19 @@ describe("Bedrijf Integration Workflow Tests", () => {
       expect(createdOpdracht.status).toBe("OPEN");
 
       // 2. ZZP applies for the opdracht
-      const sollicitatie = await prisma.sollicitatie.create({
+      const sollicitatie = await prisma.opdrachtSollicitatie.create({
         data: {
           opdrachtId: createdOpdracht.id,
-          zzpProfileId: testZZPProfile.id,
+          sollicitantType: "ZZP_BEVEILIGER",
+          zzpId: testZZPProfile.id,
           motivatie: "Ik ben geïnteresseerd in deze opdracht",
           status: "PENDING",
         },
         include: {
-          zzpProfile: {
+          zzp: {
             select: {
               voornaam: true,
               achternaam: true,
-              telefoon: true,
             },
           },
         },
@@ -249,68 +259,72 @@ describe("Bedrijf Integration Workflow Tests", () => {
 
       expect(sollicitatie).toBeDefined();
       expect(sollicitatie.status).toBe("PENDING");
-      expect(sollicitatie.zzpProfileId).toBe(testZZPProfile.id);
+      expect(sollicitatie.zzpId).toBe(testZZPProfile.id);
 
       // 3. Bedrijf accepts the application (planning assignment)
-      const acceptedSollicitatie = await prisma.sollicitatie.update({
+      const acceptedSollicitatie = await prisma.opdrachtSollicitatie.update({
         where: { id: sollicitatie.id },
         data: {
           status: "ACCEPTED",
-          acceptedAt: new Date(),
+          beoordeeldOp: new Date(),
+          beoordeeldDoor: testBedrijfProfile.userId,
         },
       });
 
       expect(acceptedSollicitatie.status).toBe("ACCEPTED");
-      expect(acceptedSollicitatie.acceptedAt).toBeDefined();
+      expect(acceptedSollicitatie.beoordeeldOp).toBeDefined();
 
       // 4. Update opdracht status to assigned
       const updatedOpdracht = await prisma.opdracht.update({
         where: { id: createdOpdracht.id },
-        data: { status: "ASSIGNED" },
+        data: { status: "TOEGEWEZEN" },
       });
 
-      expect(updatedOpdracht.status).toBe("ASSIGNED");
+      expect(updatedOpdracht.status).toBe("TOEGEWEZEN");
 
       // 5. ZZP logs work hours
-      const werkuren = await prisma.werkuren.create({
+      const werkuren = await prisma.werkuur.create({
         data: {
-          zzpProfileId: testZZPProfile.id,
+          zzpId: testZZPProfile.id,
           opdrachtId: createdOpdracht.id,
           startTijd: new Date(),
           eindTijd: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours later
-          pauzeMinuten: 30,
-          locatie: opdrachtData.locatie,
-          beschrijving: "Worked security shift",
-          status: "GOEDGEKEURD",
+          startLocatie: { address: opdrachtData.locatie },
+          eindLocatie: { address: opdrachtData.locatie },
+          urenGewerkt: 8.0,
+          uurtarief: opdrachtData.uurtarief,
+          status: "APPROVED",
         },
       });
 
       expect(werkuren).toBeDefined();
-      expect(werkuren.zzpProfileId).toBe(testZZPProfile.id);
-      expect(werkuren.status).toBe("GOEDGEKEURD");
+      expect(werkuren.zzpId).toBe(testZZPProfile.id);
+      expect(werkuren.status).toBe("APPROVED");
 
       // 6. Complete the opdracht
       const completedOpdracht = await prisma.opdracht.update({
         where: { id: createdOpdracht.id },
-        data: { status: "COMPLETED" },
+        data: { status: "AFGEROND" },
       });
 
-      expect(completedOpdracht.status).toBe("COMPLETED");
+      expect(completedOpdracht.status).toBe("AFGEROND");
 
-      // 7. Request payment
-      const betalingsAanvraag = await prisma.betalingsAanvraag.create({
+      // 7. Create payment record for the work
+      const betaling = await prisma.betaling.create({
         data: {
-          zzpProfileId: testZZPProfile.id,
           bedrag: 200.0, // 8 hours * €25
-          beschrijving: "Payment for completed security work",
-          referentie: `PAY-${Date.now()}`,
-          status: "AANGEVRAAGD",
+          betalerId: testOpdrachtgever.id,
+          betalerType: "OPDRACHTGEVER",
+          ontvangerId: testZZPProfile.id,
+          ontvangerType: "ZZP",
+          type: "DIRECT_PAYMENT",
+          status: "PENDING",
         },
       });
 
-      expect(betalingsAanvraag).toBeDefined();
-      expect(betalingsAanvraag.bedrag).toBe(200.0);
-      expect(betalingsAanvraag.status).toBe("AANGEVRAAGD");
+      expect(betaling).toBeDefined();
+      expect(betaling.bedrag).toBe(200.0);
+      expect(betaling.status).toBe("PENDING");
     });
 
     it("should complete planning workflow as leverancier", async () => {
@@ -341,22 +355,24 @@ describe("Bedrijf Integration Workflow Tests", () => {
         where: { id: externalOpdracht.id },
         data: {
           acceptedBedrijfId: testBedrijfProfile.id,
-          status: "ASSIGNED",
+          status: "TOEGEWEZEN",
         },
       });
 
       expect(acceptedOpdracht.acceptedBedrijfId).toBe(testBedrijfProfile.id);
-      expect(acceptedOpdracht.status).toBe("ASSIGNED");
+      expect(acceptedOpdracht.status).toBe("TOEGEWEZEN");
 
       // 3. Assign ZZP to the opdracht (planning)
-      const planningSollicitatie = await prisma.sollicitatie.create({
+      const planningSollicitatie = await prisma.opdrachtSollicitatie.create({
         data: {
           opdrachtId: externalOpdracht.id,
-          zzpProfileId: testZZPProfile.id,
+          sollicitantType: "ZZP_BEVEILIGER",
+          zzpId: testZZPProfile.id,
           bedrijfId: testBedrijfProfile.id, // Assigned by bedrijf
           motivatie: "Toegewezen door beveiligingsbedrijf",
           status: "ACCEPTED",
-          acceptedAt: new Date(),
+          beoordeeldOp: new Date(),
+          beoordeeldDoor: testBedrijfProfile.userId,
         },
       });
 
@@ -366,10 +382,10 @@ describe("Bedrijf Integration Workflow Tests", () => {
       // 4. Mark opdracht as in progress
       const inProgressOpdracht = await prisma.opdracht.update({
         where: { id: externalOpdracht.id },
-        data: { status: "IN_PROGRESS" },
+        data: { status: "BEZIG" },
       });
 
-      expect(inProgressOpdracht.status).toBe("IN_PROGRESS");
+      expect(inProgressOpdracht.status).toBe("BEZIG");
     });
 
     it("should handle client relationship management", async () => {
@@ -393,7 +409,7 @@ describe("Bedrijf Integration Workflow Tests", () => {
             creatorType: "OPDRACHTGEVER",
             opdrachtgeverId: testOpdrachtgever.id,
             acceptedBedrijfId: testBedrijfProfile.id,
-            status: "COMPLETED",
+            status: "AFGEROND",
           },
         }),
         prisma.opdracht.create({
@@ -414,7 +430,7 @@ describe("Bedrijf Integration Workflow Tests", () => {
             creatorType: "OPDRACHTGEVER",
             opdrachtgeverId: testOpdrachtgever.id,
             acceptedBedrijfId: testBedrijfProfile.id,
-            status: "IN_PROGRESS",
+            status: "BEZIG",
           },
         }),
       ]);
@@ -510,7 +526,7 @@ describe("Bedrijf Integration Workflow Tests", () => {
             directZZPAllowed: true,
             creatorType: "BEDRIJF",
             creatorBedrijfId: testBedrijfProfile.id,
-            status: "ASSIGNED",
+            status: "TOEGEWEZEN",
             createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
           },
         }),
@@ -551,12 +567,12 @@ describe("Bedrijf Integration Workflow Tests", () => {
         _count: { id: true },
       });
 
-      expect(statusBreakdown).toHaveLength(2); // OPEN and ASSIGNED
+      expect(statusBreakdown).toHaveLength(2); // OPEN and TOEGEWEZEN
       expect(statusBreakdown.find((s) => s.status === "OPEN")?._count.id).toBe(
         1,
       );
       expect(
-        statusBreakdown.find((s) => s.status === "ASSIGNED")?._count.id,
+        statusBreakdown.find((s) => s.status === "TOEGEWEZEN")?._count.id,
       ).toBe(1);
     });
 

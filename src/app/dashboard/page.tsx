@@ -33,12 +33,6 @@ export default function DashboardPage() {
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [showInsurancePromo, setShowInsurancePromo] = useState(true);
 
-  useEffect(() => {
-    if (session) {
-      fetchDashboardData();
-    }
-  }, [session, fetchDashboardData]);
-
   const fetchDashboardData = async () => {
     if (!session) return;
 
@@ -125,6 +119,12 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (session) {
+      fetchDashboardData();
+    }
+  }, [session]);
 
   const dismissInsurancePromo = () => {
     setShowInsurancePromo(false);

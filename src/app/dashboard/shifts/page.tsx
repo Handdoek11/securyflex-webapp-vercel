@@ -58,12 +58,6 @@ export default function ShiftsPage() {
   const [clockingIn, setClockingIn] = useState<string | null>(null);
   const [clockingOut, setClockingOut] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (session) {
-      fetchShifts();
-    }
-  }, [session, fetchShifts]);
-
   const fetchShifts = async () => {
     if (!session) return;
 
@@ -90,6 +84,12 @@ export default function ShiftsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (session) {
+      fetchShifts();
+    }
+  }, [session]);
 
   const handleClockIn = async (
     shiftId: string,

@@ -163,12 +163,6 @@ export default function ProfilePage() {
   const [_error, setError] = useState<string | null>(null);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
-  useEffect(() => {
-    if (session) {
-      fetchProfile();
-    }
-  }, [session, fetchProfile]);
-
   const fetchProfile = async () => {
     if (!session) return;
 
@@ -194,6 +188,12 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (session) {
+      fetchProfile();
+    }
+  }, [session]);
 
   // Use real profile data or fallback to mock data
   const displayProfile = profile || mockProfile;

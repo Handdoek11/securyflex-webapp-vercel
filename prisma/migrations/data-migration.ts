@@ -15,54 +15,26 @@ async function migrateLocationData() {
   console.log("🔄 Starting location data migration...");
 
   try {
-    // Get all Opdrachten with old location string format
-    const opdrachten = (await prisma.$queryRaw`
-      SELECT id, locatie
-      FROM "Opdracht"
-      WHERE locatie IS NOT NULL
-      AND NOT EXISTS (
-        SELECT 1 FROM "OpdrachtLocatie"
-        WHERE "opdrachtId" = "Opdracht".id
-      )
-    `) as { id: string; locatie: string }[];
+    // Get all Opdrachten to ensure they have the required locatie field
+    const opdrachten = await prisma.opdracht.findMany({
+      where: {
+        NOT: {
+          locatie: null,
+        },
+      },
+      select: {
+        id: true,
+        locatie: true,
+      },
+    });
 
-    console.log(`Found ${opdrachten.length} opdrachten to migrate`);
+    console.log(`Found ${opdrachten.length} opdrachten with location data`);
 
-    for (const opdracht of opdrachten) {
-      try {
-        // Parse location string (expecting format: "Street, PostalCode City")
-        const locationParts = opdracht.locatie
-          .split(",")
-          .map((s: string) => s.trim());
-
-        const adres = locationParts[0] || "Onbekend";
-        const postcodeAndCity = locationParts[1] || "";
-
-        // Extract postcode and city from second part
-        const postcodeMatch = postcodeAndCity.match(/(\d{4}\s?[A-Z]{2})/i);
-        const postcode = postcodeMatch ? postcodeMatch[1] : "1000AA";
-        const plaats =
-          postcodeAndCity.replace(postcodeMatch?.[0] || "", "").trim() ||
-          "Onbekend";
-
-        // Create new OpdrachtLocatie record
-        await prisma.opdrachtLocatie.create({
-          data: {
-            opdrachtId: opdracht.id,
-            adres,
-            postcode,
-            plaats,
-          },
-        });
-
-        console.log(`✅ Migrated location for opdracht ${opdracht.id}`);
-      } catch (error) {
-        console.error(
-          `❌ Failed to migrate location for opdracht ${opdracht.id}:`,
-          error,
-        );
-      }
-    }
+    // Note: Current schema uses a simple locatie: String field
+    // No migration needed as OpdrachtLocatie model doesn't exist in current schema
+    console.log(
+      "✅ Location data is already in correct format (single string field)",
+    );
 
     console.log("✅ Location migration completed");
   } catch (error) {
@@ -75,46 +47,29 @@ async function migrateCertificateData() {
   console.log("🔄 Starting certificate data migration...");
 
   try {
-    // Get all ZZPProfiles with legacy certificate strings
+    // Get all ZZPProfiles with certificate data
     const profiles = await prisma.zZPProfile.findMany({
       where: {
-        certificatenLegacy: {
-          isEmpty: false,
+        NOT: {
+          certificaten: {
+            isEmpty: true,
+          },
         },
       },
       select: {
         id: true,
-        certificatenLegacy: true,
+        certificaten: true,
       },
     });
 
-    console.log(`Found ${profiles.length} profiles with legacy certificates`);
+    console.log(`Found ${profiles.length} profiles with certificate data`);
 
-    for (const profile of profiles) {
-      for (const certName of profile.certificatenLegacy || []) {
-        try {
-          // Create Certificate record for each legacy string
-          await prisma.certificate.create({
-            data: {
-              zzpId: profile.id,
-              naam: certName,
-              uitgever: "Onbekend", // Will need manual update
-              status: "PENDING",
-              beschrijving: "Gemigreerd uit legacy systeem",
-            },
-          });
-
-          console.log(
-            `✅ Created certificate "${certName}" for profile ${profile.id}`,
-          );
-        } catch (error) {
-          console.error(
-            `❌ Failed to create certificate for profile ${profile.id}:`,
-            error,
-          );
-        }
-      }
-    }
+    // Note: Current schema uses certificaten: String[] array field
+    // No migration needed as Certificate model doesn't exist in current schema
+    // Certificate data is stored directly as string array in ZZPProfile
+    console.log(
+      "✅ Certificate data is already in correct format (string array)",
+    );
 
     console.log("✅ Certificate migration completed");
   } catch (error) {
@@ -151,10 +106,10 @@ async function addMissingDefaults() {
   console.log("🔄 Adding missing default values...");
 
   try {
-    // Update ZZPProfiles with missing new required fields
+    // Update ZZPProfiles with missing required fields
     await prisma.zZPProfile.updateMany({
       where: {
-        voornaam: null,
+        OR: [{ voornaam: "" }, { achternaam: "" }],
       },
       data: {
         voornaam: "Onbekend",
@@ -162,18 +117,9 @@ async function addMissingDefaults() {
       },
     });
 
-    // Update BedrijfProfiles with missing arrays
-    await prisma.$executeRaw`
-      UPDATE "BedrijfProfile"
-      SET
-        werkgebied = ARRAY[]::text[],
-        specialisaties = ARRAY[]::text[],
-        certificeringen = ARRAY[]::text[]
-      WHERE
-        werkgebied IS NULL
-        OR specialisaties IS NULL
-        OR certificeringen IS NULL
-    `;
+    // Note: BedrijfProfile fields in current schema don't include these arrays
+    // Current BedrijfProfile has teamSize, extraAccounts, subscriptionTier etc.
+    console.log("✅ BedrijfProfile structure is already up to date");
 
     console.log("✅ Missing defaults added");
   } catch (error) {

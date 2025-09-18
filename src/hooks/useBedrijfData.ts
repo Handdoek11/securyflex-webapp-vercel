@@ -171,7 +171,7 @@ export function useBedrijfOpdrachten(params?: {
   });
 
   const createOpdracht = useCallback(
-    async (opdrachtData: any) => {
+    async (opdrachtData: Record<string, unknown>) => {
       try {
         const response = await fetch("/api/bedrijf/opdrachten", {
           method: "POST",
@@ -229,7 +229,7 @@ export function useBedrijfPlanning(params?: {
       telefoon: string;
       specialisaties: string[];
       ervaring: string;
-      beschikbaarheid: any;
+      beschikbaarheid: Record<string, unknown>;
       user: {
         email: string;
       };
@@ -340,7 +340,7 @@ export function useBedrijfKlanten(params?: {
     async (clientData: {
       clientId: string;
       action: "add_note" | "update_contact" | "mark_favorite";
-      data: Record<string, any>;
+      data: Record<string, unknown>;
     }) => {
       try {
         const response = await fetch("/api/bedrijf/klanten", {

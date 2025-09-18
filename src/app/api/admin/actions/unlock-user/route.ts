@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin/auth";
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // POST /api/admin/actions/unlock-user - Unlock a user account
@@ -15,10 +15,7 @@ export async function POST(request: NextRequest) {
     const { email } = body;
 
     if (!email) {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
     // Log admin action
@@ -26,7 +23,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: session.user.id,
         email: session.user.email,
-        eventType: "ADMIN_ACTION",
+        eventType: "ACCOUNT_UNLOCKED",
         ipAddress:
           request.headers.get("x-forwarded-for") ||
           request.headers.get("x-real-ip") ||
@@ -35,6 +32,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           action: "unlock-user",
           targetEmail: email,
+          adminAction: true,
         },
       },
     });
@@ -45,10 +43,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Unlock the account
@@ -81,7 +76,7 @@ export async function POST(request: NextRequest) {
     console.error("Unlock user error:", error);
     return NextResponse.json(
       { error: "Failed to unlock account" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

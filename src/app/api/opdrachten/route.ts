@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -106,7 +107,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query based on user role and view
-    const where: any = {};
+    const where: Prisma.OpdrachtWhereInput = {};
 
     if (view === "available") {
       // Opdrachten available for application
@@ -337,6 +338,16 @@ export async function POST(request: NextRequest) {
     const creatorType = user.opdrachtgever ? "OPDRACHTGEVER" : "BEDRIJF";
     const creatorId = user.opdrachtgever?.id || user.bedrijfProfile?.id;
 
+    if (!creatorId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Creator ID required",
+        },
+        { status: 400 },
+      );
+    }
+
     // Create opdracht
     const opdracht = await prisma.opdracht.create({
       data: {
@@ -352,7 +363,7 @@ export async function POST(request: NextRequest) {
         isUrgent: validatedData.isUrgent || false,
         status: validatedData.isUrgent ? "URGENT" : "OPEN",
         creatorType,
-        creatorId: creatorId!,
+        creatorId,
         targetAudience: validatedData.targetAudience,
         directZZPAllowed:
           validatedData.directZZPAllowed ??

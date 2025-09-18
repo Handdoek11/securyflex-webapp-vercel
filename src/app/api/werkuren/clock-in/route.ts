@@ -1,8 +1,29 @@
+import type { Opdracht, User, ZZPProfile } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { calculateDistance } from "@/components/ui/gps-tracker";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { clockInSchema } from "@/lib/validation/schemas";
+
+// Type definitions
+interface GPSLocation {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  timestamp: Date;
+}
+
+// Removed unused JobLocation interface - using inline types instead
+
+type OpdrachtWithRelations = Opdracht & {
+  beveiligers: Array<{ zzpId: string; status: string }>;
+  opdrachtgever?: { bedrijfsnaam: string } | null;
+  bedrijf?: { bedrijfsnaam: string } | null;
+};
+
+type ZZPProfileWithUser = ZZPProfile & {
+  user: User;
+};
 
 // Rate limiting - prevent rapid clock-in attempts
 const clockInAttempts = new Map<
@@ -328,13 +349,13 @@ function getJobLocation(opdrachtId: string) {
 }
 
 // Store GPS record for fraud detection
-async function storeGPSRecord(_zzpId: string, location: any) {
+async function storeGPSRecord(zzpId: string, location: GPSLocation) {
   try {
     // In production, store in a separate GPS tracking table
     // For now, we'll use a simple cache or database approach
     await prisma.werkuur.updateMany({
       where: {
-        beveiligerId: beveiligerId,
+        zzpId: zzpId,
         status: "ACTIVE",
       },
       data: {
@@ -349,11 +370,11 @@ async function storeGPSRecord(_zzpId: string, location: any) {
 }
 
 // Get last GPS record for speed validation
-async function getLastGPSRecord(beveiligerId: string) {
+async function getLastGPSRecord(zzpId: string) {
   try {
     const lastRecord = await prisma.werkuur.findFirst({
       where: {
-        beveiligerId: beveiligerId,
+        zzpId: zzpId,
       },
       orderBy: {
         startTijd: "desc",
@@ -368,7 +389,13 @@ async function getLastGPSRecord(beveiligerId: string) {
       lastRecord?.startLocatie &&
       typeof lastRecord.startLocatie === "object"
     ) {
-      const location = lastRecord.startLocatie as any;
+      const location = lastRecord.startLocatie as {
+        lat: number;
+        lng: number;
+        accuracy?: number;
+        timestamp?: string;
+        address?: string;
+      };
       return {
         lat: location.lat,
         lng: location.lng,
@@ -385,8 +412,8 @@ async function getLastGPSRecord(beveiligerId: string) {
 
 // Send notification to job owner
 async function sendClockInNotification(
-  opdracht: any,
-  beveiliger: any,
+  opdracht: OpdrachtWithRelations,
+  beveiliger: ZZPProfileWithUser,
   clockInTime: Date,
 ) {
   try {

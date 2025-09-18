@@ -1,7 +1,30 @@
+import type { Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { settingsSchema } from "@/lib/validation/schemas";
+
+// Types for settings
+type UserUpdateData = {
+  name?: string;
+  email?: string;
+  emailVerified?: Date | null;
+};
+
+type SettingsData = Record<string, unknown>;
+
+type NotificationSettings = {
+  emailNotifications?: Record<string, boolean>;
+  smsNotifications?: Record<string, boolean>;
+  pushNotifications?: Record<string, boolean>;
+};
+
+type JobRecommendationSettings = {
+  locationRadius?: number;
+  minimumPayRate?: number;
+  preferredShiftTypes?: string[];
+  skillFilters?: string[];
+};
 
 // Default settings for new users
 const DEFAULT_SETTINGS = {
@@ -89,7 +112,7 @@ export async function GET(_request: NextRequest) {
       },
     });
 
-    const settings = userSettings.settings as any;
+    const settings = userSettings.settings as Record<string, unknown>;
 
     return NextResponse.json({
       success: true,
@@ -140,8 +163,8 @@ export async function PATCH(request: NextRequest) {
     const validatedData = validation.data;
 
     // Separate user profile updates from settings
-    const userUpdates: any = {};
-    const settingsUpdates: any = { ...validatedData };
+    const userUpdates: UserUpdateData = {};
+    const settingsUpdates: SettingsData = { ...validatedData };
 
     // Handle basic profile fields
     if (validatedData.name) {
@@ -197,7 +220,7 @@ export async function PATCH(request: NextRequest) {
 
     // Merge current settings with updates
     const mergedSettings = {
-      ...(currentSettings.settings as any),
+      ...(currentSettings.settings as SettingsData),
       ...settingsUpdates,
     };
 
@@ -267,7 +290,7 @@ async function handlePrivacySettingsChange(userId: string, visibility: string) {
         where: { id: zzpProfile.id },
         data: {
           metadata: {
-            ...((zzpProfile.metadata as any) || {}),
+            ...((zzpProfile.metadata as Prisma.JsonValue) || {}),
             profileVisibility: visibility,
             lastVisibilityChange: new Date().toISOString(),
           },
@@ -287,7 +310,10 @@ async function handlePrivacySettingsChange(userId: string, visibility: string) {
 }
 
 // Update notification preferences in external services
-async function updateNotificationPreferences(userId: string, settings: any) {
+async function updateNotificationPreferences(
+  userId: string,
+  settings: NotificationSettings,
+) {
   try {
     // In production, integrate with notification services:
     // - Email service (SendGrid, Mailgun)
@@ -310,7 +336,10 @@ async function updateNotificationPreferences(userId: string, settings: any) {
 }
 
 // Update job recommendation algorithm
-async function updateJobRecommendations(userId: string, settings: any) {
+async function updateJobRecommendations(
+  userId: string,
+  settings: JobRecommendationSettings,
+) {
   try {
     // Update job matching criteria
     const criteria = {

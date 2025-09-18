@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin/auth";
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // GET /api/admin/actions/stats - Get dashboard statistics
@@ -41,7 +41,7 @@ export async function GET(_request: NextRequest) {
     });
 
     // Get monthly revenue
-    const monthlyRevenue = await prisma.$queryRaw`
+    const monthlyRevenue = await prisma.$queryRaw<Array<{ total: number }>>`
       SELECT
         COALESCE(SUM("totaalBedrag"), 0)::float as total
       FROM "VerzamelFactuur"
@@ -54,13 +54,13 @@ export async function GET(_request: NextRequest) {
       totalUsers,
       activeOpdrachten,
       lockedAccounts,
-      monthlyRevenue: (monthlyRevenue as any)[0]?.total || 0,
+      monthlyRevenue: monthlyRevenue[0]?.total || 0,
     });
   } catch (error) {
     console.error("Stats error:", error);
     return NextResponse.json(
       { error: "Failed to fetch stats" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

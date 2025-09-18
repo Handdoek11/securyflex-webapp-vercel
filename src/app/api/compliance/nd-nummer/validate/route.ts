@@ -1,3 +1,9 @@
+import type {
+  BedrijfProfile,
+  NDNummerStatus,
+  Prisma,
+  ZZPProfile,
+} from "@prisma/client";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
@@ -70,7 +76,7 @@ async function createAuditLog(
   performedBy: string,
   ipAddress: string | null,
   userAgent: string | null,
-  apiResponse: any,
+  apiResponse: Prisma.JsonValue,
 ) {
   try {
     const auditData = {
@@ -78,8 +84,8 @@ async function createAuditLog(
       zzpProfileId: profileType === "ZZP" ? profileId : undefined,
       bedrijfProfileId: profileType === "BEDRIJF" ? profileId : undefined,
       ndNummer,
-      previousStatus: previousStatus as any,
-      newStatus: newStatus as any,
+      previousStatus: previousStatus as NDNummerStatus | null,
+      newStatus: newStatus as NDNummerStatus,
       action: "VERIFICATIE" as const,
       performedBy,
       verificationSource: "Justis API",
@@ -129,7 +135,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { ndNummer, bedrijfsnaam, kvkNummer, profileType } = validation.data!;
+    const { ndNummer, bedrijfsnaam, kvkNummer, profileType } = validation.data;
 
     // Get user profile to verify permissions and get profile ID
     const user = await prisma.user.findUnique({
@@ -149,7 +155,7 @@ export async function POST(request: NextRequest) {
 
     // Determine the profile to update based on profileType
     let profileId: string;
-    let _currentProfile: any;
+    let _currentProfile: ZZPProfile | BedrijfProfile | null;
     let previousStatus: string | null = null;
 
     if (profileType === "ZZP") {
@@ -180,7 +186,7 @@ export async function POST(request: NextRequest) {
     // Update the profile with ND-nummer information
     const updateData = {
       ndNummer,
-      ndNummerStatus: justisResponse.status as any,
+      ndNummerStatus: justisResponse.status as NDNummerStatus,
       ndNummerLaatsteControle: new Date(),
       ndNummerVervalDatum: justisResponse.expiryDate || null,
       ndNummerOpmerking:
@@ -188,7 +194,7 @@ export async function POST(request: NextRequest) {
         (justisResponse.valid ? "Geverifieerd via Justis API" : null),
     };
 
-    let updatedProfile;
+    let updatedProfile: ZZPProfile | BedrijfProfile | null = null;
     if (profileType === "ZZP") {
       updatedProfile = await prisma.zZPProfile.update({
         where: { id: profileId },

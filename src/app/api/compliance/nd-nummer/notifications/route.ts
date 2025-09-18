@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const notificationData = validation.data!;
+    const notificationData = validation.data;
 
     // Check if user has permission to send notifications
     const isAdmin = await checkAdminPermissions(session.user.id);
@@ -214,7 +215,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause for notifications
-    const whereClause: any = {
+    const whereClause: Prisma.NotificationWhereInput = {
       type: "SYSTEM_ANNOUNCEMENT",
       metadata: {
         path: ["category"],

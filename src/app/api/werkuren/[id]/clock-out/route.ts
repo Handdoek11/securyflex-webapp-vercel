@@ -1,8 +1,45 @@
+import type {
+  Bedrijf,
+  Opdracht,
+  Opdrachtgever,
+  User,
+  Werkuur,
+  ZZPProfile,
+} from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { calculateDistance } from "@/components/ui/gps-tracker";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { clockOutSchema } from "@/lib/validation/schemas";
+
+// Type definitions
+interface LocationData {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  timestamp?: string;
+  address?: string;
+  distanceFromClockIn?: number;
+}
+
+interface IncidentData {
+  type: string;
+  description: string;
+  severity: string;
+  reportedAt?: string;
+  reportedBy?: string;
+}
+
+type WerkuurWithOpdracht = Werkuur & {
+  opdracht: Opdracht & {
+    opdrachtgever?: { bedrijfsnaam: string } | null;
+    bedrijf?: { bedrijfsnaam: string } | null;
+  };
+};
+
+type ZZPProfileWithUser = ZZPProfile & {
+  user: User;
+};
 
 interface RouteParams {
   params: Promise<{
@@ -144,7 +181,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // 2. Validate distance from clock-in location
     if (werkuur.startLocatie && typeof werkuur.startLocatie === "object") {
-      const startLocation = werkuur.startLocatie as any;
+      const startLocation = werkuur.startLocatie as LocationData;
       const distance = calculateDistance(
         locatie.lat,
         locatie.lng,
@@ -205,8 +242,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             calculateDistance(
               locatie.lat,
               locatie.lng,
-              (werkuur.startLocatie as any).lat,
-              (werkuur.startLocatie as any).lng,
+              (werkuur.startLocatie as LocationData).lat,
+              (werkuur.startLocatie as LocationData).lng,
             ),
           )
         : null,
@@ -238,7 +275,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           .filter(Boolean)
           .join("\n\n---\n\n"),
         metadata: {
-          ...((werkuur.metadata as any) || {}),
+          ...((werkuur.metadata as Record<string, unknown>) || {}),
           clockOutPhoto: foto,
           clockOutTime: now_date.toISOString(),
           incidents: incidentsData,
@@ -305,7 +342,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 // Create payment record
-async function createPaymentRecord(werkuur: any, beveiliger: any) {
+async function createPaymentRecord(
+  werkuur: WerkuurWithOpdracht,
+  beveiliger: ZZPProfileWithUser,
+) {
   try {
     await prisma.betaling.create({
       data: {
@@ -330,9 +370,9 @@ async function createPaymentRecord(werkuur: any, beveiliger: any) {
 
 // Send clock-out notifications
 async function sendClockOutNotifications(
-  werkuur: any,
-  beveiliger: any,
-  incidents: any[],
+  werkuur: WerkuurWithOpdracht,
+  beveiliger: ZZPProfileWithUser,
+  incidents: IncidentData[],
 ) {
   try {
     // Notify job owner

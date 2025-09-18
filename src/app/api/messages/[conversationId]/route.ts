@@ -1,3 +1,4 @@
+import type { Message } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -268,6 +269,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const { conversationId } = await params;
+
     const updateMessageSchema = z.object({
       messageId: z.string(),
       action: z.enum(["edit", "delete"]),
@@ -292,7 +295,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    let updatedMessage;
+    let updatedMessage: Message | undefined;
 
     if (validatedData.action === "edit" && validatedData.content) {
       updatedMessage = await prisma.message.update({

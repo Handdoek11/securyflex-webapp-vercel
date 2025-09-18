@@ -3,7 +3,7 @@
 import { ArrowRight, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { AppDownloadSection } from "@/components/landing/AppDownloadSection";
 import { EarningsCalculator } from "@/components/landing/EarningsCalculator";
 import { FAQSection } from "@/components/landing/FAQSection";
@@ -17,7 +17,7 @@ import { RoleSpecificSchema } from "@/components/seo/SchemaMarkup";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/contexts/RoleContext";
 
-export default function Home() {
+function HomeContent() {
   const { activeRole, setActiveRole } = useRole();
   const searchParams = useSearchParams();
   const roleParam = searchParams.get("role");
@@ -726,5 +726,13 @@ export default function Home() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <HomeContent />
+    </Suspense>
   );
 }

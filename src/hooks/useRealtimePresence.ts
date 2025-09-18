@@ -1,6 +1,7 @@
 "use client";
 
 import type { UserRole } from "@prisma/client";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
 import { getOnlineUsers, trackUserPresence } from "@/lib/supabase";
 
@@ -19,12 +20,12 @@ interface OnlineUser {
  * Hook voor het bijhouden van online/offline status van gebruikers
  * Handig voor het tonen van beschikbare beveiligers
  */
-export function useRealtimePresence(userId?: string, metadata?: any) {
+export function useRealtimePresence(userId?: string, metadata?: Record<string, unknown>) {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [isTracking, setIsTracking] = useState(false);
 
   useEffect(() => {
-    let channel: any = null;
+    let channel: RealtimeChannel | null = null;
 
     const setupPresence = async () => {
       // Track current user if userId provided
@@ -73,7 +74,7 @@ export function useRealtimePresence(userId?: string, metadata?: any) {
    * Update current user's metadata (e.g., location)
    */
   const updatePresence = useCallback(
-    async (newMetadata: any) => {
+    async (newMetadata: Record<string, unknown>) => {
       if (!userId) return;
 
       const channel = trackUserPresence(userId, {

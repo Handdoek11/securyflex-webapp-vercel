@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -90,8 +91,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let whereClause: any = {};
-    const includeClause: any = {
+    let whereClause: Prisma.ZZPProfileWhereInput = {};
+    const includeClause: Prisma.ZZPProfileInclude = {
       user: {
         select: {
           id: true,
@@ -361,7 +362,7 @@ export async function POST(request: NextRequest) {
       includeExpiringSoon,
       daysBeforeExpiry,
       includeInactiveProfiles,
-    } = validation.data!;
+    } = validation.data;
 
     // Check if user has permission to check these profiles
     const isAdmin = await checkAdminPermissions(session.user.id);

@@ -34,7 +34,21 @@
       "Bash(dir C:UserssvdweDesktopSecuryFlex-1srcappapi)",
       "Bash(findstr:*)",
       "Bash(git remote set-url:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx supabase projects:*)",
+      "Bash(vercel link:*)",
+      "Bash(vercel:*)",
+      "Bash(tasklist)",
+      "Bash(where npm)",
+      "Bash(where pnpm)",
+      "Bash(move \"C:\\Users\\svdwe\\Desktop\\SecuryFlex-1\\src\\lib\\performance.ts\" \"C:\\Users\\svdwe\\Desktop\\SecuryFlex-1\\src\\lib\\performance.tsx\")",
+      "Bash(ren:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm run test:*)",
+      "Bash(find:*)",
+      "Bash(npx biome check:*)"
     ],
     "deny": [],
     "ask": []

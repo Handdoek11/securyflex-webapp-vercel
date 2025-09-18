@@ -22,7 +22,11 @@ export const env = createEnv({
     SENTRY_DSN: z.string().url().optional(),
 
     // Admin configuration
-    ADMIN_EMAILS: z.string().min(1).optional().default("stef@securyflex.com,robert@securyflex.com"),
+    ADMIN_EMAILS: z
+      .string()
+      .min(1)
+      .optional()
+      .default("stef@securyflex.com,robert@securyflex.com"),
     ADMIN_TOOLS_PASSWORD: z.string().min(8).optional(),
   },
   client: {

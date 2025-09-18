@@ -7,6 +7,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "biome check",
+    "lint:all": "biome check && tsc --noEmit",
+    "lint:fix": "biome check --write",
     "format": "biome format --write",
     "test": "vitest",
     "test:watch": "vitest --watch",
@@ -31,7 +33,14 @@
     "db:migrate": "tsx prisma/migrations/data-migration.ts",
     "e2e:debug": "playwright test --debug",
     "e2e:report": "playwright show-report",
-    "e2e:install": "playwright install"
+    "e2e:install": "playwright install",
+    "admin:unlock-user": "node scripts/admin/unlock-user.js",
+    "admin:reset-password": "node scripts/admin/reset-user-password.js",
+    "admin:daily-report": "node scripts/admin/daily-report.js",
+    "admin:export-users": "node scripts/admin/export-users.js",
+    "admin:cleanup-test": "node scripts/admin/cleanup-test-data.js",
+    "admin:check": "node check-admin-accounts.js",
+    "admin:create": "node create-admin-users.js"
   },
   "dependencies": {
     "@auth/core": "^0.40.0",

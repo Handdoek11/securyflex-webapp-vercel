@@ -1,7 +1,7 @@
-import { type NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { auth } from "@/lib/auth";
+import { type NextRequest, NextResponse } from "next/server";
 import { isAdminEmail, validateAdminPassword } from "@/lib/admin/auth";
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // Helper: Generate secure password
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     if (!email || !adminPassword) {
       return NextResponse.json(
         { error: "Email and admin password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         { error: "Invalid admin password" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -80,10 +80,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Generate new password
@@ -116,13 +113,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       newPassword,
-      message: "Password has been reset. Share this password securely with the user.",
+      message:
+        "Password has been reset. Share this password securely with the user.",
     });
   } catch (error) {
     console.error("Reset password error:", error);
     return NextResponse.json(
       { error: "Failed to reset password" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

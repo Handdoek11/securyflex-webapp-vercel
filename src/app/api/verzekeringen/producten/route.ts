@@ -1,3 +1,4 @@
+import type { Korting, Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query
-    const whereClause: any = {
+    const whereClause: Prisma.VerzekeringProductWhereInput = {
       isActief: true,
     };
 
@@ -86,27 +87,30 @@ export async function GET(request: NextRequest) {
         .filter((pk) => pk.korting?.isActief)
         .map((pk) => pk.korting);
 
-      const bestDiscount = activeDiscounts.reduce((best, current) => {
-        if (!current) return best;
-        if (!best) return current;
+      const bestDiscount = activeDiscounts.reduce(
+        (best, current) => {
+          if (!current) return best;
+          if (!best) return current;
 
-        // Compare discount values (convert to percentage if needed)
-        const currentValue =
-          current.kortingType === "PERCENTAGE"
-            ? Number(current.waarde)
-            : product.basispremie
-              ? (Number(current.waarde) / Number(product.basispremie)) * 100
-              : 0;
+          // Compare discount values (convert to percentage if needed)
+          const currentValue =
+            current.kortingType === "PERCENTAGE"
+              ? Number(current.waarde)
+              : product.basispremie
+                ? (Number(current.waarde) / Number(product.basispremie)) * 100
+                : 0;
 
-        const bestValue =
-          best.kortingType === "PERCENTAGE"
-            ? Number(best.waarde)
-            : product.basispremie
-              ? (Number(best.waarde) / Number(product.basispremie)) * 100
-              : 0;
+          const bestValue =
+            best.kortingType === "PERCENTAGE"
+              ? Number(best.waarde)
+              : product.basispremie
+                ? (Number(best.waarde) / Number(product.basispremie)) * 100
+                : 0;
 
-        return currentValue > bestValue ? current : best;
-      }, null as any);
+          return currentValue > bestValue ? current : best;
+        },
+        null as Korting | null,
+      );
 
       return {
         id: product.id,

@@ -12,6 +12,7 @@ import {
   Shield,
   XCircle,
 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
@@ -412,11 +413,14 @@ export default function DocumentReviewDetailPage({
 
             <div className="border rounded-lg p-4 bg-gray-50 min-h-96 flex items-center justify-center">
               {document.mimeType.startsWith("image/") ? (
-                <img
-                  src={`/api/documents/${document.id}`}
-                  alt={document.originalFileName}
-                  className="max-w-full max-h-96 object-contain"
-                />
+                <div className="relative w-full h-96">
+                  <Image
+                    src={`/api/documents/${document.id}`}
+                    alt={document.originalFileName}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
               ) : (
                 <div className="text-center">
                   <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
@@ -451,7 +455,10 @@ export default function DocumentReviewDetailPage({
 
               <TabsContent value="steps" className="space-y-2">
                 {guidelines.steps.map((step, index) => (
-                  <div key={index} className="flex items-start gap-2">
+                  <div
+                    key={`step-${index}-${step.substring(0, 20)}`}
+                    className="flex items-start gap-2"
+                  >
                     <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium">
                       {index + 1}
                     </span>
@@ -462,7 +469,10 @@ export default function DocumentReviewDetailPage({
 
               <TabsContent value="checks" className="space-y-2">
                 {guidelines.checks.map((check, index) => (
-                  <div key={index} className="flex items-start gap-2">
+                  <div
+                    key={`check-${index}-${check.substring(0, 20)}`}
+                    className="flex items-start gap-2"
+                  >
                     <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
                     <span className="text-sm">{check}</span>
                   </div>
@@ -471,7 +481,7 @@ export default function DocumentReviewDetailPage({
 
               <TabsContent value="external" className="space-y-2">
                 {guidelines.externalUrls?.map((link, index) => (
-                  <div key={index}>
+                  <div key={`link-${index}-${link.url}`}>
                     <Button
                       variant="outline"
                       onClick={() => window.open(link.url, "_blank")}
@@ -685,7 +695,10 @@ export default function DocumentReviewDetailPage({
 
               <div className="space-y-3">
                 {document.verificationHistory.map((entry, index) => (
-                  <div key={index} className="border-l-2 border-gray-200 pl-3">
+                  <div
+                    key={`history-${index}-${entry.createdAt}`}
+                    className="border-l-2 border-gray-200 pl-3"
+                  >
                     <div className="flex items-center gap-2 text-sm">
                       <History className="h-3 w-3" />
                       <span className="font-medium">{entry.action}</span>

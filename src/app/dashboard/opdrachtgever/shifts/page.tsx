@@ -15,7 +15,7 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -161,7 +161,7 @@ function getStatusBadge(status: string, isUrgent?: boolean) {
   }
 }
 
-export default function OpdrachtgeverShiftsPage() {
+function OpdrachtgeverShiftsContent() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") || "open";
@@ -686,5 +686,13 @@ export default function OpdrachtgeverShiftsPage() {
         </div>
       </div>
     </OpdrachtgeverDashboardLayout>
+  );
+}
+
+export default function OpdrachtgeverShiftsPage() {
+  return (
+    <Suspense fallback={<OpdrachtgeverDashboardLayout />}>
+      <OpdrachtgeverShiftsContent />
+    </Suspense>
   );
 }

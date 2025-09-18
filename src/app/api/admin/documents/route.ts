@@ -1,6 +1,7 @@
+import type { Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin/auth";
+import { auth } from "@/lib/auth";
 import {
   sendDocumentApprovedNotification,
   sendDocumentRejectedNotification,
@@ -33,11 +34,7 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
     // Build where clause
-    const where: {
-      status?: string;
-      documentType?: string;
-      userId?: string;
-    } = {};
+    const where: Prisma.DocumentVerificatieWhereInput = {};
 
     if (status) {
       where.status = status;
@@ -178,7 +175,6 @@ export async function POST(request: NextRequest) {
 
     // Get client IP and User Agent
     const ipAddress =
-      request.ip ||
       request.headers.get("x-forwarded-for") ||
       request.headers.get("x-real-ip") ||
       "unknown";
@@ -240,7 +236,7 @@ export async function POST(request: NextRequest) {
                   documentType: updatedDoc.documentType,
                   originalFileName: updatedDoc.originalFileName,
                   status: updatedDoc.status,
-                  adminNotes: updatedDoc.adminNotes,
+                  adminNotes: updatedDoc.adminNotes || undefined,
                 },
                 adminName: session.user.name || session.user.email,
               });
@@ -280,7 +276,7 @@ export async function POST(request: NextRequest) {
                 verificatieDatum: new Date(),
                 verifiedBy: session.user.id,
                 rejectionReason: data?.rejectionReason || "Bulk rejected",
-                adminNotes: data?.adminNotes,
+                adminNotes: data?.adminNotes || undefined,
               },
             });
 
@@ -311,8 +307,8 @@ export async function POST(request: NextRequest) {
                   documentType: updatedDoc.documentType,
                   originalFileName: updatedDoc.originalFileName,
                   status: updatedDoc.status,
-                  rejectionReason: updatedDoc.rejectionReason,
-                  adminNotes: updatedDoc.adminNotes,
+                  rejectionReason: updatedDoc.rejectionReason || undefined,
+                  adminNotes: updatedDoc.adminNotes || undefined,
                 },
                 adminName: session.user.name || session.user.email,
               });

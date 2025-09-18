@@ -13,15 +13,18 @@ interface PerformanceMemory {
 }
 
 // Debounced search function for input fields
-export const createDebouncedSearch = (callback: (query: string) => void, delay = 300) => {
+export const createDebouncedSearch = (
+  callback: (query: string) => void,
+  delay = 300,
+) => {
   return debounce(callback, delay);
 };
 
 // Lazy loading utility for heavy components
-export function createLazyComponent<P = object, T extends React.ComponentType<P> = React.ComponentType<P>>(
-  importFunc: () => Promise<{ default: T }>,
-  _fallback?: React.ComponentType
-) {
+export function createLazyComponent<
+  P = object,
+  T extends React.ComponentType<P> = React.ComponentType<P>,
+>(importFunc: () => Promise<{ default: T }>, _fallback?: React.ComponentType) {
   return React.lazy(importFunc);
 }
 
@@ -30,14 +33,14 @@ export function useVirtualScroll<T>(
   items: T[],
   containerHeight: number,
   itemHeight: number,
-  buffer = 5
+  buffer = 5,
 ) {
   const [scrollTop, setScrollTop] = React.useState(0);
 
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - buffer);
   const endIndex = Math.min(
     items.length - 1,
-    Math.floor((scrollTop + containerHeight) / itemHeight) + buffer
+    Math.floor((scrollTop + containerHeight) / itemHeight) + buffer,
   );
 
   const visibleItems = items.slice(startIndex, endIndex + 1);
@@ -52,7 +55,7 @@ export function useVirtualScroll<T>(
     endIndex,
     onScroll: (event: React.UIEvent<HTMLDivElement>) => {
       setScrollTop(event.currentTarget.scrollTop);
-    }
+    },
   };
 }
 
@@ -83,17 +86,17 @@ export function OptimizedImage({
   className,
   placeholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f0f0'/%3E%3C/svg%3E",
   onLoad,
-  onError
+  onError,
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [hasError, setHasError] = React.useState(false);
 
-  const handleLoad = React.useCallback(() => {
+  const _handleLoad = React.useCallback(() => {
     setIsLoaded(true);
     onLoad?.();
   }, [onLoad]);
 
-  const handleError = React.useCallback(() => {
+  const _handleError = React.useCallback(() => {
     setHasError(true);
     onError?.();
   }, [onError]);
@@ -104,7 +107,9 @@ export function OptimizedImage({
         className={`bg-muted flex items-center justify-center ${className}`}
         style={{ width, height }}
       >
-        <span className="text-muted-foreground text-sm">Afbeelding niet beschikbaar</span>
+        <span className="text-muted-foreground text-sm">
+          Afbeelding niet beschikbaar
+        </span>
       </div>
     );
   }
@@ -123,9 +128,7 @@ export function OptimizedImage({
         alt={alt}
         width={width}
         height={height}
-        className={`w-full h-full object-cover transition-opacity duration-300 ${
-          isLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? "opacity-100" : "opacity-0"}`}
         onLoad={handleLoad}
         onError={handleError}
         loading="lazy"
@@ -137,8 +140,11 @@ export function OptimizedImage({
 // Request deduplication for API calls
 const requestCache = new Map<string, Promise<unknown>>();
 
-export function dedupedFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
-  const key = `${url}-${JSON.stringify(options)}`;
+export function dedupedFetch<T>(
+  url: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const key = `$url-$JSON.stringify(options)`;
 
   const cached = requestCache.get(key);
   if (cached) {
@@ -146,7 +152,7 @@ export function dedupedFetch<T>(url: string, options: RequestInit = {}): Promise
   }
 
   const request = fetch(url, options)
-    .then(response => response.json())
+    .then((response) => response.json())
     .finally(() => {
       // Clean up cache after request completes
       setTimeout(() => requestCache.delete(key), 5000);
@@ -157,15 +163,18 @@ export function dedupedFetch<T>(url: string, options: RequestInit = {}): Promise
 }
 
 // Preload critical resources
-export function preloadResource(href: string, as: 'script' | 'style' | 'font' | 'image') {
-  if (typeof document !== 'undefined') {
-    const link = document.createElement('link');
-    link.rel = 'preload';
+export function preloadResource(
+  href: string,
+  as: "script" | "style" | "font" | "image",
+) {
+  if (typeof document !== "undefined") {
+    const link = document.createElement("link");
+    link.rel = "preload";
     link.href = href;
     link.as = as;
 
-    if (as === 'font') {
-      link.crossOrigin = 'anonymous';
+    if (as === "font") {
+      link.crossOrigin = "anonymous";
     }
 
     document.head.appendChild(link);
@@ -174,24 +183,30 @@ export function preloadResource(href: string, as: 'script' | 'style' | 'font' | 
 
 // Bundle size monitoring (development only)
 export function logBundleInfo() {
-  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+  if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
     // Log memory usage
-    if ('memory' in performance) {
+    if ("memory" in performance) {
       const memory = (performance as PerformanceMemory).memory;
-      console.log('Memory usage:', {
-        used: Math.round(memory.usedJSHeapSize / 1024 / 1024) + ' MB',
-        total: Math.round(memory.totalJSHeapSize / 1024 / 1024) + ' MB',
-        limit: Math.round(memory.jsHeapSizeLimit / 1024 / 1024) + ' MB'
+      console.log("Memory usage:", {
+        used: Math.round(memory.usedJSHeapSize / 1024 / 1024) + " MB",
+        total: Math.round(memory.totalJSHeapSize / 1024 / 1024) + " MB",
+        limit: Math.round(memory.jsHeapSizeLimit / 1024 / 1024) + " MB",
       });
     }
 
     // Log navigation timing
-    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    const navigation = performance.getEntriesByType(
+      "navigation",
+    )[0] as PerformanceNavigationTiming;
     if (navigation) {
-      console.log('Page load timing:', {
-        domContentLoaded: Math.round(navigation.domContentLoadedEventEnd - navigation.fetchStart),
-        loadComplete: Math.round(navigation.loadEventEnd - navigation.fetchStart),
-        firstByte: Math.round(navigation.responseStart - navigation.fetchStart)
+      console.log("Page load timing:", {
+        domContentLoaded: Math.round(
+          navigation.domContentLoadedEventEnd - navigation.fetchStart,
+        ),
+        loadComplete: Math.round(
+          navigation.loadEventEnd - navigation.fetchStart,
+        ),
+        firstByte: Math.round(navigation.responseStart - navigation.fetchStart),
       });
     }
   }
@@ -200,18 +215,18 @@ export function logBundleInfo() {
 // Service Worker registration for offline functionality
 export function registerServiceWorker() {
   if (
-    typeof window !== 'undefined' &&
-    'serviceWorker' in navigator &&
-    process.env.NODE_ENV === 'production'
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    process.env.NODE_ENV === "production"
   ) {
-    window.addEventListener('load', () => {
+    window.addEventListener("load", () => {
       navigator.serviceWorker
-        .register('/sw.js')
-        .then(registration => {
-          console.log('SW registered: ', registration);
+        .register("/sw.js")
+        .then((registration) => {
+          console.log("SW registered: ", registration);
         })
-        .catch(registrationError => {
-          console.log('SW registration failed: ', registrationError);
+        .catch((registrationError) => {
+          console.log("SW registration failed: ", registrationError);
         });
     });
   }
@@ -220,12 +235,12 @@ export function registerServiceWorker() {
 // React performance hooks
 export function usePerformanceMonitor(componentName: string) {
   React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       const startTime = performance.now();
 
       return () => {
         const endTime = performance.now();
-        console.log(`${componentName} render time: ${endTime - startTime}ms`);
+        console.log(`$componentNamerender time: $endTime - startTimems`);
       };
     }
   }, [componentName]);
@@ -234,11 +249,11 @@ export function usePerformanceMonitor(componentName: string) {
 // Memoization helpers
 export const memoizeWithExpiry = <TArgs extends readonly unknown[], TResult>(
   fn: (...args: TArgs) => TResult,
-  ttl: number = 60000 // 1 minute default
+  ttl: number = 60000, // 1 minute default
 ) => {
   const cache = new Map<string, { value: TResult; expiry: number }>();
 
-  return ((...args: TArgs): TResult => {
+  return (...args: TArgs): TResult => {
     const key = JSON.stringify(args);
     const now = Date.now();
     const cached = cache.get(key);
@@ -258,25 +273,25 @@ export const memoizeWithExpiry = <TArgs extends readonly unknown[], TResult>(
     }
 
     return result;
-  });
+  };
 };
 
 // Critical CSS detection
 export function loadCriticalCSS() {
-  if (typeof document !== 'undefined') {
-    const criticalCSS = document.getElementById('critical-css');
+  if (typeof document !== "undefined") {
+    const criticalCSS = document.getElementById("critical-css");
     if (criticalCSS) {
       // Critical CSS is already loaded
       return;
     }
 
     // Load non-critical CSS asynchronously
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/css/non-critical.css';
-    link.media = 'print';
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "/css/non-critical.css";
+    link.media = "print";
     link.onload = () => {
-      link.media = 'all';
+      link.media = "all";
     };
     document.head.appendChild(link);
   }

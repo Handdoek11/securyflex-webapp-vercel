@@ -1,5 +1,5 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient, type UserRole } from "@prisma/client";
+import { PrismaClient, type UserRole, type User, type ZZPProfile, type BedrijfProfile, type Opdrachtgever } from "@prisma/client";
 import bcryptjs from "bcryptjs";
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -39,8 +39,15 @@ declare module "next-auth/jwt" {
   }
 }
 
+// Type for user with all relations included
+type UserWithProfiles = User & {
+  zzpProfile: ZZPProfile | null;
+  bedrijfProfile: BedrijfProfile | null;
+  opdrachtgever: Opdrachtgever | null;
+};
+
 // Helper function to determine if user has completed their profile
-function determineProfileCompleteness(user: any): boolean {
+function determineProfileCompleteness(user: UserWithProfiles): boolean {
   switch (user.role) {
     case "ZZP_BEVEILIGER":
       return !!(user.zzpProfile?.kvkNummer && user.zzpProfile?.uurtarief);

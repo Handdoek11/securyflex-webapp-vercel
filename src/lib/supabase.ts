@@ -23,7 +23,7 @@ export const supabaseAdmin = createClient(
 // REAL-TIME SUBSCRIPTION HELPERS
 // ============================================
 
-type RealtimeCallback = (payload: any) => void;
+type RealtimeCallback = (payload: Record<string, unknown>) => void;
 
 /**
  * Create a generic real-time subscription
@@ -130,7 +130,7 @@ export const subscribeToUserStatusUpdates = (
 /**
  * Track user presence (online/offline status)
  */
-export const trackUserPresence = (userId: string, metadata?: any) => {
+export const trackUserPresence = (userId: string, metadata?: Record<string, unknown>) => {
   const channel = supabase.channel("presence");
 
   channel
@@ -173,7 +173,7 @@ export const getOnlineUsers = (channelName: string = "presence") => {
 /**
  * Send a broadcast message (e.g., notifications)
  */
-export const sendBroadcast = (channel: string, event: string, payload: any) => {
+export const sendBroadcast = (channel: string, event: string, payload: Record<string, unknown>) => {
   return supabase.channel(channel).send({
     type: "broadcast",
     event,
@@ -187,7 +187,7 @@ export const sendBroadcast = (channel: string, event: string, payload: any) => {
 export const listenToBroadcast = (
   channel: string,
   event: string,
-  callback: (payload: any) => void,
+  callback: (payload: Record<string, unknown>) => void,
 ) => {
   return supabase
     .channel(channel)

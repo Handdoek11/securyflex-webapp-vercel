@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -42,21 +43,21 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category"); // shift, application, system, payment
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
-    const priority = searchParams.get("priority"); // high, normal, low
+    const _priority = searchParams.get("priority"); // high, normal, low - TODO: implement priority filtering
 
     try {
       // Build where clause
-      const where: any = {
+      const where: Prisma.NotificationWhereInput = {
         userId: session.user.id,
         // Filter for opdrachtgever-specific notifications
         OR: [
-          { type: "SHIFT_APPLICATION" },
-          { type: "SHIFT_CANCELLED" },
-          { type: "SHIFT_COMPLETED" },
-          { type: "BEVEILIGER_LATE" },
-          { type: "PAYMENT_DUE" },
-          { type: "SYSTEM_UPDATE" },
-          { type: "URGENT_SHIFT" },
+          { type: "OPDRACHT_NEW" },
+          { type: "OPDRACHT_ASSIGNED" },
+          { type: "OPDRACHT_UPDATED" },
+          { type: "OPDRACHT_CANCELLED" },
+          { type: "TEAM_INVITED" },
+          { type: "PAYMENT_PENDING" },
+          { type: "SYSTEM_ANNOUNCEMENT" },
         ],
       };
 
@@ -66,19 +67,15 @@ export async function GET(request: NextRequest) {
 
       if (category) {
         const categoryMap: Record<string, string[]> = {
-          shift: [
-            "SHIFT_APPLICATION",
-            "SHIFT_CANCELLED",
-            "SHIFT_COMPLETED",
-            "URGENT_SHIFT",
+          opdracht: [
+            "OPDRACHT_NEW",
+            "OPDRACHT_ASSIGNED",
+            "OPDRACHT_UPDATED",
+            "OPDRACHT_CANCELLED",
           ],
-          application: [
-            "SHIFT_APPLICATION",
-            "APPLICATION_APPROVED",
-            "APPLICATION_REJECTED",
-          ],
-          system: ["SYSTEM_UPDATE", "ACCOUNT_UPDATE"],
-          payment: ["PAYMENT_DUE", "PAYMENT_COMPLETED", "INVOICE_READY"],
+          team: ["TEAM_INVITED", "TEAM_ACCEPTED"],
+          system: ["SYSTEM_ANNOUNCEMENT"],
+          payment: ["PAYMENT_RECEIVED", "PAYMENT_PENDING"],
         };
 
         if (categoryMap[category]) {
@@ -86,19 +83,13 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      if (priority) {
-        where.priority = priority.toUpperCase();
-      }
+      // Note: Priority field doesn't exist in database schema, so we ignore this filter
 
       // Get notifications with related data
       const [notifications, totalCount, unreadCount] = await Promise.all([
         prisma.notification.findMany({
           where,
-          include: {
-            // Include related opdracht data if available
-            relatedData: true,
-          },
-          orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+          orderBy: { createdAt: "desc" },
           skip: (page - 1) * limit,
           take: limit,
         }),
@@ -115,108 +106,26 @@ export async function GET(request: NextRequest) {
       // Transform notifications for frontend
       const transformedNotifications = await Promise.all(
         notifications.map(async (notification) => {
-          let relatedInfo = null;
+          const relatedInfo = null;
 
-          // Add context-specific information based on notification type
-          if (notification.relatedId) {
-            switch (notification.type) {
-              case "SHIFT_APPLICATION": {
-                const application =
-                  await prisma.opdrachtSollicitatie.findUnique({
-                    where: { id: notification.relatedId },
-                    include: {
-                      beveiliger: {
-                        include: {
-                          user: { select: { name: true } },
-                        },
-                      },
-                      opdracht: {
-                        select: { titel: true, datum: true, locatie: true },
-                      },
-                    },
-                  });
-                if (application) {
-                  relatedInfo = {
-                    beveiliger: application.beveiliger.user.name,
-                    shift: application.opdracht.titel,
-                    date: application.opdracht.datum,
-                    location: application.opdracht.locatie,
-                  };
-                }
-                break;
-              }
-
-              case "SHIFT_COMPLETED":
-              case "SHIFT_CANCELLED":
-              case "URGENT_SHIFT": {
-                const shift = await prisma.opdracht.findUnique({
-                  where: { id: notification.relatedId },
-                  select: {
-                    titel: true,
-                    datum: true,
-                    locatie: true,
-                    status: true,
-                    acceptedBeveiliger: {
-                      include: {
-                        user: { select: { name: true } },
-                      },
-                    },
-                  },
-                });
-                if (shift) {
-                  relatedInfo = {
-                    shift: shift.titel,
-                    date: shift.datum,
-                    location: shift.locatie,
-                    status: shift.status,
-                    beveiliger: shift.acceptedBeveiliger?.user.name,
-                  };
-                }
-                break;
-              }
-
-              case "BEVEILIGER_LATE": {
-                const lateInfo = await prisma.werkuur.findUnique({
-                  where: { id: notification.relatedId },
-                  include: {
-                    beveiliger: {
-                      include: {
-                        user: { select: { name: true } },
-                      },
-                    },
-                    opdracht: {
-                      select: { titel: true, locatie: true },
-                    },
-                  },
-                });
-                if (lateInfo) {
-                  relatedInfo = {
-                    beveiliger: lateInfo.beveiliger.user.name,
-                    shift: lateInfo.opdracht.titel,
-                    location: lateInfo.opdracht.locatie,
-                  };
-                }
-                break;
-              }
-            }
-          }
+          // Note: relatedId field doesn't exist in schema, so relatedInfo stays null
 
           return {
             id: notification.id,
             type: notification.type,
             title: notification.title,
             message: notification.message,
-            priority: notification.priority,
+            priority: "NORMAL" as const, // Default priority since field doesn't exist
             category: notification.category,
             isRead: notification.isRead,
-            relatedId: notification.relatedId,
+            relatedId: null, // relatedId doesn't exist in schema, using null
             relatedInfo,
             createdAt: notification.createdAt,
             readAt: notification.readAt,
 
             // UI helpers
             icon: getNotificationIcon(notification.type),
-            color: getNotificationColor(notification.priority),
+            color: getNotificationColor("NORMAL"),
             timeAgo: getTimeAgo(notification.createdAt),
           };
         }),
@@ -300,12 +209,12 @@ export async function GET(request: NextRequest) {
           notifications: [
             {
               id: "mock-1",
-              type: "SHIFT_APPLICATION",
+              type: "OPDRACHT_NEW",
               title: "Nieuwe sollicitatie",
               message:
                 "Jan de Vries heeft gesolliciteerd voor Terminal 1 - Nachtdienst",
-              priority: "HIGH",
-              category: "application",
+              priority: "NORMAL",
+              category: "OPDRACHT",
               isRead: false,
               createdAt: new Date(),
               icon: "👤",
@@ -314,15 +223,15 @@ export async function GET(request: NextRequest) {
             },
             {
               id: "mock-2",
-              type: "URGENT_SHIFT",
-              title: "Urgente shift",
-              message: "Terminal 2 - Dagdienst morgen nog niet gevuld",
-              priority: "HIGH",
-              category: "shift",
+              type: "OPDRACHT_UPDATED",
+              title: "Opdracht bijgewerkt",
+              message: "Terminal 2 - Dagdienst morgen is bijgewerkt",
+              priority: "NORMAL",
+              category: "OPDRACHT",
               isRead: false,
               createdAt: new Date(Date.now() - 30 * 60 * 1000),
               icon: "🚨",
-              color: "red",
+              color: "blue",
               timeAgo: "30 minuten geleden",
             },
           ],
@@ -378,7 +287,7 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
-      const updateData: any = {
+      const updateData: Prisma.NotificationUpdateManyMutationInput = {
         updatedAt: new Date(),
       };
 
@@ -451,13 +360,19 @@ export async function PUT(request: NextRequest) {
 // Helper functions
 function getNotificationIcon(type: string): string {
   const iconMap: Record<string, string> = {
-    SHIFT_APPLICATION: "👤",
-    SHIFT_CANCELLED: "❌",
-    SHIFT_COMPLETED: "✅",
-    BEVEILIGER_LATE: "⏰",
-    PAYMENT_DUE: "💰",
-    SYSTEM_UPDATE: "🔔",
-    URGENT_SHIFT: "🚨",
+    OPDRACHT_NEW: "👤",
+    OPDRACHT_ASSIGNED: "✅",
+    OPDRACHT_UPDATED: "📝",
+    OPDRACHT_CANCELLED: "❌",
+    TEAM_INVITED: "👥",
+    TEAM_ACCEPTED: "✅",
+    MESSAGE_NEW: "💬",
+    REVIEW_RECEIVED: "⭐",
+    PAYMENT_RECEIVED: "💰",
+    PAYMENT_PENDING: "💰",
+    WERKUUR_APPROVED: "✅",
+    WERKUUR_DISPUTED: "⚠️",
+    SYSTEM_ANNOUNCEMENT: "🔔",
   };
   return iconMap[type] || "📢";
 }

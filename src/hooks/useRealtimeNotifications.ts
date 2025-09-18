@@ -14,7 +14,7 @@ export interface Notification {
   isRead: boolean;
   actionUrl?: string;
   actionLabel?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface NotificationState {
@@ -140,7 +140,7 @@ export function useRealtimeNotifications(userId: string | undefined) {
         const response = await fetch(`/api/notifications?userId=${userId}`);
         if (response.ok) {
           const data = await response.json();
-          const notifications = data.notifications.map((n: any) => ({
+          const notifications = data.notifications.map((n: Record<string, unknown>) => ({
             ...n,
             timestamp: new Date(n.timestamp),
           }));
@@ -357,17 +357,17 @@ export function useRealtimeAlerts(opdrachtgeverId: string | undefined) {
           const data = await response.json();
           setAlerts({
             shiftAlerts:
-              data.shiftAlerts?.map((a: any) => ({
+              data.shiftAlerts?.map((a: Record<string, unknown>) => ({
                 ...a,
                 timestamp: new Date(a.timestamp),
               })) || [],
             documentAlerts:
-              data.documentAlerts?.map((a: any) => ({
+              data.documentAlerts?.map((a: Record<string, unknown>) => ({
                 ...a,
                 timestamp: new Date(a.timestamp),
               })) || [],
             paymentAlerts:
-              data.paymentAlerts?.map((a: any) => ({
+              data.paymentAlerts?.map((a: Record<string, unknown>) => ({
                 ...a,
                 dueDate: new Date(a.dueDate),
               })) || [],

@@ -13,12 +13,12 @@ export async function GET() {
       message: "Database connected successfully",
       userCount,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Database error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );

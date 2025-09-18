@@ -1,3 +1,4 @@
+import type { Assignment, Opdracht, User } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -373,7 +374,15 @@ export async function PATCH(request: NextRequest) {
 }
 
 // Helper function to validate feedback type
-function validateFeedbackType(user: any, opdracht: any, type: string): boolean {
+function validateFeedbackType(
+  user: User & { role: string },
+  opdracht: Opdracht & {
+    opdrachtgeverId?: string;
+    bedrijf?: { userId: string } | null;
+    assignments?: Assignment[];
+  },
+  type: string,
+): boolean {
   const userRole = user.role;
 
   switch (type) {
@@ -390,8 +399,9 @@ function validateFeedbackType(user: any, opdracht: any, type: string): boolean {
 
     case "ZZP_TO_BEDRIJF": {
       // Check if ZZP was assigned to this opdracht
-      const assignment = opdracht.assignments.find(
-        (a: any) => a.teamLid.zzp?.userId === user.id,
+      const assignment = opdracht.assignments?.find(
+        (a: Assignment & { teamLid?: { zzp?: { userId: string } } }) =>
+          a.teamLid?.zzp?.userId === user.id,
       );
       return userRole === "ZZP_BEVEILIGER" && !!assignment;
     }

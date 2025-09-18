@@ -1,13 +1,12 @@
-import { type NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { auth } from "@/lib/auth";
+import { type NextRequest, NextResponse } from "next/server";
 import {
-  formatCurrency,
   isAdminEmail,
   transactionsToCSV,
   usersToCSV,
   validateAdminPassword,
 } from "@/lib/admin/auth";
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // GET /api/admin/actions/stats - Get dashboard statistics
@@ -34,7 +33,7 @@ export async function GET(request: NextRequest) {
     console.error("Admin action error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -55,7 +54,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: session.user.id,
         email: session.user.email,
-        eventType: "ADMIN_ACTION",
+        eventType: "SUSPICIOUS_ACTIVITY", // Using appropriate enum value
         ipAddress:
           request.headers.get("x-forwarded-for") ||
           request.headers.get("x-real-ip") ||
@@ -64,6 +63,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           action: pathname,
           targetEmail: body.email,
+          adminAction: true,
         },
       },
     });
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     console.error("Admin action error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -118,7 +118,7 @@ async function handleGetStats() {
     });
 
     // Get monthly revenue
-    const monthlyRevenue = await prisma.$queryRaw`
+    const monthlyRevenue = await prisma.$queryRaw<Array<{ total: number }>>`
       SELECT
         COALESCE(SUM("totaalBedrag"), 0)::float as total
       FROM "VerzamelFactuur"
@@ -131,13 +131,13 @@ async function handleGetStats() {
       totalUsers,
       activeOpdrachten,
       lockedAccounts,
-      monthlyRevenue: (monthlyRevenue as any)[0]?.total || 0,
+      monthlyRevenue: monthlyRevenue[0]?.total || 0,
     });
   } catch (error) {
     console.error("Stats error:", error);
     return NextResponse.json(
       { error: "Failed to fetch stats" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -148,10 +148,7 @@ async function handleUnlockUser(body: { email: string }) {
     const { email } = body;
 
     if (!email) {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
     // Find user
@@ -160,10 +157,7 @@ async function handleUnlockUser(body: { email: string }) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Unlock the account
@@ -196,7 +190,7 @@ async function handleUnlockUser(body: { email: string }) {
     console.error("Unlock user error:", error);
     return NextResponse.json(
       { error: "Failed to unlock account" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -204,7 +198,7 @@ async function handleUnlockUser(body: { email: string }) {
 // Handler: Reset user password
 async function handleResetPassword(
   body: { email: string; adminPassword: string },
-  adminEmail: string
+  adminEmail: string,
 ) {
   try {
     const { email, adminPassword } = body;
@@ -212,7 +206,7 @@ async function handleResetPassword(
     if (!email || !adminPassword) {
       return NextResponse.json(
         { error: "Email and admin password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -220,7 +214,7 @@ async function handleResetPassword(
     if (!validateAdminPassword(adminPassword)) {
       return NextResponse.json(
         { error: "Invalid admin password" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -230,10 +224,7 @@ async function handleResetPassword(
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Generate new password
@@ -266,13 +257,14 @@ async function handleResetPassword(
     return NextResponse.json({
       success: true,
       newPassword,
-      message: "Password has been reset. Share this password securely with the user.",
+      message:
+        "Password has been reset. Share this password securely with the user.",
     });
   } catch (error) {
     console.error("Reset password error:", error);
     return NextResponse.json(
       { error: "Failed to reset password" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -306,7 +298,7 @@ async function handleExportUsers() {
     console.error("Export users error:", error);
     return NextResponse.json(
       { error: "Failed to export users" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -340,7 +332,7 @@ async function handleExportTransactions() {
     console.error("Export transactions error:", error);
     return NextResponse.json(
       { error: "Failed to export transactions" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

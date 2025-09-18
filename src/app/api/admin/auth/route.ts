@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { isAdminEmail } from "@/lib/admin/auth";
 import { auth } from "@/lib/auth";
-import { getAdminEmails, isAdminEmail } from "@/lib/admin/auth";
 import prisma from "@/lib/prisma";
 
 // POST /api/admin/auth - Verify admin credentials

@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Opdracht, Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -177,11 +177,18 @@ export async function GET(request: NextRequest) {
       }),
 
       // Team performance stats
-      prisma.sollicitatie.groupBy({
+      prisma.opdrachtSollicitatie.groupBy({
         by: ["status"],
         where: {
-          opdracht: baseWhereClause,
-          createdAt: { gte: startDate },
+          opdrachtId: {
+            in: (
+              await prisma.opdracht.findMany({
+                where: baseWhereClause,
+                select: { id: true },
+              })
+            ).map((o) => o.id),
+          },
+          sollicitatiedatum: { gte: startDate },
         },
         _count: { id: true },
       }),
@@ -267,7 +274,10 @@ export async function GET(request: NextRequest) {
 
     // Process status breakdown
     const statusData = statusBreakdown.reduce(
-      (acc, item) => {
+      (
+        acc: Record<string, number>,
+        item: { status: string; _count: { id: number } },
+      ) => {
         acc[item.status] = item._count.id;
         return acc;
       },
@@ -276,7 +286,10 @@ export async function GET(request: NextRequest) {
 
     // Process team stats
     const teamPerformance = teamStats.reduce(
-      (acc, item) => {
+      (
+        acc: Record<string, number>,
+        item: { status: string; _count: { id: number } },
+      ) => {
         acc[item.status] = item._count.id;
         return acc;
       },
@@ -285,7 +298,8 @@ export async function GET(request: NextRequest) {
 
     // Calculate success rates
     const totalApplications = Object.values(teamPerformance).reduce(
-      (sum, count) => sum + count,
+      (sum: number, count: unknown) =>
+        sum + (typeof count === "number" ? count : 0),
       0,
     );
     const successRate =
@@ -295,7 +309,13 @@ export async function GET(request: NextRequest) {
 
     // Process revenue timeline for chart
     const revenueTimeline = revenueData.reduce(
-      (acc, opdracht) => {
+      (
+        acc: Record<
+          string,
+          { week: string; revenue: number; opdrachten: number }
+        >,
+        opdracht,
+      ) => {
         const weekKey = getWeekKey(opdracht.createdAt);
         if (!acc[weekKey]) {
           acc[weekKey] = { week: weekKey, revenue: 0, opdrachten: 0 };
@@ -314,7 +334,11 @@ export async function GET(request: NextRequest) {
 
     // Convert to array and sort
     const chartData = Object.values(revenueTimeline)
-      .sort((a, b) => a.week.localeCompare(b.week))
+      .sort((a: unknown, b: unknown) => {
+        const weekA = (a as { week: string }).week;
+        const weekB = (b as { week: string }).week;
+        return weekA.localeCompare(weekB);
+      })
       .slice(-12); // Last 12 weeks
 
     return NextResponse.json({

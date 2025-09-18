@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -199,7 +200,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const validatedData = updateNotificationSchema.parse(body);
 
-    let result;
+    let result: Prisma.BatchPayload;
 
     if (validatedData.markAllAsRead) {
       // Mark all unread notifications as read
@@ -269,7 +270,7 @@ export async function DELETE(request: NextRequest) {
     const notificationIds = searchParams.get("ids")?.split(",");
     const clearAll = searchParams.get("clearAll") === "true";
 
-    let result;
+    let result: Prisma.BatchPayload;
 
     if (clearAll) {
       result = await prisma.notification.deleteMany({

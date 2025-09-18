@@ -25,10 +25,103 @@ enum FinqleWebhookEvent {
   WEEKLY_PAYOUT_COMPLETED = "weekly_payout.completed",
 }
 
+// Finqle webhook data interfaces
+interface PaymentInitiatedData {
+  paymentId: string;
+  invoiceId: string;
+  amount: number;
+  merchantId: string;
+}
+
+interface PaymentCompletedData {
+  paymentId: string;
+  invoiceId: string;
+  amount: number;
+  merchantId: string;
+  payoutDate: string;
+}
+
+interface PaymentFailedData {
+  paymentId: string;
+  invoiceId: string;
+  amount: number;
+  merchantId: string;
+  reason: string;
+}
+
+interface InvoiceCreatedData {
+  invoiceId: string;
+  merchantId: string;
+  amount: number;
+  dueDate: string;
+  opdrachtId: string;
+}
+
+interface InvoicePaidData {
+  invoiceId: string;
+  paymentDate: string;
+  amount: number;
+}
+
+interface InvoiceOverdueData {
+  invoiceId: string;
+  daysOverdue: number;
+  amount: number;
+}
+
+interface KYCApprovedData {
+  merchantId: string;
+  approvedAt: string;
+}
+
+interface KYCRejectedData {
+  merchantId: string;
+  reason: string;
+  rejectedAt: string;
+}
+
+interface DirectPaymentApprovedData {
+  requestId: string;
+  merchantId: string;
+  debtorId: string;
+  amount: number;
+  approvedAt: string;
+}
+
+interface DirectPaymentRejectedData {
+  requestId: string;
+  merchantId: string;
+  debtorId: string;
+  amount: number;
+  reason: string;
+}
+
+interface WeeklyPayoutCompletedData {
+  payoutId: string;
+  merchantId: string;
+  totalAmount: number;
+  invoiceCount: number;
+  payoutDate: string;
+}
+
+// Union type for all possible webhook data
+type FinqleWebhookData =
+  | PaymentInitiatedData
+  | PaymentCompletedData
+  | PaymentFailedData
+  | InvoiceCreatedData
+  | InvoicePaidData
+  | InvoiceOverdueData
+  | KYCApprovedData
+  | KYCRejectedData
+  | DirectPaymentApprovedData
+  | DirectPaymentRejectedData
+  | WeeklyPayoutCompletedData;
+
 interface FinqleWebhookPayload {
   event: FinqleWebhookEvent;
   timestamp: string;
-  data: any;
+  data: FinqleWebhookData;
   signature?: string;
 }
 
@@ -141,7 +234,7 @@ export async function POST(request: NextRequest) {
 
 // Handler functions for each event type
 
-async function handlePaymentInitiated(data: any) {
+async function handlePaymentInitiated(data: PaymentInitiatedData) {
   const { paymentId, invoiceId, amount, merchantId } = data;
 
   // Update payment record
@@ -180,7 +273,7 @@ async function handlePaymentInitiated(data: any) {
   });
 }
 
-async function handlePaymentCompleted(data: any) {
+async function handlePaymentCompleted(data: PaymentCompletedData) {
   const { paymentId, invoiceId, amount, merchantId, payoutDate } = data;
 
   // Update payment record
@@ -234,7 +327,7 @@ async function handlePaymentCompleted(data: any) {
   });
 }
 
-async function handlePaymentFailed(data: any) {
+async function handlePaymentFailed(data: PaymentFailedData) {
   const { paymentId, invoiceId, amount, merchantId, reason } = data;
 
   // Update payment record
@@ -274,7 +367,7 @@ async function handlePaymentFailed(data: any) {
   });
 }
 
-async function handleInvoiceCreated(data: any) {
+async function handleInvoiceCreated(data: InvoiceCreatedData) {
   const { invoiceId, merchantId, amount, dueDate, opdrachtId } = data;
 
   // Create or update invoice record
@@ -302,7 +395,7 @@ async function handleInvoiceCreated(data: any) {
   });
 }
 
-async function handleInvoicePaid(data: any) {
+async function handleInvoicePaid(data: InvoicePaidData) {
   const { invoiceId, paymentDate, amount } = data;
 
   // Update invoice status
@@ -337,7 +430,7 @@ async function handleInvoicePaid(data: any) {
   }
 }
 
-async function handleInvoiceOverdue(data: any) {
+async function handleInvoiceOverdue(data: InvoiceOverdueData) {
   const { invoiceId, daysOverdue, amount } = data;
 
   // Update invoice status
@@ -371,7 +464,7 @@ async function handleInvoiceOverdue(data: any) {
   }
 }
 
-async function handleKYCApproved(data: any) {
+async function handleKYCApproved(data: KYCApprovedData) {
   const { merchantId, approvedAt } = data;
 
   // Update user's Finqle status
@@ -419,7 +512,7 @@ async function handleKYCApproved(data: any) {
   }
 }
 
-async function handleKYCRejected(data: any) {
+async function handleKYCRejected(data: KYCRejectedData) {
   const { merchantId, reason, rejectedAt } = data;
 
   // Update user's Finqle status
@@ -468,7 +561,7 @@ async function handleKYCRejected(data: any) {
   }
 }
 
-async function handleDirectPaymentApproved(data: any) {
+async function handleDirectPaymentApproved(data: DirectPaymentApprovedData) {
   const { requestId, merchantId, debtorId, amount, approvedAt } = data;
 
   // Create notification for merchant
@@ -491,7 +584,7 @@ async function handleDirectPaymentApproved(data: any) {
   }
 }
 
-async function handleDirectPaymentRejected(data: any) {
+async function handleDirectPaymentRejected(data: DirectPaymentRejectedData) {
   const { requestId, merchantId, debtorId, amount, reason } = data;
 
   // Create notification for merchant
@@ -515,7 +608,7 @@ async function handleDirectPaymentRejected(data: any) {
   }
 }
 
-async function handleWeeklyPayoutCompleted(data: any) {
+async function handleWeeklyPayoutCompleted(data: WeeklyPayoutCompletedData) {
   const { payoutId, merchantId, totalAmount, invoiceCount, payoutDate } = data;
 
   // Find merchant

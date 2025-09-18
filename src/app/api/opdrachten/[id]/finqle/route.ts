@@ -157,9 +157,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         const platformFee =
           Number(werkuur.platformFee) * Number(werkuur.urenGewerkt);
 
+        // Check if finqleDebtorId exists
+        if (!werkuur.opdracht.opdrachtgever.finqleDebtorId) {
+          console.error(
+            `Opdrachtgever ${werkuur.opdracht.opdrachtgever.id} has no Finqle debtor ID`,
+          );
+          continue;
+        }
+
         // Create billing request in Finqle
         const billingRequest = await finqleClient.createBillingRequest({
-          debtorId: werkuur.opdracht.opdrachtgever.finqleDebtorId!,
+          debtorId: werkuur.opdracht.opdrachtgever.finqleDebtorId,
           projectId: werkuur.opdrachtId,
           merchantId: zzp.finqleMerchantId,
           hours: Number(werkuur.urenGewerkt),
@@ -180,7 +188,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           data: {
             werkuurId: werkuur.id,
             merchantId: zzp.finqleMerchantId,
-            debtorId: werkuur.opdracht.opdrachtgever.finqleDebtorId!,
+            debtorId: werkuur.opdracht.opdrachtgever.finqleDebtorId,
             amount,
             directPayment: requestDirectPayment || false,
             finqleRequestId: billingRequest.data.requestId,

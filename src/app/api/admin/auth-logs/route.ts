@@ -1,6 +1,7 @@
+import type { Prisma, SecurityEventType } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin/auth";
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // GET /api/admin/auth-logs - View authentication logs
@@ -32,9 +33,9 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get("userId");
     const eventType = searchParams.get("eventType");
 
-    const where: { userId?: string; eventType?: string } = {};
+    const where: Prisma.SecurityLogWhereInput = {};
     if (userId) where.userId = userId;
-    if (eventType) where.eventType = eventType;
+    if (eventType) where.eventType = eventType as SecurityEventType;
 
     // Get security logs
     const logs = await prisma.securityLog.findMany({

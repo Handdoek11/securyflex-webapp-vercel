@@ -1,3 +1,9 @@
+import type {
+  BedrijfProfile,
+  Opdrachtgever,
+  User,
+  ZZPProfile,
+} from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -165,7 +171,11 @@ export async function PATCH(request: NextRequest) {
 }
 
 // Update ZZP Profile
-async function updateZZPProfile(profileId: string, data: any, user: any) {
+async function updateZZPProfile(
+  profileId: string,
+  data: unknown,
+  user: User & { zzpProfile: ZZPProfile | null },
+) {
   // Validate ZZP profile data
   const validation = zzpProfileSchema.partial().safeParse(data);
 
@@ -203,7 +213,8 @@ async function updateZZPProfile(profileId: string, data: any, user: any) {
   }
 
   // Update user basic info if provided
-  const userUpdates: any = {};
+  const userUpdates: { name?: string; email?: string; emailVerified?: null } =
+    {};
   if (validatedData.name && validatedData.name !== user.name) {
     userUpdates.name = validatedData.name;
   }
@@ -220,7 +231,7 @@ async function updateZZPProfile(profileId: string, data: any, user: any) {
   }
 
   // Prepare profile updates
-  const profileUpdates: any = { ...validatedData };
+  const profileUpdates: Record<string, unknown> = { ...validatedData };
   delete profileUpdates.name;
   delete profileUpdates.email;
 
@@ -255,8 +266,8 @@ async function updateZZPProfile(profileId: string, data: any, user: any) {
 // Update Bedrijf Profile (placeholder)
 async function updateBedrijfProfile(
   _profileId: string,
-  _data: any,
-  _user: any,
+  _data: unknown,
+  _user: User & { bedrijfProfile: BedrijfProfile | null },
 ) {
   // Similar implementation for bedrijf profiles
   return NextResponse.json(
@@ -271,8 +282,8 @@ async function updateBedrijfProfile(
 // Update Opdrachtgever Profile
 async function updateOpdrachtgeverProfile(
   profileId: string,
-  data: any,
-  user: any,
+  data: unknown,
+  user: User & { opdrachtgever: Opdrachtgever | null },
 ) {
   // Validate opdrachtgever profile data
   const validation = opdrachtgeverDbProfileSchema.partial().safeParse(data);
@@ -311,7 +322,8 @@ async function updateOpdrachtgeverProfile(
   }
 
   // Update user basic info if provided
-  const userUpdates: any = {};
+  const userUpdates: { name?: string; email?: string; emailVerified?: null } =
+    {};
   if (validatedData.name && validatedData.name !== user.name) {
     userUpdates.name = validatedData.name;
   }
@@ -331,7 +343,7 @@ async function updateOpdrachtgeverProfile(
   }
 
   // Prepare profile updates
-  const profileUpdates: any = {};
+  const profileUpdates: Record<string, unknown> = {};
   if (validatedData.bedrijfsnaam)
     profileUpdates.bedrijfsnaam = validatedData.bedrijfsnaam;
   if (validatedData.kvkNummer !== undefined)
@@ -369,7 +381,13 @@ async function updateOpdrachtgeverProfile(
 }
 
 // Calculate profile completion percentage
-function calculateProfileCompletion(user: any): number {
+function calculateProfileCompletion(
+  user: User & {
+    zzpProfile?: ZZPProfile | null;
+    opdrachtgever?: Opdrachtgever | null;
+    bedrijfProfile?: BedrijfProfile | null;
+  },
+): number {
   if (user.role === "ZZP_BEVEILIGER" && user.zzpProfile) {
     return calculateZZPProfileCompletion(user);
   } else if (user.role === "OPDRACHTGEVER" && user.opdrachtgever) {
@@ -379,7 +397,9 @@ function calculateProfileCompletion(user: any): number {
   return 0;
 }
 
-function calculateZZPProfileCompletion(user: any): number {
+function calculateZZPProfileCompletion(
+  user: User & { zzpProfile: ZZPProfile },
+): number {
   const profile = user.zzpProfile;
   let completed = 0;
   const total = 15; // Total number of profile fields
@@ -414,7 +434,9 @@ function calculateZZPProfileCompletion(user: any): number {
   return Math.round((completed / total) * 100);
 }
 
-function calculateOpdrachtgeverProfileCompletion(user: any): number {
+function calculateOpdrachtgeverProfileCompletion(
+  user: User & { opdrachtgever: Opdrachtgever },
+): number {
   const profile = user.opdrachtgever;
   let completed = 0;
   const total = 6; // Total number of profile fields
@@ -433,7 +455,13 @@ function calculateOpdrachtgeverProfileCompletion(user: any): number {
 }
 
 // Calculate user statistics
-async function calculateUserStats(user: any) {
+async function calculateUserStats(
+  user: User & {
+    zzpProfile?: ZZPProfile | null;
+    opdrachtgever?: Opdrachtgever | null;
+    bedrijfProfile?: BedrijfProfile | null;
+  },
+) {
   if (user.role === "ZZP_BEVEILIGER" && user.zzpProfile) {
     const profileId = user.zzpProfile.id;
 

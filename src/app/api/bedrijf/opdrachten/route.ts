@@ -42,51 +42,77 @@ export const GET = withBedrijfSecurity(
     )();
 
     // Format response data using optimized result
-    const formattedOpdrachten = result.data.map((opdracht) => ({
-      id: opdracht.id,
-      titel: opdracht.titel,
-      omschrijving: opdracht.omschrijving,
-      locatie: opdracht.locatie,
-      postcode: opdracht.postcode,
-      startDatum: opdracht.startDatum,
-      eindDatum: opdracht.eindDatum,
-      uurtarief: opdracht.uurtarief,
-      aantalBeveiligers: opdracht.aantalBeveiligers,
-      vereisten: opdracht.vereisten,
-      status: opdracht.status,
-      targetAudience: opdracht.targetAudience,
-      directZZPAllowed: opdracht.directZZPAllowed,
-      createdAt: opdracht.createdAt,
+    const formattedOpdrachten = result.data.map((opdracht: unknown) => {
+      // Type assertion for the opdracht object from the optimizer
+      const typedOpdracht = opdracht as {
+        id: string;
+        titel: string;
+        omschrijving: string;
+        locatie: string;
+        postcode: string;
+        startDatum: Date;
+        eindDatum: Date;
+        uurtarief: number;
+        aantalBeveiligers: number;
+        vereisten: string[];
+        status: string;
+        targetAudience: string;
+        directZZPAllowed: boolean;
+        createdAt: Date;
+        opdrachtgever?: { bedrijfsnaam: string; contactpersoon?: string };
+        creatorBedrijf?: { bedrijfsnaam: string };
+        sollicitaties?: Array<{ id: string; status: string }>;
+        _count?: { sollicitaties: number };
+      };
 
-      // Client info
-      client: {
-        name:
-          opdracht.opdrachtgever?.bedrijfsnaam ||
-          opdracht.creatorBedrijf?.bedrijfsnaam ||
-          "Onbekend",
-        contact: opdracht.opdrachtgever?.contactpersoon || null,
-      },
+      return {
+        id: typedOpdracht.id,
+        titel: typedOpdracht.titel,
+        omschrijving: typedOpdracht.omschrijving,
+        locatie: typedOpdracht.locatie,
+        postcode: typedOpdracht.postcode,
+        startDatum: typedOpdracht.startDatum,
+        eindDatum: typedOpdracht.eindDatum,
+        uurtarief: typedOpdracht.uurtarief,
+        aantalBeveiligers: typedOpdracht.aantalBeveiligers,
+        vereisten: typedOpdracht.vereisten,
+        status: typedOpdracht.status,
+        targetAudience: typedOpdracht.targetAudience,
+        directZZPAllowed: typedOpdracht.directZZPAllowed,
+        createdAt: typedOpdracht.createdAt,
 
-      // Application status
-      hasApplied: opdracht.sollicitaties?.length > 0 || false,
-      applicationId: opdracht.sollicitaties?.[0]?.id || null,
-      applicationStatus: opdracht.sollicitaties?.[0]?.status || null,
-      totalApplications: opdracht._count?.sollicitaties || 0,
+        // Client info
+        client: {
+          name:
+            typedOpdracht.opdrachtgever?.bedrijfsnaam ||
+            typedOpdracht.creatorBedrijf?.bedrijfsnaam ||
+            "Onbekend",
+          contact: typedOpdracht.opdrachtgever?.contactpersoon || null,
+        },
 
-      // Calculated fields
-      totalValue:
-        Number(opdracht.uurtarief) *
-        opdracht.aantalBeveiligers *
-        (opdracht.eindDatum
-          ? Math.ceil(
-              (opdracht.eindDatum.getTime() - opdracht.startDatum.getTime()) /
-                (1000 * 60 * 60),
-            )
-          : 8),
-      daysUntilStart: Math.ceil(
-        (opdracht.startDatum.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-      ),
-    }));
+        // Application status
+        hasApplied: typedOpdracht.sollicitaties?.length > 0 || false,
+        applicationId: typedOpdracht.sollicitaties?.[0]?.id || null,
+        applicationStatus: typedOpdracht.sollicitaties?.[0]?.status || null,
+        totalApplications: typedOpdracht._count?.sollicitaties || 0,
+
+        // Calculated fields
+        totalValue:
+          Number(typedOpdracht.uurtarief) *
+          typedOpdracht.aantalBeveiligers *
+          (typedOpdracht.eindDatum
+            ? Math.ceil(
+                (typedOpdracht.eindDatum.getTime() -
+                  typedOpdracht.startDatum.getTime()) /
+                  (1000 * 60 * 60),
+              )
+            : 8),
+        daysUntilStart: Math.ceil(
+          (typedOpdracht.startDatum.getTime() - Date.now()) /
+            (1000 * 60 * 60 * 24),
+        ),
+      };
+    });
 
     return NextResponse.json({
       success: true,

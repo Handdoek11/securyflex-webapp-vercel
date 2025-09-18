@@ -1,7 +1,37 @@
+import type {
+  Assignment,
+  Bedrijf,
+  Opdracht,
+  Opdrachtgever,
+  Prisma,
+  TeamLid,
+  User,
+  ZZPProfile,
+} from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+
+// Type definitions
+type OpdrachtWithRelations = Opdracht & {
+  opdrachtgever?: Opdrachtgever | null;
+  bedrijf?: Bedrijf | null;
+  assignments: Array<
+    Assignment & {
+      teamLid: TeamLid & {
+        zzp?: ZZPProfile | null;
+      };
+    }
+  >;
+};
+
+type AssignmentWithTeamLid = Assignment & {
+  teamLid: TeamLid & {
+    zzp?: (ZZPProfile & { userId: string }) | null;
+  };
+  status: string;
+};
 
 // GET /api/reviews - Get reviews
 export async function GET(request: NextRequest) {
@@ -20,7 +50,7 @@ export async function GET(request: NextRequest) {
     const opdrachtId = searchParams.get("opdrachtId");
     const type = searchParams.get("type"); // "given" or "received"
 
-    const where: any = {};
+    const where: Prisma.ReviewWhereInput = {};
 
     if (userId && type === "given") {
       where.reviewerId = userId;
@@ -357,8 +387,8 @@ export async function PATCH(request: NextRequest) {
 
 // Helper function to validate review permission
 function validateReviewPermission(
-  user: any,
-  opdracht: any,
+  user: User,
+  opdracht: OpdrachtWithRelations,
   reviewedId: string,
 ): boolean {
   // Opdrachtgever can review Bedrijf
@@ -380,7 +410,7 @@ function validateReviewPermission(
   // Bedrijf can review assigned ZZP
   if (user.id === opdracht.bedrijf?.userId) {
     const assignedZzp = opdracht.assignments.find(
-      (a: any) =>
+      (a: AssignmentWithTeamLid) =>
         a.teamLid.zzp?.userId === reviewedId && a.status === "COMPLETED",
     );
     if (assignedZzp) return true;
@@ -388,7 +418,8 @@ function validateReviewPermission(
 
   // ZZP can review Bedrijf they worked for
   const userAssignment = opdracht.assignments.find(
-    (a: any) => a.teamLid.zzp?.userId === user.id && a.status === "COMPLETED",
+    (a: AssignmentWithTeamLid) =>
+      a.teamLid.zzp?.userId === user.id && a.status === "COMPLETED",
   );
   if (userAssignment && reviewedId === opdracht.bedrijf?.userId) {
     return true;

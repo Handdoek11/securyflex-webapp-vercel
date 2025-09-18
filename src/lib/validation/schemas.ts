@@ -753,7 +753,13 @@ export const ndNummerAuditLogSchema = z.object({
   expiryDate: z.string().datetime().optional(),
   nextCheckDue: z.string().datetime().optional(),
   complianceNotes: z.string().max(2000).optional(),
-  ipAddress: z.string().ip().optional(),
+  ipAddress: z
+    .string()
+    .regex(
+      /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
+      "Invalid IP address",
+    )
+    .optional(),
   userAgent: z.string().max(500).optional(),
   apiResponse: z.any().optional(),
 });
@@ -952,7 +958,7 @@ function sanitizeObject<T>(obj: T): T {
     return obj.map((item) => sanitizeObject(item)) as T;
   }
 
-  const sanitized: any = {};
+  const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === "string") {
       // Basic HTML tag stripping - for production use a proper sanitizer like DOMPurify
@@ -1044,7 +1050,7 @@ export const apiValidationMiddleware = {
   validateBody:
     <T>(schema: z.ZodSchema<T>) =>
     (
-      req: any,
+      req: Request,
     ): { success: boolean; data?: T; errors?: Record<string, string> } => {
       return validateApiRequest(schema, req.body, { sanitize: true });
     },
@@ -1052,7 +1058,7 @@ export const apiValidationMiddleware = {
   validateQuery:
     <T>(schema: z.ZodSchema<T>) =>
     (
-      req: any,
+      req: Request,
     ): { success: boolean; data?: T; errors?: Record<string, string> } => {
       return validateApiRequest(schema, req.query, { allowPartial: true });
     },
@@ -1060,7 +1066,7 @@ export const apiValidationMiddleware = {
   validateParams:
     <T>(schema: z.ZodSchema<T>) =>
     (
-      req: any,
+      req: Request,
     ): { success: boolean; data?: T; errors?: Record<string, string> } => {
       return validateApiRequest(schema, req.params);
     },

@@ -100,6 +100,7 @@ export async function GET(request: NextRequest) {
           user: {
             select: {
               email: true,
+              phone: true,
               createdAt: true,
             },
           },
@@ -208,13 +209,13 @@ export async function GET(request: NextRequest) {
           id: klant.id,
           bedrijfsnaam: klant.bedrijfsnaam,
           contactpersoon: klant.contactpersoon,
-          telefoon: klant.telefoon,
+          telefoon: klant.user.phone || null,
           email: klant.user.email,
-          adres: klant.adres,
-          postcode: klant.postcode,
-          plaats: klant.plaats,
+          adres: null, // Not available in current schema
+          postcode: null, // Not available in current schema
+          plaats: null, // Not available in current schema
           kvkNummer: klant.kvkNummer,
-          btwNummer: klant.btwNummer,
+          btwNummer: null, // Not available in current schema
 
           // Statistics
           totalOpdrachten,
@@ -239,7 +240,7 @@ export async function GET(request: NextRequest) {
           primaryContact: {
             name: klant.contactpersoon,
             email: klant.user.email,
-            phone: klant.telefoon,
+            phone: klant.user.phone || null,
           },
         };
       }),
@@ -308,7 +309,7 @@ export async function GET(request: NextRequest) {
 const ClientUpdateSchema = z.object({
   clientId: z.string().min(1, "Client ID is verplicht"),
   action: z.enum(["add_note", "update_contact", "mark_favorite"]),
-  data: z.record(z.any()), // Flexible data based on action
+  data: z.record(z.string(), z.any()), // Flexible data based on action
 });
 
 export async function POST(request: NextRequest) {
@@ -375,7 +376,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let result;
+    let result: unknown;
 
     switch (action) {
       case "add_note": {

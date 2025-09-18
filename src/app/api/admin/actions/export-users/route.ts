@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { isAdminEmail, usersToCSV } from "@/lib/admin/auth";
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // GET /api/admin/actions/export-users - Export users to CSV
@@ -37,7 +37,7 @@ export async function GET() {
     console.error("Export users error:", error);
     return NextResponse.json(
       { error: "Failed to export users" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

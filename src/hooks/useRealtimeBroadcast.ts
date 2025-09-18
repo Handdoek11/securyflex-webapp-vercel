@@ -8,6 +8,47 @@ import {
   type BroadcastPayload,
 } from "@/lib/supabase/broadcast";
 
+// Type definitions for callback parameters
+interface NotificationData {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  category: string;
+  userId: string;
+  isRead: boolean;
+  createdAt: string;
+  [key: string]: unknown;
+}
+
+interface MessageData {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  timestamp: string;
+  isRead: boolean;
+  [key: string]: unknown;
+}
+
+interface ShiftData {
+  id: string;
+  titel: string;
+  status: string;
+  opdrachtgeverId: string;
+  startDatum: string;
+  eindDatum: string;
+  [key: string]: unknown;
+}
+
+interface DashboardStats {
+  activeOpdrachten: number;
+  totalRevenue: number;
+  teamSize: number;
+  weeklyHours: number;
+  [key: string]: unknown;
+}
+
 interface UseRealtimeBroadcastOptions {
   channels: string[];
   events?: BroadcastEvent[];
@@ -205,7 +246,7 @@ export function usePaymentBroadcast(
  */
 export function useNotificationBroadcast(
   userId: string,
-  onNewNotification?: (notification: any) => void,
+  onNewNotification?: (notification: NotificationData) => void,
 ) {
   return useRealtimeBroadcast({
     channels: [`user:${userId}:notifications`],
@@ -224,7 +265,7 @@ export function useNotificationBroadcast(
 export function useMessageBroadcast(
   conversationId: string,
   userId: string,
-  onNewMessage?: (message: any) => void,
+  onNewMessage?: (message: MessageData) => void,
 ) {
   return useRealtimeBroadcast({
     channels: [`conversation:${conversationId}`, `messages:${userId}`],
@@ -265,7 +306,7 @@ export function useOpdrachtgeverShiftsBroadcast(
  */
 export function useOpdrachtgeverOwnShiftsBroadcast(
   opdrachtgeverId: string,
-  onShiftUpdate?: (shift: any, eventType: BroadcastEvent) => void,
+  onShiftUpdate?: (shift: ShiftData, eventType: BroadcastEvent) => void,
 ) {
   return useRealtimeBroadcast({
     channels: [`opdrachtgever:${opdrachtgeverId}`],
@@ -309,7 +350,7 @@ export function useOpdrachtgeverSollicitatieBroadcast(
  */
 export function useOpdrachtgeverDashboardBroadcast(
   opdrachtgeverId: string,
-  onStatsUpdate?: (stats: any) => void,
+  onStatsUpdate?: (stats: DashboardStats) => void,
 ) {
   return useRealtimeBroadcast({
     channels: [
@@ -335,7 +376,7 @@ export function useOpdrachtgeverDashboardBroadcast(
  */
 export function useOpdrachtgeverNotificationsBroadcast(
   userId: string,
-  onNewNotification?: (notification: any) => void,
+  onNewNotification?: (notification: NotificationData) => void,
   onNotificationRead?: (notificationId: string) => void,
 ) {
   return useRealtimeBroadcast({

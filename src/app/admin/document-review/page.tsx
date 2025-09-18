@@ -12,7 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -87,7 +87,7 @@ export default function DocumentReviewPage() {
     }
   }, [status, isAdmin]);
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
       setError(null);
       const params = new URLSearchParams({
@@ -122,7 +122,7 @@ export default function DocumentReviewPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, typeFilter]);
 
   useEffect(() => {
     if (isAdmin && status === "authenticated") {

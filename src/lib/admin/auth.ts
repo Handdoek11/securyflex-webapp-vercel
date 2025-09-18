@@ -4,7 +4,8 @@ import { env } from "@/lib/env";
  * Get admin emails from environment variable
  */
 export function getAdminEmails(): string[] {
-  const adminEmails = env.ADMIN_EMAILS || "stef@securyflex.com,robert@securyflex.com";
+  const adminEmails =
+    env.ADMIN_EMAILS || "stef@securyflex.com,robert@securyflex.com";
   return adminEmails
     .split(",")
     .map((email) => email.trim().toLowerCase())
@@ -99,8 +100,16 @@ export function formatCurrency(amount: number): string {
  * Export users to CSV format
  */
 export function usersToCSV(users: any[]): string {
-  const headers = ["ID", "Email", "Name", "Role", "Status", "Created", "Verified"];
-  const rows = users.map(user => [
+  const headers = [
+    "ID",
+    "Email",
+    "Name",
+    "Role",
+    "Status",
+    "Created",
+    "Verified",
+  ];
+  const rows = users.map((user) => [
     user.id,
     user.email,
     user.name,
@@ -112,7 +121,7 @@ export function usersToCSV(users: any[]): string {
 
   return [
     headers.join(","),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
   ].join("\n");
 }
 
@@ -121,7 +130,7 @@ export function usersToCSV(users: any[]): string {
  */
 export function transactionsToCSV(transactions: any[]): string {
   const headers = ["ID", "Date", "Amount", "Status", "Type", "User"];
-  const rows = transactions.map(tx => [
+  const rows = transactions.map((tx) => [
     tx.id,
     new Date(tx.createdAt).toLocaleDateString("nl-NL"),
     tx.bedrag,
@@ -132,6 +141,6 @@ export function transactionsToCSV(transactions: any[]): string {
 
   return [
     headers.join(","),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
   ].join("\n");
 }
