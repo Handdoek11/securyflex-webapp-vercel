@@ -130,7 +130,10 @@ export const subscribeToUserStatusUpdates = (
 /**
  * Track user presence (online/offline status)
  */
-export const trackUserPresence = (userId: string, metadata?: Record<string, unknown>) => {
+export const trackUserPresence = (
+  userId: string,
+  metadata?: Record<string, unknown>,
+) => {
   const channel = supabase.channel("presence");
 
   channel
@@ -173,7 +176,11 @@ export const getOnlineUsers = (channelName: string = "presence") => {
 /**
  * Send a broadcast message (e.g., notifications)
  */
-export const sendBroadcast = (channel: string, event: string, payload: Record<string, unknown>) => {
+export const sendBroadcast = (
+  channel: string,
+  event: string,
+  payload: Record<string, unknown>,
+) => {
   return supabase.channel(channel).send({
     type: "broadcast",
     event,

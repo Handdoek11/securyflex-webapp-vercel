@@ -1,18 +1,16 @@
 {
   "recommendations": [
-    // Essential for SecuryFlex development
-    "dbaeumer.vscode-eslint", // ESLint
-    "esbenp.prettier-vscode", // Prettier
-    "bradlc.vscode-tailwindcss", // Tailwind CSS IntelliSense
-    "ms-vscode.vscode-typescript-next", // TypeScript
+    // === CORE BIOME ===
+    "biomejs.biome", // Biome formatter + linter
 
-    // Additional helpful extensions
-    "prisma.prisma", // Prisma (if using)
-    "mtxr.sqltools", // SQL Tools
-    "mtxr.sqltools-driver-pg", // PostgreSQL driver
+    // === ESSENTIAL DEVELOPMENT ===
+    "bradlc.vscode-tailwindcss", // Tailwind CSS IntelliSense
+    "prisma.prisma", // Prisma support
+    "usernamehw.errorlens", // Error Lens for inline diagnostics
+
+    // === DEVELOPMENT TOOLS ===
     "GitHub.copilot", // GitHub Copilot
     "eamodio.gitlens", // GitLens
-    "usernamehw.errorlens", // Error Lens
     "formulahendry.auto-rename-tag", // Auto Rename Tag
     "naumovs.color-highlight", // Color Highlight
     "aaron-bond.better-comments", // Better Comments
@@ -21,6 +19,13 @@
     "mikestead.dotenv", // DotENV
     "christian-kohler.path-intellisense", // Path Intellisense
     "PKief.material-icon-theme", // Material Icon Theme
-    "zixuanchen.vitest-explorer" // Vitest Explorer
+    "zixuanchen.vitest-explorer", // Vitest Explorer
+    "mtxr.sqltools", // SQL Tools
+    "mtxr.sqltools-driver-pg" // PostgreSQL driver
+  ],
+  "unwantedRecommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next"
   ]
 }

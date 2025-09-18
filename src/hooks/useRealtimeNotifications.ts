@@ -140,10 +140,12 @@ export function useRealtimeNotifications(userId: string | undefined) {
         const response = await fetch(`/api/notifications?userId=${userId}`);
         if (response.ok) {
           const data = await response.json();
-          const notifications = data.notifications.map((n: Record<string, unknown>) => ({
-            ...n,
-            timestamp: new Date(n.timestamp),
-          }));
+          const notifications = data.notifications.map(
+            (n: Record<string, unknown>) => ({
+              ...n,
+              timestamp: new Date(n.timestamp),
+            }),
+          );
 
           setState({
             notifications,

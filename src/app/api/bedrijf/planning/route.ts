@@ -182,9 +182,9 @@ export async function GET(request: NextRequest) {
       assignedTeam: opdracht.sollicitaties.map((sollicitatie) => ({
         id: sollicitatie.id,
         zzpId: sollicitatie.zzpId,
-        name: `${sollicitatie.zzp?.voornaam || ''} ${sollicitatie.zzp?.achternaam || ''}`,
+        name: `${sollicitatie.zzp?.voornaam || ""} ${sollicitatie.zzp?.achternaam || ""}`,
         phone: sollicitatie.zzp?.user?.phone || null,
-        email: sollicitatie.zzp?.user?.email || '',
+        email: sollicitatie.zzp?.user?.email || "",
         status: sollicitatie.status,
       })),
 

@@ -50,7 +50,9 @@
       "Bash(find:*)",
       "Bash(npx biome check:*)",
       "WebFetch(domain:www.hostnet.nl)",
-      "Bash(code:*)"
+      "Bash(code:*)",
+      "Bash(npx biome migrate:*)",
+      "Bash(npx biome format:*)"
     ],
     "deny": [],
     "ask": []

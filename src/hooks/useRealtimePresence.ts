@@ -20,7 +20,10 @@ interface OnlineUser {
  * Hook voor het bijhouden van online/offline status van gebruikers
  * Handig voor het tonen van beschikbare beveiligers
  */
-export function useRealtimePresence(userId?: string, metadata?: Record<string, unknown>) {
+export function useRealtimePresence(
+  userId?: string,
+  metadata?: Record<string, unknown>,
+) {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [isTracking, setIsTracking] = useState(false);
 

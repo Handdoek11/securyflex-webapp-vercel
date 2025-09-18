@@ -525,7 +525,10 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 // PATCH /api/opdrachten/[id]/solliciteer - Accept/reject sollicitatie
-export async function PATCH(request: NextRequest, { params: _params }: RouteParams) {
+export async function PATCH(
+  request: NextRequest,
+  { params: _params }: RouteParams,
+) {
   try {
     const session = await auth();
 

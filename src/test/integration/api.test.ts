@@ -49,11 +49,14 @@ vi.mock('@/lib/auth', () => ({
 }))
 
 describe('API Integration Tests', () => {
-  const mockPrisma = vi.mocked(await import('@/lib/prisma')).default
-  const mockAuth = vi.mocked((await import('@/lib/auth')).auth)
+  // Use dynamic imports in beforeAll instead of top-level await
+  let mockPrisma: any
+  let mockAuth: any
 
-  beforeAll(() => {
-    // Setup is now complete
+  beforeAll(async () => {
+    // Initialize mocks with dynamic imports
+    mockPrisma = vi.mocked((await import('@/lib/prisma')).default)
+    mockAuth = vi.mocked((await import('@/lib/auth')).auth)
   })
 
   beforeEach(() => {

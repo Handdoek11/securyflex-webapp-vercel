@@ -1,12 +1,19 @@
 {
-  // Biome als default formatter en linter
+  // === DISABLE CONFLICTING SERVICES ===
+  "typescript.validate.enable": false,
+  "javascript.validate.enable": false,
+  "typescript.format.enable": false,
+  "javascript.format.enable": false,
+
+  // === BIOME AS PRIMARY TOOL ===
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "biomejs.biome",
   "editor.codeActionsOnSave": {
-    "source.fixAll.biome": "explicit"
+    "quickfix.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
   },
 
-  // Disable andere formatters voor JS/TS files
+  // === LANGUAGE SPECIFIC ===
   "[javascript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
@@ -22,10 +29,16 @@
   "[json]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
+  "[css]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
 
-  // TypeScript settings
-  "typescript.preferences.importModuleSpecifier": "relative",
-  "typescript.updateImportsOnFileMove.enabled": "always",
+  // === BIOME LSP SETTINGS ===
+  "biome.enabled": true,
+  "biome.lsp.trace.server": "verbose",
+
+  // === FORCE WORKSPACE TYPESCRIPT ===
+  "typescript.tsdk": "./node_modules/typescript/lib",
 
   // Tailwind CSS settings
   "tailwindCSS.experimental.classRegex": [
