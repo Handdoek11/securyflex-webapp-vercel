@@ -44,12 +44,6 @@ function getStatusBadge(status: string) {
           Betwist
         </Badge>
       );
-    case "DRAFT":
-      return (
-        <Badge variant="outline" className="text-xs">
-          Concept
-        </Badge>
-      );
     default:
       return null;
   }

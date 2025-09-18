@@ -310,7 +310,7 @@ export function ActiveShiftsOverview({
                   {/* Finqle Status */}
                   {shift.finqleStatus === "direct_payment_available" && (
                     <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="success" className="text-xs">
+                      <Badge variant="default" className="text-xs">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Direct payment beschikbaar
                       </Badge>

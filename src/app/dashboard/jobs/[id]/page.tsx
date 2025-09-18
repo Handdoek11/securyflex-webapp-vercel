@@ -62,10 +62,6 @@ export default function JobDetailPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [_showApplyModal, setShowApplyModal] = useState(false);
 
-  useEffect(() => {
-    fetchJobDetails();
-  }, [fetchJobDetails]);
-
   const fetchJobDetails = async () => {
     try {
       const response = await fetch(`/api/jobs/${jobId}`);
@@ -82,6 +78,10 @@ export default function JobDetailPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchJobDetails();
+  }, []);
 
   const handleQuickApply = async () => {
     if (!session) {
@@ -312,7 +312,7 @@ export default function JobDetailPage() {
               <Badge
                 variant={
                   job.applicationStatus === "ACCEPTED"
-                    ? "success"
+                    ? "default"
                     : job.applicationStatus === "REJECTED"
                       ? "destructive"
                       : "default"

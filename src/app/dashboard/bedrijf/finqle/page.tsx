@@ -175,7 +175,7 @@ export default function BedrijfFinqlePage() {
     switch (status) {
       case "completed":
       case "approved":
-        return <Badge variant="success">Voltooid</Badge>;
+        return <Badge variant="default">Voltooid</Badge>;
       case "pending":
         return <Badge variant="warning">In Behandeling</Badge>;
       case "processing":
@@ -231,7 +231,7 @@ export default function BedrijfFinqlePage() {
               Real-time kredietstatus via Finqle
             </p>
           </div>
-          <Badge variant="success" className="gap-1">
+          <Badge variant="default" className="gap-1">
             <CheckCircle className="h-3 w-3" />
             Actief
           </Badge>

@@ -320,7 +320,7 @@ export default function BedrijfPlanningPage() {
             <div className="flex items-center gap-2">
               <Select
                 value={viewMode}
-                onValueChange={(value) => setViewMode(value)}
+                onValueChange={(value) => setViewMode(value as "week" | "day")}
               >
                 <SelectTrigger className="w-32">
                   <SelectValue />
@@ -494,7 +494,7 @@ export default function BedrijfPlanningPage() {
                             <Badge
                               variant={
                                 shift.finqleStatus === "paid"
-                                  ? "success"
+                                  ? "default"
                                   : "secondary"
                               }
                               className="text-xs mt-1"

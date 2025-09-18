@@ -48,7 +48,8 @@
       "Bash(npx tsx:*)",
       "Bash(npm run test:*)",
       "Bash(find:*)",
-      "Bash(npx biome check:*)"
+      "Bash(npx biome check:*)",
+      "WebFetch(domain:www.hostnet.nl)"
     ],
     "deny": [],
     "ask": []

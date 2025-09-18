@@ -398,24 +398,21 @@ export const bedrijfValidationSchemas = {
       .string()
       .min(3, "Titel moet minimaal 3 karakters bevatten")
       .max(200),
-    omschrijving: z
+    beschrijving: z
       .string()
-      .min(10, "Omschrijving moet minimaal 10 karakters bevatten"),
+      .min(10, "Beschrijving moet minimaal 10 karakters bevatten"),
     locatie: z.string().min(2, "Locatie is verplicht"),
-    postcode: z
-      .string()
-      .regex(/^\d{4}[A-Z]{2}$/i, "Ongeldige Nederlandse postcode"),
     startDatum: z.string().datetime("Ongeldige startdatum"),
     eindDatum: z.string().datetime("Ongeldige einddatum"),
-    uurloon: z
+    uurtarief: z
       .number()
-      .min(0.01, "Uurloon moet hoger zijn dan €0.01")
-      .max(200, "Uurloon mag niet hoger zijn dan €200"),
-    aantalPersonen: z
+      .min(0.01, "Uurtarief moet hoger zijn dan €0.01")
+      .max(200, "Uurtarief mag niet hoger zijn dan €200"),
+    aantalBeveiligers: z
       .number()
       .int()
-      .min(1, "Minimaal 1 persoon vereist")
-      .max(50, "Maximaal 50 personen toegestaan"),
+      .min(1, "Minimaal 1 beveiliger vereist")
+      .max(50, "Maximaal 50 beveiligers toegestaan"),
     vereisten: z.array(z.string()).max(10, "Maximaal 10 vereisten toegestaan"),
     targetAudience: z.enum(["ALLEEN_ZZP", "ALLEEN_BEDRIJVEN", "BEIDEN"]),
     directZZPAllowed: z.boolean(),

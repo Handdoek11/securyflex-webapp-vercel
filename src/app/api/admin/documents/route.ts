@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, VerificatieStatus, DocumentType } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { isAdminEmail } from "@/lib/admin/auth";
 import { auth } from "@/lib/auth";
@@ -37,11 +37,11 @@ export async function GET(request: NextRequest) {
     const where: Prisma.DocumentVerificatieWhereInput = {};
 
     if (status) {
-      where.status = status;
+      where.status = status as VerificatieStatus;
     }
 
     if (documentType) {
-      where.documentType = documentType;
+      where.documentType = documentType as DocumentType;
     }
 
     if (userId) {

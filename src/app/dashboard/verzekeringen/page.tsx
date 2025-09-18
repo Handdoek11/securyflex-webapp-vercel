@@ -529,7 +529,7 @@ export default function VerzekeringenPage() {
                             )}
                           </div>
                           {product.platformKorting > 0 && (
-                            <Badge variant="success" className="ml-2">
+                            <Badge variant="default" className="ml-2">
                               {product.platformKorting}% korting
                             </Badge>
                           )}

@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, SollicitatieStatus } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       };
 
       if (status !== "all") {
-        where.status = status.toUpperCase();
+        where.status = status.toUpperCase() as SollicitatieStatus;
       }
 
       // Get applications with pagination

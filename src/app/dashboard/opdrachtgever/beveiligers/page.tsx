@@ -69,6 +69,28 @@ interface Beveiliger {
   availability?: string;
   responseTime?: string;
   certificates?: string[];
+  // Additional properties used in the component
+  specialization?: string;
+  status?: string;
+  isOnline?: boolean;
+  availabilityText?: string;
+  isFavoriteClient?: boolean;
+  distance?: number;
+  shiftsCompleted?: number;
+  isNewTalent?: boolean;
+  recentWork?: string;
+  reliability?: number;
+  nextAvailable?: string;
+  recentAchievement?: string;
+  certifications?: string[];
+  documents?: {
+    id?: boolean;
+    vog?: boolean;
+    diploma?: boolean;
+    vogExpiresInDays?: number;
+  };
+  isFavorite?: boolean;
+  isAvailable?: boolean;
 }
 
 function BeveiligersCard({

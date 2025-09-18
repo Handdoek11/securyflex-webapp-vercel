@@ -299,7 +299,7 @@ export default function BedrijfBeheerPage() {
                 <CreditCard className="h-5 w-5" />
                 Finqle Integratie
               </h3>
-              <Badge variant="success" className="gap-1">
+              <Badge variant="default" className="gap-1">
                 <CheckCircle className="h-3 w-3" />
                 Verbonden
               </Badge>

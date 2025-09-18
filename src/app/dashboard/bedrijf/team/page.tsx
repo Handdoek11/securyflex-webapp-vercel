@@ -207,7 +207,7 @@ export default function BedrijfTeamPage() {
   const getFinqleStatusBadge = (status: TeamMember["finqleStatus"]) => {
     switch (status) {
       case "onboarded":
-        return <Badge variant="success">Finqle Actief</Badge>;
+        return <Badge variant="default">Finqle Actief</Badge>;
       case "pending":
         return <Badge variant="warning">Finqle In Behandeling</Badge>;
       case "not_started":

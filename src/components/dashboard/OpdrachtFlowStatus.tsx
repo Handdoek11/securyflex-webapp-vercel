@@ -375,7 +375,7 @@ export function OpdrachtFlowStatus({
                         </Badge>
                       )}
                       {isCompleted && (
-                        <Badge variant="success">
+                        <Badge variant="default">
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Voltooid
                         </Badge>

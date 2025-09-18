@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
                 user: {
                   select: {
                     email: true,
+                    phone: true,
                   },
                 },
               },
@@ -153,11 +154,11 @@ export async function GET(request: NextRequest) {
         voornaam: true,
         achternaam: true,
         specialisaties: true,
-        ervaring: true,
         beschikbaarheid: true,
         user: {
           select: {
             email: true,
+            phone: true,
           },
         },
       },
@@ -181,9 +182,9 @@ export async function GET(request: NextRequest) {
       assignedTeam: opdracht.sollicitaties.map((sollicitatie) => ({
         id: sollicitatie.id,
         zzpId: sollicitatie.zzpId,
-        name: `${sollicitatie.zzp.voornaam} ${sollicitatie.zzp.achternaam}`,
-        phone: sollicitatie.zzp.user.phone || null,
-        email: sollicitatie.zzp.user.email,
+        name: `${sollicitatie.zzp?.voornaam || ''} ${sollicitatie.zzp?.achternaam || ''}`,
+        phone: sollicitatie.zzp?.user?.phone || null,
+        email: sollicitatie.zzp?.user?.email || '',
         status: sollicitatie.status,
       })),
 
@@ -311,7 +312,7 @@ export async function POST(request: NextRequest) {
     const existingAssignments = await prisma.opdrachtSollicitatie.findMany({
       where: {
         opdrachtId,
-        zzpProfileId: { in: zzpProfileIds },
+        zzpId: { in: zzpProfileIds },
         status: { in: ["ACCEPTED", "PENDING"] },
       },
     });
@@ -332,12 +333,11 @@ export async function POST(request: NextRequest) {
         prisma.opdrachtSollicitatie.create({
           data: {
             opdrachtId,
-            zzpProfileId,
+            zzpId: zzpProfileId,
             motivatie: notities || "Toegewezen door beveiligingsbedrijf",
             status: "ACCEPTED",
-            acceptedAt: new Date(),
-            startTijd: startTijd ? new Date(startTijd) : undefined,
-            eindTijd: eindTijd ? new Date(eindTijd) : undefined,
+            beoordeeldOp: new Date(),
+            sollicitantType: "ZZP_BEVEILIGER",
           },
           include: {
             zzp: {
@@ -347,6 +347,7 @@ export async function POST(request: NextRequest) {
                 user: {
                   select: {
                     email: true,
+                    phone: true,
                   },
                 },
               },
@@ -389,11 +390,11 @@ export async function POST(request: NextRequest) {
       data: {
         assignments: assignments.map((assignment) => ({
           id: assignment.id,
-          zzpName: `${assignment.zzp.voornaam} ${assignment.zzp.achternaam}`,
-          zzpPhone: assignment.zzp.user.phone || null,
-          zzpEmail: assignment.zzp.user.email,
-          startTijd: assignment.startTijd,
-          eindTijd: assignment.eindTijd,
+          zzpId: assignment.zzpId,
+          zzpName: `${assignment.zzp?.voornaam} ${assignment.zzp?.achternaam}`,
+          zzpPhone: assignment.zzp?.user?.phone || null,
+          zzpEmail: assignment.zzp?.user?.email,
+          status: assignment.status,
         })),
         opdracht: {
           id: opdracht.id,

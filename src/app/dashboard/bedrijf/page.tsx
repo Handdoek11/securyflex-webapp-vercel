@@ -572,7 +572,7 @@ export default function BedrijfDashboardPage() {
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">96.2%</span>
-                    <Badge variant="success" className="text-xs">
+                    <Badge variant="default" className="text-xs">
                       <TrendingUp className="h-3 w-3" />
                     </Badge>
                   </div>
@@ -592,7 +592,7 @@ export default function BedrijfDashboardPage() {
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">0.8%</span>
-                    <Badge variant="success" className="text-xs">
+                    <Badge variant="default" className="text-xs">
                       Laag
                     </Badge>
                   </div>

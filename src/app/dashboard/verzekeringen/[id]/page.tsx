@@ -560,7 +560,7 @@ export default function VerzekeringDetailPage() {
                           €{premie.finaal}
                         </span>
                         {premie.totaalKorting > 0 && (
-                          <Badge variant="success" className="ml-2">
+                          <Badge variant="default" className="ml-2">
                             {premie.totaalKorting}% korting
                           </Badge>
                         )}

@@ -47,9 +47,8 @@ export const GET = withBedrijfSecurity(
       const typedOpdracht = opdracht as {
         id: string;
         titel: string;
-        omschrijving: string;
+        beschrijving: string;
         locatie: string;
-        postcode: string;
         startDatum: Date;
         eindDatum: Date;
         uurtarief: number;
@@ -68,9 +67,8 @@ export const GET = withBedrijfSecurity(
       return {
         id: typedOpdracht.id,
         titel: typedOpdracht.titel,
-        omschrijving: typedOpdracht.omschrijving,
+        beschrijving: typedOpdracht.beschrijving,
         locatie: typedOpdracht.locatie,
-        postcode: typedOpdracht.postcode,
         startDatum: typedOpdracht.startDatum,
         eindDatum: typedOpdracht.eindDatum,
         uurtarief: typedOpdracht.uurtarief,
@@ -91,7 +89,7 @@ export const GET = withBedrijfSecurity(
         },
 
         // Application status
-        hasApplied: typedOpdracht.sollicitaties?.length > 0 || false,
+        hasApplied: (typedOpdracht.sollicitaties?.length ?? 0) > 0,
         applicationId: typedOpdracht.sollicitaties?.[0]?.id || null,
         applicationStatus: typedOpdracht.sollicitaties?.[0]?.status || null,
         totalApplications: typedOpdracht._count?.sollicitaties || 0,
@@ -161,9 +159,8 @@ export const POST = withBedrijfSecurity(
         prisma.opdracht.create({
           data: {
             titel: validatedData.titel,
-            omschrijving: validatedData.omschrijving,
+            beschrijving: validatedData.beschrijving,
             locatie: validatedData.locatie,
-            postcode: validatedData.postcode,
             startDatum: new Date(validatedData.startDatum),
             eindDatum: new Date(validatedData.eindDatum),
             uurtarief: validatedData.uurtarief,
@@ -175,9 +172,10 @@ export const POST = withBedrijfSecurity(
 
             // Set creator as bedrijf
             creatorType: CreatorType.BEDRIJF,
+            creatorId: bedrijfProfile.userId,
             creatorBedrijfId: bedrijfProfile.id,
 
-            status: validatedData.isDraft ? "DRAFT" : "OPEN",
+            status: "OPEN",
           },
           include: {
             creatorBedrijf: {

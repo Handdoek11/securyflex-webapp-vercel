@@ -371,7 +371,7 @@ export default function BedrijfOpdrachtPlaatsenPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="direct-payment">Finqle Direct Payment</Label>
-                  <Badge variant="success" className="text-xs">
+                  <Badge variant="default" className="text-xs">
                     Aanbevolen
                   </Badge>
                 </div>

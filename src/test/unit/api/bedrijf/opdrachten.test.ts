@@ -277,7 +277,7 @@ describe("Bedrijf Opdrachten API", () => {
         ...draftData,
         startDatum: new Date(draftData.startDatum),
         eindDatum: new Date(draftData.eindDatum),
-        status: "DRAFT",
+        status: "OPEN",
         creatorType: "BEDRIJF",
         creatorBedrijfId: mockBedrijfProfile.id,
         createdAt: new Date(),
@@ -290,12 +290,12 @@ describe("Bedrijf Opdrachten API", () => {
 
       const result = await mockPrisma.opdracht.create({
         data: expect.objectContaining({
-          status: "DRAFT",
+          status: "OPEN",
         }),
         include: expect.any(Object),
       });
 
-      expect(result.status).toBe("DRAFT");
+      expect(result.status).toBe("OPEN");
     });
 
     it("should validate required fields", async () => {

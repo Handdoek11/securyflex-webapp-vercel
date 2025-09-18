@@ -210,7 +210,7 @@ async function handlePaymentInitiated(payload: FinqleWebhookPayload) {
       });
 
       // Broadcast payment status update
-      await broadcastPaymentUpdate(betaling.zzpProfileId, {
+      await broadcastPaymentUpdate(betaling.ontvangerId, {
         type: "payment_initiated",
         paymentId: payment_id,
         amount: amount,
@@ -231,13 +231,6 @@ async function handlePaymentCompleted(payload: FinqleWebhookPayload) {
       where: {
         finqleReferentie: payment_id,
       },
-      include: {
-        zzpProfile: {
-          include: {
-            user: true,
-          },
-        },
-      },
     });
 
     if (betaling) {
@@ -245,13 +238,13 @@ async function handlePaymentCompleted(payload: FinqleWebhookPayload) {
         where: { id: betaling.id },
         data: {
           status: "PAID",
-          uitbetalingsDatum: new Date(),
-          finqlePaymentId: payment_id,
+          paidAt: new Date(),
+          finqleReferentie: payment_id,
         },
       });
 
       // Broadcast successful payment
-      await broadcastPaymentUpdate(betaling.zzpProfileId, {
+      await broadcastPaymentUpdate(betaling.ontvangerId, {
         type: "payment_completed",
         paymentId: payment_id,
         amount: Number(amount),
@@ -259,7 +252,7 @@ async function handlePaymentCompleted(payload: FinqleWebhookPayload) {
       });
 
       // Create notification for ZZP
-      await createPaymentNotification(betaling.zzpProfile.user.id, {
+      await createPaymentNotification(betaling.ontvangerId, {
         type: "payment_received",
         title: "Betaling ontvangen",
         message: `Je uitbetaling van €${amount} is succesvol verwerkt`,
@@ -280,13 +273,6 @@ async function handlePaymentFailed(payload: FinqleWebhookPayload) {
       where: {
         finqleReferentie: payment_id,
       },
-      include: {
-        zzpProfile: {
-          include: {
-            user: true,
-          },
-        },
-      },
     });
 
     if (betaling) {
@@ -294,13 +280,12 @@ async function handlePaymentFailed(payload: FinqleWebhookPayload) {
         where: { id: betaling.id },
         data: {
           status: "FAILED",
-          finqlePaymentId: payment_id,
-          opmerkingen: `Payment failed: ${error_message} (${error_code})`,
+          finqleReferentie: payment_id,
         },
       });
 
       // Broadcast payment failure
-      await broadcastPaymentUpdate(betaling.zzpProfileId, {
+      await broadcastPaymentUpdate(betaling.ontvangerId, {
         type: "payment_failed",
         paymentId: payment_id,
         status: "failed",
@@ -308,7 +293,7 @@ async function handlePaymentFailed(payload: FinqleWebhookPayload) {
       });
 
       // Create notification for ZZP
-      await createPaymentNotification(betaling.zzpProfile.user.id, {
+      await createPaymentNotification(betaling.ontvangerId, {
         type: "payment_failed",
         title: "Betaling mislukt",
         message: `Je uitbetaling is mislukt: ${error_message}. Controleer je bankgegevens.`,
@@ -414,11 +399,11 @@ async function handleBatchPayoutCompleted(payload: FinqleWebhookPayload) {
     // Update all payments in this batch
     await prisma.betaling.updateMany({
       where: {
-        finqleBatchId: batch_id,
+        finqleReferentie: batch_id,
       },
       data: {
-        status: "BETAALD",
-        uitbetalingsDatum: new Date(),
+        status: "PAID",
+        paidAt: new Date(),
       },
     });
 
@@ -463,12 +448,12 @@ interface PaymentUpdate {
 }
 
 async function broadcastPaymentUpdate(
-  zzpProfileId: string,
+  ontvangerId: string,
   update: PaymentUpdate,
 ) {
   try {
     await broadcastOpdrachtEvent(BroadcastEvent.PAYMENT_COMPLETED, {
-      zzpProfileId,
+      ontvangerId,
       ...update,
     });
   } catch (error) {

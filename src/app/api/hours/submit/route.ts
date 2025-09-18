@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
             gte: startDate,
             lte: endDate,
           },
-          status: { in: ["DRAFT", "PENDING"] }, // Only submit draft or pending entries
+          status: { in: ["PENDING"] }, // Only submit draft or pending entries
         },
       });
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
             gte: startDate,
             lte: endDate,
           },
-          status: { in: ["DRAFT", "PENDING"] },
+          status: { in: ["PENDING"] },
         },
         data: {
           status: "PENDING",

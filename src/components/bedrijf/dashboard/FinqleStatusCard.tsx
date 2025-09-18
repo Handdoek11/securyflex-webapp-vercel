@@ -156,7 +156,7 @@ export function FinqleStatusCard({
         </h3>
         <div className="flex items-center gap-2">
           {isConnected ? (
-            <Badge variant="success" className="gap-1">
+            <Badge variant="default" className="gap-1">
               <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
               Verbonden
             </Badge>
@@ -301,7 +301,7 @@ export function FinqleStatusCard({
               <CheckCircle className="h-4 w-4 text-green-600" />
               <span className="text-sm font-medium">Direct Payment actief</span>
             </div>
-            <Badge variant="success" className="text-xs">
+            <Badge variant="default" className="text-xs">
               Opt-in: 68%
             </Badge>
           </div>

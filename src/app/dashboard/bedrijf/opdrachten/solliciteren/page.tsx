@@ -202,7 +202,7 @@ export default function BedrijfOpdrachtSolliciterenPage() {
 
   const getMatchBadge = (score: number) => {
     if (score >= 90) {
-      return <Badge variant="success">Perfect match</Badge>;
+      return <Badge variant="default">Perfect match</Badge>;
     } else if (score >= 75) {
       return <Badge variant="secondary">Goede match</Badge>;
     }
@@ -239,7 +239,7 @@ export default function BedrijfOpdrachtSolliciterenPage() {
       headerActions={
         <div className="flex items-center gap-2">
           <Badge variant="outline">{opdrachten.length} opdrachten</Badge>
-          <Badge variant="success">
+          <Badge variant="default">
             {teamMembers.filter((m) => m.available).length} beschikbaar
           </Badge>
         </div>
@@ -403,7 +403,7 @@ export default function BedrijfOpdrachtSolliciterenPage() {
                       </p>
                     </div>
                     {opdracht.directPayment && (
-                      <Badge variant="success" className="gap-1">
+                      <Badge variant="default" className="gap-1">
                         <CheckCircle className="h-3 w-3" />
                         Direct Payment
                       </Badge>

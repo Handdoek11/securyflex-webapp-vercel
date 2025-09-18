@@ -380,8 +380,8 @@ export class BedrijfQueryOptimizer {
             id: true,
           },
           _sum: {
-            uurloon: true,
-            aantalPersonen: true,
+            uurtarief: true,
+            aantalBeveiligers: true,
           },
         });
 
@@ -447,8 +447,8 @@ export class BedrijfQueryOptimizer {
                 titel: true,
                 status: true,
                 startDatum: true,
-                uurloon: true,
-                aantalPersonen: true,
+                uurtarief: true,
+                aantalBeveiligers: true,
                 createdAt: true,
               },
               orderBy: { createdAt: "desc" },
@@ -489,8 +489,8 @@ export class BedrijfQueryOptimizer {
               this.prisma.$queryRaw`
             SELECT
               COUNT(*)::int as total_opdrachten,
-              SUM("uurloon" * "aantalPersonen")::int as estimated_revenue,
-              AVG("uurloon")::float as avg_hourly_rate
+              SUM("uurtarief" * "aantalBeveiligers")::int as estimated_revenue,
+              AVG("uurtarief")::float as avg_hourly_rate
             FROM "Opdracht"
             WHERE (
               ("creatorType" = 'BEDRIJF' AND "creatorBedrijfId" = ${bedrijfId})
@@ -503,7 +503,7 @@ export class BedrijfQueryOptimizer {
               this.prisma.$queryRaw`
             SELECT
               COUNT(*)::int as total_opdrachten,
-              SUM("uurloon" * "aantalPersonen")::int as estimated_revenue
+              SUM("uurtarief" * "aantalBeveiligers")::int as estimated_revenue
             FROM "Opdracht"
             WHERE (
               ("creatorType" = 'BEDRIJF' AND "creatorBedrijfId" = ${bedrijfId})
