@@ -1,8 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { z } from "zod";
-import { broadcastOpdrachtEvent, BroadcastEvent } from "@/lib/supabase/broadcast";
+import {
+  BroadcastEvent,
+  broadcastOpdrachtEvent,
+} from "@/lib/supabase/broadcast";
 
 // Schema for updating shifts
 const updateShiftSchema = z.object({
@@ -10,7 +13,10 @@ const updateShiftSchema = z.object({
   beschrijving: z.string().optional(),
   locatie: z.string().min(1).optional(),
   adres: z.string().optional(),
-  datum: z.string().transform((str) => new Date(str)).optional(),
+  datum: z
+    .string()
+    .transform((str) => new Date(str))
+    .optional(),
   startTijd: z.string().min(1).optional(),
   eindTijd: z.string().min(1).optional(),
   aantalBeveiligers: z.number().min(1).optional(),
@@ -19,13 +25,22 @@ const updateShiftSchema = z.object({
   vereisten: z.array(z.string()).optional(),
   specialisatie: z.string().optional(),
   isUrgent: z.boolean().optional(),
-  status: z.enum(["OPEN", "GEPUBLICEERD", "BEVESTIGD", "ACTIEF", "VOLTOOID", "GEANNULEERD"]).optional()
+  status: z
+    .enum([
+      "OPEN",
+      "GEPUBLICEERD",
+      "BEVESTIGD",
+      "ACTIEF",
+      "VOLTOOID",
+      "GEANNULEERD",
+    ])
+    .optional(),
 });
 
 // GET /api/opdrachtgever/shifts/[id] - Get specific shift
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -34,19 +49,19 @@ export async function GET(
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const opdrachtgeverProfile = await prisma.opdrachtgever.findUnique({
       where: { userId: session.user.id },
-      select: { id: true }
+      select: { id: true },
     });
 
     if (!opdrachtgeverProfile) {
       return NextResponse.json(
         { success: false, error: "Opdrachtgever profile not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -54,7 +69,7 @@ export async function GET(
       const shift = await prisma.opdracht.findFirst({
         where: {
           id: id,
-          opdrachtgeverId: opdrachtgeverProfile.id
+          opdrachtgeverId: opdrachtgeverProfile.id,
         },
         include: {
           sollicitaties: {
@@ -65,15 +80,15 @@ export async function GET(
                     select: {
                       name: true,
                       email: true,
-                      phone: true
-                    }
-                  }
-                }
-              }
+                      phone: true,
+                    },
+                  },
+                },
+              },
             },
             orderBy: {
-              createdAt: "desc"
-            }
+              createdAt: "desc",
+            },
           },
           acceptedBeveiliger: {
             include: {
@@ -81,10 +96,10 @@ export async function GET(
                 select: {
                   name: true,
                   email: true,
-                  phone: true
-                }
-              }
-            }
+                  phone: true,
+                },
+              },
+            },
           },
           werkuren: {
             include: {
@@ -92,30 +107,30 @@ export async function GET(
                 include: {
                   user: {
                     select: {
-                      name: true
-                    }
-                  }
-                }
-              }
+                      name: true,
+                    },
+                  },
+                },
+              },
             },
             orderBy: {
-              datum: "desc"
-            }
+              datum: "desc",
+            },
           },
           feedback: true,
           opdrachtgever: {
             select: {
               bedrijfsnaam: true,
-              contactpersoon: true
-            }
-          }
-        }
+              contactpersoon: true,
+            },
+          },
+        },
       });
 
       if (!shift) {
         return NextResponse.json(
           { success: false, error: "Shift not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -140,7 +155,7 @@ export async function GET(
         targetAudience: shift.targetAudience,
 
         // Application details
-        applications: shift.sollicitaties.map(sol => ({
+        applications: shift.sollicitaties.map((sol) => ({
           id: sol.id,
           beveiligerId: sol.beveiligerId,
           name: sol.beveiliger.user.name,
@@ -153,21 +168,23 @@ export async function GET(
           profileData: {
             specialisaties: sol.beveiliger.specialisaties,
             certificaten: sol.beveiliger.certificaten,
-            totalReviews: sol.beveiliger.totalReviews
-          }
+            totalReviews: sol.beveiliger.totalReviews,
+          },
         })),
 
         // Accepted beveiliger
-        acceptedBeveiliger: shift.acceptedBeveiliger ? {
-          id: shift.acceptedBeveiliger.id,
-          name: shift.acceptedBeveiliger.user.name,
-          email: shift.acceptedBeveiliger.user.email,
-          phone: shift.acceptedBeveiliger.user.phone,
-          rating: shift.acceptedBeveiliger.rating
-        } : null,
+        acceptedBeveiliger: shift.acceptedBeveiliger
+          ? {
+              id: shift.acceptedBeveiliger.id,
+              name: shift.acceptedBeveiliger.user.name,
+              email: shift.acceptedBeveiliger.user.email,
+              phone: shift.acceptedBeveiliger.user.phone,
+              rating: shift.acceptedBeveiliger.rating,
+            }
+          : null,
 
         // Work hours tracking
-        workHours: shift.werkuren.map(wu => ({
+        workHours: shift.werkuren.map((wu) => ({
           id: wu.id,
           beveiligerId: wu.beveiligerId,
           beveiligernaam: wu.beveiliger.user.name,
@@ -179,7 +196,7 @@ export async function GET(
           uurtarief: wu.uurtarief,
           totaalBedrag: wu.totaalBedrag,
           status: wu.status,
-          opmerking: wu.opmerking
+          opmerking: wu.opmerking,
         })),
 
         // Feedback
@@ -188,32 +205,30 @@ export async function GET(
         // Company info
         company: {
           name: shift.opdrachtgever.bedrijfsnaam,
-          contact: shift.opdrachtgever.contactpersoon
+          contact: shift.opdrachtgever.contactpersoon,
         },
 
         // Metadata
         createdAt: shift.createdAt,
-        updatedAt: shift.updatedAt
+        updatedAt: shift.updatedAt,
       };
 
       return NextResponse.json({
         success: true,
-        data: transformedShift
+        data: transformedShift,
       });
-
     } catch (dbError) {
       console.error("Database error fetching shift:", dbError);
       return NextResponse.json(
         { success: false, error: "Failed to fetch shift from database" },
-        { status: 500 }
+        { status: 500 },
       );
     }
-
   } catch (error) {
     console.error("Get shift error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch shift" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -221,7 +236,7 @@ export async function GET(
 // PUT /api/opdrachtgever/shifts/[id] - Update shift
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -230,19 +245,19 @@ export async function PUT(
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const opdrachtgeverProfile = await prisma.opdrachtgever.findUnique({
       where: { userId: session.user.id },
-      select: { id: true }
+      select: { id: true },
     });
 
     if (!opdrachtgeverProfile) {
       return NextResponse.json(
         { success: false, error: "Opdrachtgever profile not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -255,35 +270,48 @@ export async function PUT(
       const existingShift = await prisma.opdracht.findFirst({
         where: {
           id: id,
-          opdrachtgeverId: opdrachtgeverProfile.id
-        }
+          opdrachtgeverId: opdrachtgeverProfile.id,
+        },
       });
 
       if (!existingShift) {
         return NextResponse.json(
           { success: false, error: "Shift not found or access denied" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
       // Check if shift can be updated (not if it's completed or cancelled)
-      if (existingShift.status === "VOLTOOID" || existingShift.status === "GEANNULEERD") {
+      if (
+        existingShift.status === "VOLTOOID" ||
+        existingShift.status === "GEANNULEERD"
+      ) {
         return NextResponse.json(
-          { success: false, error: "Cannot update completed or cancelled shifts" },
-          { status: 400 }
+          {
+            success: false,
+            error: "Cannot update completed or cancelled shifts",
+          },
+          { status: 400 },
         );
       }
 
       // Recalculate budget if relevant fields changed
       let updatedBudget = validatedData.budget;
-      if (!updatedBudget && (validatedData.uurtarief || validatedData.aantalBeveiligers || validatedData.startTijd || validatedData.eindTijd)) {
+      if (
+        !updatedBudget &&
+        (validatedData.uurtarief ||
+          validatedData.aantalBeveiligers ||
+          validatedData.startTijd ||
+          validatedData.eindTijd)
+      ) {
         const uurtarief = validatedData.uurtarief || existingShift.uurtarief;
-        const aantalBeveiligers = validatedData.aantalBeveiligers || existingShift.aantalBeveiligers;
+        const aantalBeveiligers =
+          validatedData.aantalBeveiligers || existingShift.aantalBeveiligers;
         const startTijd = validatedData.startTijd || existingShift.startTijd;
         const eindTijd = validatedData.eindTijd || existingShift.eindTijd;
 
-        const startHour = parseInt(startTijd.split(':')[0]);
-        const endHour = parseInt(eindTijd.split(':')[0]);
+        const startHour = parseInt(startTijd.split(":")[0], 10);
+        const endHour = parseInt(eindTijd.split(":")[0], 10);
         const hours = endHour - startHour;
 
         updatedBudget = Number(uurtarief) * aantalBeveiligers * hours;
@@ -295,7 +323,7 @@ export async function PUT(
         data: {
           ...validatedData,
           budget: updatedBudget,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         },
         include: {
           sollicitaties: {
@@ -305,59 +333,62 @@ export async function PUT(
                   user: {
                     select: {
                       name: true,
-                      email: true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+                      email: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
-      console.log(`Shift ${id} updated by opdrachtgever ${opdrachtgeverProfile.id}`);
+      console.log(
+        `Shift ${id} updated by opdrachtgever ${opdrachtgeverProfile.id}`,
+      );
 
       // Broadcast the shift update
-      await broadcastOpdrachtEvent(BroadcastEvent.OPDRACHT_UPDATED, updatedShift);
+      await broadcastOpdrachtEvent(
+        BroadcastEvent.OPDRACHT_UPDATED,
+        updatedShift,
+      );
 
       return NextResponse.json({
         success: true,
         data: updatedShift,
-        message: "Shift succesvol bijgewerkt"
+        message: "Shift succesvol bijgewerkt",
       });
-
     } catch (dbError) {
       console.error("Database error updating shift:", dbError);
       return NextResponse.json(
         { success: false, error: "Failed to update shift in database" },
-        { status: 500 }
+        { status: 500 },
       );
     }
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
           success: false,
           error: "Validation error",
-          details: error.errors
+          details: error.errors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     console.error("Update shift error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update shift" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // DELETE /api/opdrachtgever/shifts/[id] - Delete/Cancel shift
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -366,19 +397,19 @@ export async function DELETE(
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const opdrachtgeverProfile = await prisma.opdrachtgever.findUnique({
       where: { userId: session.user.id },
-      select: { id: true }
+      select: { id: true },
     });
 
     if (!opdrachtgeverProfile) {
       return NextResponse.json(
         { success: false, error: "Opdrachtgever profile not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -387,18 +418,18 @@ export async function DELETE(
       const existingShift = await prisma.opdracht.findFirst({
         where: {
           id: id,
-          opdrachtgeverId: opdrachtgeverProfile.id
+          opdrachtgeverId: opdrachtgeverProfile.id,
         },
         include: {
           sollicitaties: true,
-          werkuren: true
-        }
+          werkuren: true,
+        },
       });
 
       if (!existingShift) {
         return NextResponse.json(
           { success: false, error: "Shift not found or access denied" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -406,14 +437,17 @@ export async function DELETE(
       if (existingShift.status === "VOLTOOID") {
         return NextResponse.json(
           { success: false, error: "Cannot cancel completed shifts" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       if (existingShift.status === "ACTIEF") {
         return NextResponse.json(
-          { success: false, error: "Cannot cancel active shifts. Please contact support." },
-          { status: 400 }
+          {
+            success: false,
+            error: "Cannot cancel active shifts. Please contact support.",
+          },
+          { status: 400 },
         );
       }
 
@@ -422,8 +456,8 @@ export async function DELETE(
         where: { id: id },
         data: {
           status: "GEANNULEERD",
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
 
       // Update any pending sollicitaties to rejected
@@ -431,39 +465,42 @@ export async function DELETE(
         await prisma.opdrachtSollicitatie.updateMany({
           where: {
             opdrachtId: id,
-            status: "PENDING"
+            status: "PENDING",
           },
           data: {
             status: "AFGEWEZEN",
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
       }
 
-      console.log(`Shift ${id} cancelled by opdrachtgever ${opdrachtgeverProfile.id}`);
+      console.log(
+        `Shift ${id} cancelled by opdrachtgever ${opdrachtgeverProfile.id}`,
+      );
 
       // Broadcast the shift cancellation (status change)
-      await broadcastOpdrachtEvent(BroadcastEvent.OPDRACHT_STATUS_CHANGED, cancelledShift);
+      await broadcastOpdrachtEvent(
+        BroadcastEvent.OPDRACHT_STATUS_CHANGED,
+        cancelledShift,
+      );
 
       return NextResponse.json({
         success: true,
         data: cancelledShift,
-        message: "Shift succesvol geannuleerd"
+        message: "Shift succesvol geannuleerd",
       });
-
     } catch (dbError) {
       console.error("Database error cancelling shift:", dbError);
       return NextResponse.json(
         { success: false, error: "Failed to cancel shift in database" },
-        { status: 500 }
+        { status: 500 },
       );
     }
-
   } catch (error) {
     console.error("Cancel shift error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to cancel shift" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

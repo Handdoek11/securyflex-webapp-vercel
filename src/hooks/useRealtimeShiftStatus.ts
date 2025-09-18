@@ -1,12 +1,12 @@
 "use client";
 
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase/client";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface ShiftStatus {
   shiftId: string;
-  status: 'LIVE' | 'STARTING_SOON' | 'ISSUE' | 'COMPLETED';
+  status: "LIVE" | "STARTING_SOON" | "ISSUE" | "COMPLETED";
   checkInsCount: number;
   totalRequired: number;
   activeGuards: GuardCheckIn[];
@@ -18,7 +18,7 @@ interface GuardCheckIn {
   guardId: string;
   guardName: string;
   checkedInAt: string | null;
-  status: 'ACTIVE' | 'LATE' | 'NO_SHOW';
+  status: "ACTIVE" | "LATE" | "NO_SHOW";
   minutesLate?: number;
   location?: {
     latitude: number;
@@ -27,7 +27,7 @@ interface GuardCheckIn {
 }
 
 interface ShiftIssue {
-  type: 'LATE_CHECK_IN' | 'NO_SHOW' | 'EARLY_DEPARTURE' | 'INCIDENT';
+  type: "LATE_CHECK_IN" | "NO_SHOW" | "EARLY_DEPARTURE" | "INCIDENT";
   description: string;
   timestamp: Date;
   guardId?: string;
@@ -48,10 +48,11 @@ export function useRealtimeShiftStatus(shiftId: string | undefined) {
     const supabase = createSupabaseClient();
 
     // Subscribe to shift status channel
-    const shiftChannel = supabase.channel(`shift-status:${shiftId}`)
-      .on('presence', { event: 'sync' }, () => {
+    const shiftChannel = supabase
+      .channel(`shift-status:${shiftId}`)
+      .on("presence", { event: "sync" }, () => {
         const state = shiftChannel.presenceState();
-        console.log('Presence sync:', state);
+        console.log("Presence sync:", state);
 
         // Process presence data for active guards
         const activeGuards = Object.values(state).flatMap((presences: any) =>
@@ -60,84 +61,95 @@ export function useRealtimeShiftStatus(shiftId: string | undefined) {
             guardName: presence.guard_name,
             checkedInAt: presence.checked_in_at,
             status: presence.status,
-            location: presence.location
-          }))
+            location: presence.location,
+          })),
         );
 
-        setStatus(prev => prev ? {
-          ...prev,
-          activeGuards,
-          checkInsCount: activeGuards.filter(g => g.status === 'ACTIVE').length
-        } : null);
+        setStatus((prev) =>
+          prev
+            ? {
+                ...prev,
+                activeGuards,
+                checkInsCount: activeGuards.filter((g) => g.status === "ACTIVE")
+                  .length,
+              }
+            : null,
+        );
       })
-      .on('broadcast', { event: 'shift-update' }, (payload) => {
-        console.log('Shift update:', payload);
+      .on("broadcast", { event: "shift-update" }, (payload) => {
+        console.log("Shift update:", payload);
 
-        setStatus(prev => ({
+        setStatus((prev) => ({
           shiftId,
-          status: payload.payload.status || prev?.status || 'LIVE',
-          checkInsCount: payload.payload.checkInsCount || prev?.checkInsCount || 0,
-          totalRequired: payload.payload.totalRequired || prev?.totalRequired || 0,
-          activeGuards: payload.payload.activeGuards || prev?.activeGuards || [],
+          status: payload.payload.status || prev?.status || "LIVE",
+          checkInsCount:
+            payload.payload.checkInsCount || prev?.checkInsCount || 0,
+          totalRequired:
+            payload.payload.totalRequired || prev?.totalRequired || 0,
+          activeGuards:
+            payload.payload.activeGuards || prev?.activeGuards || [],
           issues: payload.payload.issues || prev?.issues || [],
-          lastUpdate: new Date()
+          lastUpdate: new Date(),
         }));
       })
-      .on('broadcast', { event: 'check-in' }, (payload) => {
-        console.log('Guard check-in:', payload);
+      .on("broadcast", { event: "check-in" }, (payload) => {
+        console.log("Guard check-in:", payload);
 
         const newCheckIn: GuardCheckIn = {
           guardId: payload.payload.guard_id,
           guardName: payload.payload.guard_name,
           checkedInAt: payload.payload.checked_in_at,
-          status: 'ACTIVE',
-          location: payload.payload.location
+          status: "ACTIVE",
+          location: payload.payload.location,
         };
 
-        setStatus(prev => {
+        setStatus((prev) => {
           if (!prev) return null;
 
           const updatedGuards = [
-            ...prev.activeGuards.filter(g => g.guardId !== newCheckIn.guardId),
-            newCheckIn
+            ...prev.activeGuards.filter(
+              (g) => g.guardId !== newCheckIn.guardId,
+            ),
+            newCheckIn,
           ];
 
           return {
             ...prev,
             activeGuards: updatedGuards,
-            checkInsCount: updatedGuards.filter(g => g.status === 'ACTIVE').length
+            checkInsCount: updatedGuards.filter((g) => g.status === "ACTIVE")
+              .length,
           };
         });
       })
-      .on('broadcast', { event: 'issue' }, (payload) => {
-        console.log('Shift issue:', payload);
+      .on("broadcast", { event: "issue" }, (payload) => {
+        console.log("Shift issue:", payload);
 
         const newIssue: ShiftIssue = {
           type: payload.payload.type,
           description: payload.payload.description,
           timestamp: new Date(payload.payload.timestamp),
-          guardId: payload.payload.guard_id
+          guardId: payload.payload.guard_id,
         };
 
-        setStatus(prev => {
+        setStatus((prev) => {
           if (!prev) return null;
 
           return {
             ...prev,
-            status: 'ISSUE',
-            issues: [...prev.issues, newIssue]
+            status: "ISSUE",
+            issues: [...prev.issues, newIssue],
           };
         });
       })
       .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
+        if (status === "SUBSCRIBED") {
           setIsConnected(true);
           console.log(`Connected to shift ${shiftId} status channel`);
 
           // Track presence for this client
           await shiftChannel.track({
             online_at: new Date().toISOString(),
-            user_type: 'opdrachtgever'
+            user_type: "opdrachtgever",
           });
         }
       });
@@ -168,25 +180,25 @@ export function useRealtimeShiftStatus(shiftId: string | undefined) {
           totalRequired: data.totalRequired,
           activeGuards: data.activeGuards,
           issues: data.issues,
-          lastUpdate: new Date()
+          lastUpdate: new Date(),
         });
       }
     } catch (error) {
-      console.error('Error refreshing shift status:', error);
+      console.error("Error refreshing shift status:", error);
     }
   };
 
   // Function to report an issue
-  const reportIssue = async (issue: Omit<ShiftIssue, 'timestamp'>) => {
+  const reportIssue = async (issue: Omit<ShiftIssue, "timestamp">) => {
     if (!channel) return;
 
     await channel.send({
-      type: 'broadcast',
-      event: 'issue',
+      type: "broadcast",
+      event: "issue",
       payload: {
         ...issue,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
   };
 
@@ -194,7 +206,7 @@ export function useRealtimeShiftStatus(shiftId: string | undefined) {
     status,
     isConnected,
     refreshStatus,
-    reportIssue
+    reportIssue,
   };
 }
 
@@ -212,10 +224,11 @@ export function useRealtimeMultipleShifts(shiftIds: string[]) {
     const channels: RealtimeChannel[] = [];
 
     // Subscribe to each shift
-    shiftIds.forEach(shiftId => {
-      const channel = supabase.channel(`shift-status:${shiftId}`)
-        .on('broadcast', { event: 'shift-update' }, (payload) => {
-          setStatuses(prev => {
+    shiftIds.forEach((shiftId) => {
+      const channel = supabase
+        .channel(`shift-status:${shiftId}`)
+        .on("broadcast", { event: "shift-update" }, (payload) => {
+          setStatuses((prev) => {
             const updated = new Map(prev);
             updated.set(shiftId, {
               shiftId,
@@ -224,7 +237,7 @@ export function useRealtimeMultipleShifts(shiftIds: string[]) {
               totalRequired: payload.payload.totalRequired,
               activeGuards: payload.payload.activeGuards || [],
               issues: payload.payload.issues || [],
-              lastUpdate: new Date()
+              lastUpdate: new Date(),
             });
             return updated;
           });
@@ -238,16 +251,20 @@ export function useRealtimeMultipleShifts(shiftIds: string[]) {
 
     // Cleanup
     return () => {
-      channels.forEach(channel => {
+      channels.forEach((channel) => {
         supabase.removeChannel(channel);
       });
       setIsConnected(false);
     };
-  }, [shiftIds.join(',')]);
+  }, [
+    // Subscribe to each shift
+    shiftIds.forEach,
+    shiftIds.length,
+  ]);
 
   return {
     statuses,
-    isConnected
+    isConnected,
   };
 }
 
@@ -261,7 +278,7 @@ export function useRealtimeDashboardStats(opdrachtgeverId: string | undefined) {
     checkInRate: 100,
     todaysCost: 0,
     weeklyShifts: 0,
-    monthlyShifts: 0
+    monthlyShifts: 0,
   });
 
   useEffect(() => {
@@ -270,9 +287,10 @@ export function useRealtimeDashboardStats(opdrachtgeverId: string | undefined) {
     const supabase = createSupabaseClient();
 
     // Subscribe to dashboard updates
-    const channel = supabase.channel(`dashboard:${opdrachtgeverId}`)
-      .on('broadcast', { event: 'stats-update' }, (payload) => {
-        console.log('Dashboard stats update:', payload);
+    const channel = supabase
+      .channel(`dashboard:${opdrachtgeverId}`)
+      .on("broadcast", { event: "stats-update" }, (payload) => {
+        console.log("Dashboard stats update:", payload);
         setStats(payload.payload);
       })
       .subscribe();
@@ -280,13 +298,15 @@ export function useRealtimeDashboardStats(opdrachtgeverId: string | undefined) {
     // Initial fetch
     const fetchStats = async () => {
       try {
-        const response = await fetch(`/api/dashboard/opdrachtgever/${opdrachtgeverId}/stats`);
+        const response = await fetch(
+          `/api/dashboard/opdrachtgever/${opdrachtgeverId}/stats`,
+        );
         if (response.ok) {
           const data = await response.json();
           setStats(data);
         }
       } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
+        console.error("Error fetching dashboard stats:", error);
       }
     };
 

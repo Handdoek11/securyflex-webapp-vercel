@@ -1,22 +1,50 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import {
+  AlertCircle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  FileText,
+  Gift,
+  Info,
+  Loader2,
+  Mail,
+  Phone,
+  Shield,
+  Star,
+  Users,
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { Shield, ChevronLeft, Check, Info, Calculator, FileText, Phone, Mail, Star, Users, Percent, Gift, Loader2, AlertCircle, Clock, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
-import { useSession } from "next-auth/react";
-import Link from "next/link";
 
 // Mock product detail data
 const mockProductDetail = {
@@ -30,9 +58,10 @@ const mockProductDetail = {
     daarom is deze verzekering niet alleen verstandig maar vaak ook verplicht gesteld door opdrachtgevers.`,
 
     verzekeraar: "Schouten Zekerheid",
-    verzekeraarInfo: "Al 40 jaar specialist in verzekeringen voor de beveiligingsbranche",
+    verzekeraarInfo:
+      "Al 40 jaar specialist in verzekeringen voor de beveiligingsbranche",
 
-    basispremie: 42.50,
+    basispremie: 42.5,
     platformKorting: 15,
 
     categorie: "Zakelijke verzekeringen",
@@ -43,7 +72,7 @@ const mockProductDetail = {
       { naam: "Eigen risico", waarde: "€ 0" },
       { naam: "Rechtsbijstand", waarde: "Inbegrepen" },
       { naam: "Werelddekking", waarde: "Ja (excl. USA/Canada)" },
-      { naam: "Opzichtschade", waarde: "€ 25.000" }
+      { naam: "Opzichtschade", waarde: "€ 25.000" },
     ],
 
     features: [
@@ -54,7 +83,7 @@ const mockProductDetail = {
       "24/7 schademeldservice",
       "Opzichtschade gedekt tot €25.000",
       "Personeelsaansprakelijkheid inbegrepen",
-      "Vermogensschade gedekt"
+      "Vermogensschade gedekt",
     ],
 
     uitsluitingen: [
@@ -62,20 +91,35 @@ const mockProductDetail = {
       "Schade door alcohol/drugs gebruik",
       "Boetes en dwangsommen",
       "Schade aan eigen goederen",
-      "Werkzaamheden in USA/Canada"
+      "Werkzaamheden in USA/Canada",
     ],
 
     vereisten: [
       "Geldig KvK nummer",
       "Minimaal MBO niveau 2 beveiliging",
       "Geen strafrechtelijk verleden",
-      "Minimaal 6 maanden werkervaring"
+      "Minimaal 6 maanden werkervaring",
     ],
 
     reviews: [
-      { naam: "Johan B.", rating: 5, comment: "Uitstekende verzekering, snel geholpen bij schademelding", datum: "2024-11-15" },
-      { naam: "Sandra K.", rating: 4, comment: "Goede dekking voor een eerlijke prijs", datum: "2024-10-22" },
-      { naam: "Mike T.", rating: 5, comment: "Al jaren tevreden klant, aanrader!", datum: "2024-09-30" }
+      {
+        naam: "Johan B.",
+        rating: 5,
+        comment: "Uitstekende verzekering, snel geholpen bij schademelding",
+        datum: "2024-11-15",
+      },
+      {
+        naam: "Sandra K.",
+        rating: 4,
+        comment: "Goede dekking voor een eerlijke prijs",
+        datum: "2024-10-22",
+      },
+      {
+        naam: "Mike T.",
+        rating: 5,
+        comment: "Al jaren tevreden klant, aanrader!",
+        datum: "2024-09-30",
+      },
     ],
 
     rating: 4.7,
@@ -85,9 +129,9 @@ const mockProductDetail = {
     documenten: [
       { naam: "Polisvoorwaarden AVB", url: "#", size: "245 KB" },
       { naam: "Informatieblad verzekering", url: "#", size: "123 KB" },
-      { naam: "Schadeformulier", url: "#", size: "89 KB" }
-    ]
-  }
+      { naam: "Schadeformulier", url: "#", size: "89 KB" },
+    ],
+  },
 };
 
 export default function VerzekeringDetailPage() {
@@ -109,12 +153,12 @@ export default function VerzekeringDetailPage() {
     kvkNummer: "",
     startDatum: "",
     opmerkingen: "",
-    akkoord: false
+    akkoord: false,
   });
 
   useEffect(() => {
     loadProductDetail();
-  }, [params.id]);
+  }, [loadProductDetail]);
 
   const loadProductDetail = async () => {
     setLoading(true);
@@ -124,15 +168,16 @@ export default function VerzekeringDetailPage() {
       // const data = await res.json();
 
       // For now, use mock data
-      const productData = mockProductDetail[params.id as string] || mockProductDetail.p1;
+      const productData =
+        mockProductDetail[params.id as string] || mockProductDetail.p1;
       setProduct(productData);
 
       // Pre-fill form with user data if available
       if (session?.user) {
-        setAanvraagForm(prev => ({
+        setAanvraagForm((prev) => ({
           ...prev,
           naam: session.user.name || "",
-          email: session.user.email || ""
+          email: session.user.email || "",
         }));
       }
     } catch (error) {
@@ -150,13 +195,13 @@ export default function VerzekeringDetailPage() {
     }
 
     try {
-      const res = await fetch('/api/verzekeringen/kortingen/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/verzekeringen/kortingen/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: kortingCode,
-          productId: params.id
-        })
+          productId: params.id,
+        }),
       });
 
       const data = await res.json();
@@ -189,7 +234,9 @@ export default function VerzekeringDetailPage() {
       platformKorting: platformKorting.toFixed(2),
       codeKorting: codeKorting.toFixed(2),
       finaal: finaal.toFixed(2),
-      totaalKorting: ((platformKorting + codeKorting) / basis * 100).toFixed(0)
+      totaalKorting: (((platformKorting + codeKorting) / basis) * 100).toFixed(
+        0,
+      ),
     };
   };
 
@@ -206,15 +253,15 @@ export default function VerzekeringDetailPage() {
     }
 
     try {
-      const res = await fetch('/api/verzekeringen/aanvragen', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/verzekeringen/aanvragen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: params.id,
           aanvraagData: aanvraagForm,
           kortingCode: kortingValid ? kortingCode : undefined,
-          saveAsConcept: false
-        })
+          saveAsConcept: false,
+        }),
       });
 
       const data = await res.json();
@@ -222,7 +269,7 @@ export default function VerzekeringDetailPage() {
       if (data.success) {
         toast.success("Aanvraag succesvol ingediend!");
         setShowAanvraagDialog(false);
-        router.push('/dashboard/verzekeringen/aanvragen');
+        router.push("/dashboard/verzekeringen/aanvragen");
       } else {
         toast.error(data.error || "Kon aanvraag niet indienen");
       }
@@ -253,7 +300,10 @@ export default function VerzekeringDetailPage() {
               Het opgevraagde verzekeringsproduct kon niet worden gevonden.
             </AlertDescription>
           </Alert>
-          <Button className="mt-4" onClick={() => router.push('/dashboard/verzekeringen')}>
+          <Button
+            className="mt-4"
+            onClick={() => router.push("/dashboard/verzekeringen")}
+          >
             Terug naar overzicht
           </Button>
         </div>
@@ -264,15 +314,12 @@ export default function VerzekeringDetailPage() {
   const premie = calculatePremie();
 
   return (
-    <DashboardLayout
-      title={product.naam}
-      subtitle={product.korteBeschrijving}
-    >
+    <DashboardLayout title={product.naam} subtitle={product.korteBeschrijving}>
       <div className="p-4 space-y-6">
         {/* Back button */}
         <Button
           variant="ghost"
-          onClick={() => router.push('/dashboard/verzekeringen')}
+          onClick={() => router.push("/dashboard/verzekeringen")}
           className="mb-4"
         >
           <ChevronLeft className="h-4 w-4 mr-2" />
@@ -300,14 +347,18 @@ export default function VerzekeringDetailPage() {
                     </p>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold">Belangrijkste kenmerken:</h4>
+                      <h4 className="font-semibold">
+                        Belangrijkste kenmerken:
+                      </h4>
                       <ul className="space-y-2">
-                        {product.features.map((feature: string, idx: number) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{feature}</span>
-                          </li>
-                        ))}
+                        {product.features.map(
+                          (feature: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm">{feature}</span>
+                            </li>
+                          ),
+                        )}
                       </ul>
                     </div>
 
@@ -325,17 +376,20 @@ export default function VerzekeringDetailPage() {
                   <CardHeader>
                     <CardTitle>Vereisten</CardTitle>
                     <CardDescription>
-                      Om deze verzekering af te sluiten moet je aan de volgende voorwaarden voldoen:
+                      Om deze verzekering af te sluiten moet je aan de volgende
+                      voorwaarden voldoen:
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      {product.vereisten.map((vereiste: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <Info className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm">{vereiste}</span>
-                        </li>
-                      ))}
+                      {product.vereisten.map(
+                        (vereiste: string, idx: number) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <Info className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">{vereiste}</span>
+                          </li>
+                        ),
+                      )}
                     </ul>
                   </CardContent>
                 </Card>
@@ -347,12 +401,17 @@ export default function VerzekeringDetailPage() {
                   <CardContent>
                     <div className="space-y-2">
                       {product.documenten.map((doc: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-3 border rounded-lg"
+                        >
                           <div className="flex items-center gap-3">
                             <FileText className="h-4 w-4 text-muted-foreground" />
                             <div>
                               <p className="text-sm font-medium">{doc.naam}</p>
-                              <p className="text-xs text-muted-foreground">{doc.size}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {doc.size}
+                              </p>
                             </div>
                           </div>
                           <Button variant="outline" size="sm">
@@ -373,9 +432,16 @@ export default function VerzekeringDetailPage() {
                   <CardContent>
                     <div className="space-y-3">
                       {product.dekkingen.map((dekking: any, idx: number) => (
-                        <div key={idx} className="flex justify-between py-2 border-b last:border-0">
-                          <span className="text-sm font-medium">{dekking.naam}</span>
-                          <span className="text-sm font-semibold text-green-600">{dekking.waarde}</span>
+                        <div
+                          key={idx}
+                          className="flex justify-between py-2 border-b last:border-0"
+                        >
+                          <span className="text-sm font-medium">
+                            {dekking.naam}
+                          </span>
+                          <span className="text-sm font-semibold text-green-600">
+                            {dekking.waarde}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -391,12 +457,14 @@ export default function VerzekeringDetailPage() {
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      {product.uitsluitingen.map((uitsluiting: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm">{uitsluiting}</span>
-                        </li>
-                      ))}
+                      {product.uitsluitingen.map(
+                        (uitsluiting: string, idx: number) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">{uitsluiting}</span>
+                          </li>
+                        ),
+                      )}
                     </ul>
                   </CardContent>
                 </Card>
@@ -410,18 +478,25 @@ export default function VerzekeringDetailPage() {
                       <div className="flex items-center gap-2">
                         <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
                         <span className="font-semibold">{product.rating}</span>
-                        <span className="text-muted-foreground">({product.aantalReviews} reviews)</span>
+                        <span className="text-muted-foreground">
+                          ({product.aantalReviews} reviews)
+                        </span>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {product.reviews.map((review: any, idx: number) => (
-                      <div key={idx} className="space-y-2 pb-4 border-b last:border-0">
+                      <div
+                        key={idx}
+                        className="space-y-2 pb-4 border-b last:border-0"
+                      >
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="font-semibold">{review.naam}</p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(review.datum).toLocaleDateString('nl-NL')}
+                              {new Date(review.datum).toLocaleDateString(
+                                "nl-NL",
+                              )}
                             </p>
                           </div>
                           <div className="flex gap-1">
@@ -437,7 +512,9 @@ export default function VerzekeringDetailPage() {
                             ))}
                           </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">{review.comment}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {review.comment}
+                        </p>
                       </div>
                     ))}
                   </CardContent>
@@ -461,8 +538,12 @@ export default function VerzekeringDetailPage() {
                   </div>
                   {product.platformKorting > 0 && (
                     <div className="flex justify-between text-green-600">
-                      <span className="text-sm">Platform korting (-{product.platformKorting}%)</span>
-                      <span className="text-sm">-€{premie.platformKorting}</span>
+                      <span className="text-sm">
+                        Platform korting (-{product.platformKorting}%)
+                      </span>
+                      <span className="text-sm">
+                        -€{premie.platformKorting}
+                      </span>
                     </div>
                   )}
                   {kortingValid && (
@@ -475,7 +556,9 @@ export default function VerzekeringDetailPage() {
                     <div className="flex justify-between items-baseline">
                       <span className="font-semibold">Totaal per maand</span>
                       <div>
-                        <span className="text-2xl font-bold">€{premie.finaal}</span>
+                        <span className="text-2xl font-bold">
+                          €{premie.finaal}
+                        </span>
                         {premie.totaalKorting > 0 && (
                           <Badge variant="success" className="ml-2">
                             {premie.totaalKorting}% korting
@@ -493,7 +576,9 @@ export default function VerzekeringDetailPage() {
                     <Input
                       placeholder="CODE"
                       value={kortingCode}
-                      onChange={(e) => setKortingCode(e.target.value.toUpperCase())}
+                      onChange={(e) =>
+                        setKortingCode(e.target.value.toUpperCase())
+                      }
                       className="flex-1"
                     />
                     <Button
@@ -501,7 +586,11 @@ export default function VerzekeringDetailPage() {
                       onClick={validateKortingCode}
                       disabled={!kortingCode || kortingValid}
                     >
-                      {kortingValid ? <Check className="h-4 w-4" /> : "Toepassen"}
+                      {kortingValid ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        "Toepassen"
+                      )}
                     </Button>
                   </div>
                   {kortingValid && kortingData && (
@@ -511,7 +600,10 @@ export default function VerzekeringDetailPage() {
                   )}
                 </div>
 
-                <Dialog open={showAanvraagDialog} onOpenChange={setShowAanvraagDialog}>
+                <Dialog
+                  open={showAanvraagDialog}
+                  onOpenChange={setShowAanvraagDialog}
+                >
                   <DialogTrigger asChild>
                     <Button className="w-full" size="lg">
                       Direct aanvragen
@@ -532,7 +624,12 @@ export default function VerzekeringDetailPage() {
                         <Input
                           id="naam"
                           value={aanvraagForm.naam}
-                          onChange={(e) => setAanvraagForm({...aanvraagForm, naam: e.target.value})}
+                          onChange={(e) =>
+                            setAanvraagForm({
+                              ...aanvraagForm,
+                              naam: e.target.value,
+                            })
+                          }
                         />
                       </div>
 
@@ -542,7 +639,12 @@ export default function VerzekeringDetailPage() {
                           id="email"
                           type="email"
                           value={aanvraagForm.email}
-                          onChange={(e) => setAanvraagForm({...aanvraagForm, email: e.target.value})}
+                          onChange={(e) =>
+                            setAanvraagForm({
+                              ...aanvraagForm,
+                              email: e.target.value,
+                            })
+                          }
                         />
                       </div>
 
@@ -551,7 +653,12 @@ export default function VerzekeringDetailPage() {
                         <Input
                           id="telefoon"
                           value={aanvraagForm.telefoon}
-                          onChange={(e) => setAanvraagForm({...aanvraagForm, telefoon: e.target.value})}
+                          onChange={(e) =>
+                            setAanvraagForm({
+                              ...aanvraagForm,
+                              telefoon: e.target.value,
+                            })
+                          }
                         />
                       </div>
 
@@ -560,17 +667,29 @@ export default function VerzekeringDetailPage() {
                         <Input
                           id="kvk"
                           value={aanvraagForm.kvkNummer}
-                          onChange={(e) => setAanvraagForm({...aanvraagForm, kvkNummer: e.target.value})}
+                          onChange={(e) =>
+                            setAanvraagForm({
+                              ...aanvraagForm,
+                              kvkNummer: e.target.value,
+                            })
+                          }
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="startdatum">Gewenste ingangsdatum</Label>
+                        <Label htmlFor="startdatum">
+                          Gewenste ingangsdatum
+                        </Label>
                         <Input
                           id="startdatum"
                           type="date"
                           value={aanvraagForm.startDatum}
-                          onChange={(e) => setAanvraagForm({...aanvraagForm, startDatum: e.target.value})}
+                          onChange={(e) =>
+                            setAanvraagForm({
+                              ...aanvraagForm,
+                              startDatum: e.target.value,
+                            })
+                          }
                         />
                       </div>
 
@@ -579,7 +698,12 @@ export default function VerzekeringDetailPage() {
                         <Textarea
                           id="opmerkingen"
                           value={aanvraagForm.opmerkingen}
-                          onChange={(e) => setAanvraagForm({...aanvraagForm, opmerkingen: e.target.value})}
+                          onChange={(e) =>
+                            setAanvraagForm({
+                              ...aanvraagForm,
+                              opmerkingen: e.target.value,
+                            })
+                          }
                         />
                       </div>
 
@@ -588,17 +712,24 @@ export default function VerzekeringDetailPage() {
                           id="akkoord"
                           checked={aanvraagForm.akkoord}
                           onCheckedChange={(checked) =>
-                            setAanvraagForm({...aanvraagForm, akkoord: checked as boolean})
+                            setAanvraagForm({
+                              ...aanvraagForm,
+                              akkoord: checked as boolean,
+                            })
                           }
                         />
                         <label htmlFor="akkoord" className="text-sm">
-                          Ik ga akkoord met de voorwaarden en geef toestemming voor het verwerken van mijn gegevens
+                          Ik ga akkoord met de voorwaarden en geef toestemming
+                          voor het verwerken van mijn gegevens
                         </label>
                       </div>
                     </div>
 
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowAanvraagDialog(false)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowAanvraagDialog(false)}
+                      >
                         Annuleren
                       </Button>
                       <Button onClick={handleAanvraag}>
@@ -620,11 +751,17 @@ export default function VerzekeringDetailPage() {
                 <CardTitle className="text-base">Hulp nodig?</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <a href="tel:0612345678" className="flex items-center gap-2 text-sm hover:text-primary">
+                <a
+                  href="tel:0612345678"
+                  className="flex items-center gap-2 text-sm hover:text-primary"
+                >
                   <Phone className="h-4 w-4" />
                   06-12345678
                 </a>
-                <a href="mailto:verzekeringen@securyflex.nl" className="flex items-center gap-2 text-sm hover:text-primary">
+                <a
+                  href="mailto:verzekeringen@securyflex.nl"
+                  className="flex items-center gap-2 text-sm hover:text-primary"
+                >
                   <Mail className="h-4 w-4" />
                   verzekeringen@securyflex.nl
                 </a>
@@ -641,14 +778,13 @@ export default function VerzekeringDetailPage() {
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
-                    {product.aantalAanvragen} beveiligers hebben deze verzekering
+                    {product.aantalAanvragen} beveiligers hebben deze
+                    verzekering
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Shield className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    Gecertificeerde verzekeraar
-                  </span>
+                  <span className="text-sm">Gecertificeerde verzekeraar</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Gift className="h-4 w-4 text-muted-foreground" />

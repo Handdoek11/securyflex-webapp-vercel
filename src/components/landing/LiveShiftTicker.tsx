@@ -1,7 +1,7 @@
 "use client";
 
+import { Clock, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
-import { MapPin, Clock, Euro } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Shift {
@@ -16,14 +16,72 @@ interface Shift {
 
 // Mock data - in production this would come from an API
 const mockShifts: Shift[] = [
-  { id: "1", location: "Amsterdam Arena", time: "20:00", duration: "6u", rate: 32, type: "Evenement", urgent: true },
-  { id: "2", location: "Rotterdam Haven", time: "22:00", duration: "8u", rate: 30, type: "Bouwplaats" },
-  { id: "3", location: "Utrecht CS", time: "06:00", duration: "4u", rate: 28, type: "Station" },
-  { id: "4", location: "Den Haag Centrum", time: "18:00", duration: "5u", rate: 29, type: "Winkelcentrum" },
-  { id: "5", location: "Schiphol Airport", time: "00:00", duration: "8u", rate: 35, type: "Luchthaven", urgent: true },
-  { id: "6", location: "Eindhoven PSV Stadion", time: "19:00", duration: "5u", rate: 31, type: "Evenement" },
-  { id: "7", location: "Groningen Universiteit", time: "08:00", duration: "8u", rate: 27, type: "Onderwijs" },
-  { id: "8", location: "Tilburg Festival", time: "14:00", duration: "10u", rate: 30, type: "Festival" },
+  {
+    id: "1",
+    location: "Amsterdam Arena",
+    time: "20:00",
+    duration: "6u",
+    rate: 32,
+    type: "Evenement",
+    urgent: true,
+  },
+  {
+    id: "2",
+    location: "Rotterdam Haven",
+    time: "22:00",
+    duration: "8u",
+    rate: 30,
+    type: "Bouwplaats",
+  },
+  {
+    id: "3",
+    location: "Utrecht CS",
+    time: "06:00",
+    duration: "4u",
+    rate: 28,
+    type: "Station",
+  },
+  {
+    id: "4",
+    location: "Den Haag Centrum",
+    time: "18:00",
+    duration: "5u",
+    rate: 29,
+    type: "Winkelcentrum",
+  },
+  {
+    id: "5",
+    location: "Schiphol Airport",
+    time: "00:00",
+    duration: "8u",
+    rate: 35,
+    type: "Luchthaven",
+    urgent: true,
+  },
+  {
+    id: "6",
+    location: "Eindhoven PSV Stadion",
+    time: "19:00",
+    duration: "5u",
+    rate: 31,
+    type: "Evenement",
+  },
+  {
+    id: "7",
+    location: "Groningen Universiteit",
+    time: "08:00",
+    duration: "8u",
+    rate: 27,
+    type: "Onderwijs",
+  },
+  {
+    id: "8",
+    location: "Tilburg Festival",
+    time: "14:00",
+    duration: "10u",
+    rate: 30,
+    type: "Festival",
+  },
 ];
 
 export function LiveShiftTicker() {
@@ -36,7 +94,7 @@ export function LiveShiftTicker() {
 
     // Restart animation when it completes
     const interval = setInterval(() => {
-      setAnimationKey(prev => prev + 1);
+      setAnimationKey((prev) => prev + 1);
     }, 30000); // Restart every 30 seconds
 
     return () => clearInterval(interval);
@@ -53,16 +111,13 @@ export function LiveShiftTicker() {
           <span className="font-semibold text-sm">LIVE SHIFTS</span>
         </div>
 
-        <div
-          key={animationKey}
-          className="flex gap-4 animate-scroll"
-        >
+        <div key={animationKey} className="flex gap-4 animate-scroll">
           {shifts.map((shift, index) => (
             <div
               key={`${shift.id}-${index}`}
               className={cn(
                 "flex-shrink-0 bg-white rounded-lg p-3 shadow-sm border min-w-[280px]",
-                shift.urgent && "border-orange-500 bg-orange-50"
+                shift.urgent && "border-orange-500 bg-orange-50",
               )}
             >
               <div className="flex items-start justify-between mb-2">
@@ -79,8 +134,12 @@ export function LiveShiftTicker() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-primary">€{shift.rate}/u</div>
-                  <div className="text-xs text-muted-foreground">€{shift.rate * parseInt(shift.duration)},-</div>
+                  <div className="text-lg font-bold text-primary">
+                    €{shift.rate}/u
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    €{shift.rate * parseInt(shift.duration, 10)},-
+                  </div>
                 </div>
               </div>
               <div className="flex items-center justify-between text-xs">

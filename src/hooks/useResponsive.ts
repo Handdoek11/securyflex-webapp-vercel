@@ -24,10 +24,10 @@ interface ResponsiveState {
  */
 export function useResponsive(): ResponsiveState {
   // Media query checks
-  const isSmUp = useMediaQuery("(min-width: 640px)");
+  const _isSmUp = useMediaQuery("(min-width: 640px)");
   const isMdUp = useMediaQuery("(min-width: 768px)");
   const isLgUp = useMediaQuery("(min-width: 1024px)");
-  const isXlUp = useMediaQuery("(min-width: 1280px)");
+  const _isXlUp = useMediaQuery("(min-width: 1280px)");
   const is2xlUp = useMediaQuery("(min-width: 1536px)");
 
   // Touch detection

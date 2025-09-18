@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { ArrowRight, Building2, Factory, Shield } from "lucide-react";
 import Image from "next/image";
-import { Shield, Building2, Factory, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 
 export default function RegisterPage() {
@@ -22,7 +21,9 @@ export default function RegisterPage() {
               priority
             />
           </Link>
-          <h1 className="text-2xl font-bold text-foreground">Account aanmaken</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Account aanmaken
+          </h1>
           <p className="text-muted-foreground mt-2">
             Kies je rol om te beginnen met SecuryFlex
           </p>
@@ -39,24 +40,34 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <h3 className="text-lg font-bold mb-3 text-center">ZZP Beveiliger</h3>
+              <h3 className="text-lg font-bold mb-3 text-center">
+                ZZP Beveiliger
+              </h3>
 
               <div className="space-y-3 mb-6 flex-grow">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Verdien €28+ per uur</span>
+                  <span className="text-sm text-muted-foreground">
+                    Verdien €28+ per uur
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Kies je eigen werktijden</span>
+                  <span className="text-sm text-muted-foreground">
+                    Kies je eigen werktijden
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Betaald binnen 24 uur</span>
+                  <span className="text-sm text-muted-foreground">
+                    Betaald binnen 24 uur
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Automatische facturatie</span>
+                  <span className="text-sm text-muted-foreground">
+                    Automatische facturatie
+                  </span>
                 </div>
               </div>
 
@@ -78,24 +89,34 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <h3 className="text-lg font-bold mb-3 text-center w-full -ml-2">Beveiligingsbedrijf</h3>
+              <h3 className="text-lg font-bold mb-3 text-center w-full -ml-2">
+                Beveiligingsbedrijf
+              </h3>
 
               <div className="space-y-3 mb-6 flex-grow">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Toegang tot 2.847+ beveiligers</span>
+                  <span className="text-sm text-muted-foreground">
+                    Toegang tot 2.847+ beveiligers
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Automatische planning</span>
+                  <span className="text-sm text-muted-foreground">
+                    Automatische planning
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Real-time GPS monitoring</span>
+                  <span className="text-sm text-muted-foreground">
+                    Real-time GPS monitoring
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Win meer opdrachten</span>
+                  <span className="text-sm text-muted-foreground">
+                    Win meer opdrachten
+                  </span>
                 </div>
               </div>
 
@@ -117,24 +138,34 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <h3 className="text-lg font-bold mb-3 text-center">Opdrachtgever</h3>
+              <h3 className="text-lg font-bold mb-3 text-center">
+                Opdrachtgever
+              </h3>
 
               <div className="space-y-3 mb-6 flex-grow">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Beveiliging binnen 5 minuten</span>
+                  <span className="text-sm text-muted-foreground">
+                    Beveiliging binnen 5 minuten
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Transparante prijzen</span>
+                  <span className="text-sm text-muted-foreground">
+                    Transparante prijzen
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Live GPS tracking</span>
+                  <span className="text-sm text-muted-foreground">
+                    Live GPS tracking
+                  </span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <span className="text-sm text-muted-foreground">Betaal achteraf</span>
+                  <span className="text-sm text-muted-foreground">
+                    Betaal achteraf
+                  </span>
                 </div>
               </div>
 

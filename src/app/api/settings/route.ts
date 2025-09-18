@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { settingsSchema } from "@/lib/validation/schemas";
@@ -43,29 +43,29 @@ const DEFAULT_SETTINGS = {
 };
 
 // GET /api/settings - Get user settings
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth();
 
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Get user settings
     const userSettings = await prisma.userSettings.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
     });
 
     if (!userSettings) {
       // Create default settings for new user
-      const newSettings = await prisma.userSettings.create({
+      const _newSettings = await prisma.userSettings.create({
         data: {
           userId: session.user.id,
-          settings: DEFAULT_SETTINGS
-        }
+          settings: DEFAULT_SETTINGS,
+        },
       });
 
       return NextResponse.json({
@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
           ...DEFAULT_SETTINGS,
           name: session.user.name,
           email: session.user.email,
-          phone: null // Would get from profile
-        }
+          phone: null, // Would get from profile
+        },
       });
     }
 
@@ -84,9 +84,9 @@ export async function GET(request: NextRequest) {
       where: { id: session.user.id },
       include: {
         zzpProfile: {
-          select: { phone: true }
-        }
-      }
+          select: { phone: true },
+        },
+      },
     });
 
     const settings = userSettings.settings as any;
@@ -97,15 +97,14 @@ export async function GET(request: NextRequest) {
         ...settings,
         name: user?.name,
         email: user?.email,
-        phone: user?.zzpProfile?.phone
-      }
+        phone: user?.zzpProfile?.phone,
+      },
     });
-
   } catch (error) {
     console.error("Settings fetch error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch settings" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -118,7 +117,7 @@ export async function PATCH(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -132,9 +131,9 @@ export async function PATCH(request: NextRequest) {
         {
           success: false,
           error: "Invalid settings data",
-          details: validation.error.errors
+          details: validation.error.errors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -160,13 +159,13 @@ export async function PATCH(request: NextRequest) {
     let phoneUpdated = false;
     if (validatedData.phone) {
       const zzpProfile = await prisma.zZPProfile.findUnique({
-        where: { userId: session.user.id }
+        where: { userId: session.user.id },
       });
 
       if (zzpProfile) {
         await prisma.zZPProfile.update({
           where: { id: zzpProfile.id },
-          data: { phone: validatedData.phone }
+          data: { phone: validatedData.phone },
         });
         phoneUpdated = true;
       }
@@ -177,13 +176,13 @@ export async function PATCH(request: NextRequest) {
     if (Object.keys(userUpdates).length > 0) {
       await prisma.user.update({
         where: { id: session.user.id },
-        data: userUpdates
+        data: userUpdates,
       });
     }
 
     // Get current settings to merge with updates
     let currentSettings = await prisma.userSettings.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
     });
 
     if (!currentSettings) {
@@ -191,33 +190,40 @@ export async function PATCH(request: NextRequest) {
       currentSettings = await prisma.userSettings.create({
         data: {
           userId: session.user.id,
-          settings: DEFAULT_SETTINGS
-        }
+          settings: DEFAULT_SETTINGS,
+        },
       });
     }
 
     // Merge current settings with updates
     const mergedSettings = {
       ...(currentSettings.settings as any),
-      ...settingsUpdates
+      ...settingsUpdates,
     };
 
     // Update settings
-    const updatedSettings = await prisma.userSettings.update({
+    const _updatedSettings = await prisma.userSettings.update({
       where: { userId: session.user.id },
       data: {
         settings: mergedSettings,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     // Handle privacy settings changes
     if (validatedData.profileVisibility) {
-      await handlePrivacySettingsChange(session.user.id, validatedData.profileVisibility);
+      await handlePrivacySettingsChange(
+        session.user.id,
+        validatedData.profileVisibility,
+      );
     }
 
     // Handle notification preferences changes
-    if (validatedData.emailNotifications || validatedData.smsNotifications || validatedData.pushNotifications) {
+    if (
+      validatedData.emailNotifications ||
+      validatedData.smsNotifications ||
+      validatedData.pushNotifications
+    ) {
       await updateNotificationPreferences(session.user.id, mergedSettings);
     }
 
@@ -236,15 +242,14 @@ export async function PATCH(request: NextRequest) {
         settings: mergedSettings,
         userUpdated: Object.keys(userUpdates).length > 0,
         phoneUpdated,
-        emailVerificationRequired: !!userUpdates.email
-      }
+        emailVerificationRequired: !!userUpdates.email,
+      },
     });
-
   } catch (error) {
     console.error("Settings update error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update settings" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -254,7 +259,7 @@ async function handlePrivacySettingsChange(userId: string, visibility: string) {
   try {
     // Update profile visibility in ZZP profile
     const zzpProfile = await prisma.zZPProfile.findUnique({
-      where: { userId }
+      where: { userId },
     });
 
     if (zzpProfile) {
@@ -264,17 +269,18 @@ async function handlePrivacySettingsChange(userId: string, visibility: string) {
           metadata: {
             ...((zzpProfile.metadata as any) || {}),
             profileVisibility: visibility,
-            lastVisibilityChange: new Date().toISOString()
-          }
-        }
+            lastVisibilityChange: new Date().toISOString(),
+          },
+        },
       });
     }
 
     // If setting to private, hide from search results
     if (visibility === "PRIVATE") {
-      console.log(`User ${userId} set profile to private - updating search visibility`);
+      console.log(
+        `User ${userId} set profile to private - updating search visibility`,
+      );
     }
-
   } catch (error) {
     console.error("Privacy settings update error:", error);
   }
@@ -291,14 +297,13 @@ async function updateNotificationPreferences(userId: string, settings: any) {
     console.log(`Notification preferences updated for user ${userId}:`, {
       email: settings.emailNotifications,
       sms: settings.smsNotifications,
-      push: settings.pushNotifications
+      push: settings.pushNotifications,
     });
 
     // Example integrations:
     // await emailService.updatePreferences(userId, settings.emailNotifications);
     // await smsService.updatePreferences(userId, settings.smsNotifications);
     // await pushService.updatePreferences(userId, settings.pushNotifications);
-
   } catch (error) {
     console.error("Notification preferences update error:", error);
   }
@@ -312,7 +317,7 @@ async function updateJobRecommendations(userId: string, settings: any) {
       maxTravelDistance: settings.maxTravelDistance,
       preferredJobTypes: settings.preferredJobTypes,
       minimumNoticeHours: settings.minimumNoticeHours,
-      autoAcceptUrgent: settings.autoAcceptUrgent
+      autoAcceptUrgent: settings.autoAcceptUrgent,
     };
 
     // In production, update recommendation engine
@@ -320,7 +325,6 @@ async function updateJobRecommendations(userId: string, settings: any) {
 
     // Example: Update machine learning model weights
     // await recommendationEngine.updateUserPreferences(userId, criteria);
-
   } catch (error) {
     console.error("Job recommendations update error:", error);
   }
@@ -337,11 +341,10 @@ async function logSettingsChange(userId: string, changedFields: string[]) {
         details: {
           changedFields,
           timestamp: new Date().toISOString(),
-          userAgent: "Unknown" // Would get from request headers
-        }
-      }
+          userAgent: "Unknown", // Would get from request headers
+        },
+      },
     });
-
   } catch (error) {
     console.error("Audit log error:", error);
     // Don't fail the request if audit logging fails
@@ -349,28 +352,28 @@ async function logSettingsChange(userId: string, changedFields: string[]) {
 }
 
 // DELETE /api/settings - Reset settings to default
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   try {
     const session = await auth();
 
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Reset to default settings
-    const resetSettings = await prisma.userSettings.upsert({
+    const _resetSettings = await prisma.userSettings.upsert({
       where: { userId: session.user.id },
       update: {
         settings: DEFAULT_SETTINGS,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       create: {
         userId: session.user.id,
-        settings: DEFAULT_SETTINGS
-      }
+        settings: DEFAULT_SETTINGS,
+      },
     });
 
     // Log the reset action
@@ -379,14 +382,13 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Settings reset to default",
-      data: DEFAULT_SETTINGS
+      data: DEFAULT_SETTINGS,
     });
-
   } catch (error) {
     console.error("Settings reset error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to reset settings" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

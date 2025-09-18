@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { type Prisma, PrismaClient } from "@prisma/client";
 import { LRUCache } from "lru-cache";
 
 // Cache configuration
@@ -6,14 +6,14 @@ const queryCache = new LRUCache<string, any>({
   max: 1000, // Maximum number of cached queries
   ttl: 1000 * 60 * 5, // 5 minutes TTL
   allowStale: false,
-  updateAgeOnGet: false
+  updateAgeOnGet: false,
 });
 
 const statsCache = new LRUCache<string, any>({
   max: 100,
   ttl: 1000 * 60 * 2, // 2 minutes for stats
   allowStale: true,
-  updateAgeOnGet: true
+  updateAgeOnGet: true,
 });
 
 // Query performance monitoring
@@ -32,23 +32,23 @@ export function createOptimizedPrismaClient(): PrismaClient {
   return new PrismaClient({
     log: [
       {
-        emit: 'event',
-        level: 'query',
+        emit: "event",
+        level: "query",
       },
       {
-        emit: 'stdout',
-        level: 'error',
+        emit: "stdout",
+        level: "error",
       },
       {
-        emit: 'stdout',
-        level: 'warn',
-      }
+        emit: "stdout",
+        level: "warn",
+      },
     ],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL
-      }
-    }
+        url: process.env.DATABASE_URL,
+      },
+    },
   });
 }
 
@@ -60,17 +60,17 @@ export async function cachedQuery<T>(
     ttl?: number;
     skipCache?: boolean;
     cacheable?: boolean;
-  } = {}
+  } = {},
 ): Promise<T> {
   const startTime = Date.now();
-  let fromCache = false;
+  let _fromCache = false;
 
   try {
     // Check cache first (unless explicitly skipped)
-    if (!options.skipCache && (options.cacheable !== false)) {
+    if (!options.skipCache && options.cacheable !== false) {
       const cached = queryCache.get(cacheKey);
       if (cached !== undefined) {
-        fromCache = true;
+        _fromCache = true;
         const duration = Date.now() - startTime;
 
         recordQueryMetric({
@@ -78,7 +78,7 @@ export async function cachedQuery<T>(
           duration,
           timestamp: new Date(),
           cached: true,
-          resultCount: Array.isArray(cached) ? cached.length : 1
+          resultCount: Array.isArray(cached) ? cached.length : 1,
         });
 
         return cached;
@@ -92,7 +92,7 @@ export async function cachedQuery<T>(
     // Cache the result (if cacheable and not explicitly skipped)
     if (options.cacheable !== false && !options.skipCache) {
       queryCache.set(cacheKey, result, {
-        ttl: options.ttl
+        ttl: options.ttl,
       });
     }
 
@@ -101,11 +101,10 @@ export async function cachedQuery<T>(
       duration,
       timestamp: new Date(),
       cached: false,
-      resultCount: Array.isArray(result) ? result.length : 1
+      resultCount: Array.isArray(result) ? result.length : 1,
     });
 
     return result;
-
   } catch (error) {
     console.error(`Query failed: ${cacheKey}`, error);
     throw error;
@@ -117,7 +116,7 @@ export interface PaginationOptions {
   page?: number;
   limit?: number;
   cursor?: string;
-  orderBy?: Record<string, 'asc' | 'desc'>;
+  orderBy?: Record<string, "asc" | "desc">;
 }
 
 export interface PaginatedResult<T> {
@@ -137,7 +136,7 @@ export async function paginateQuery<T>(
   model: any,
   where: any,
   options: PaginationOptions,
-  include?: any
+  include?: any,
 ): Promise<PaginatedResult<T>> {
   const page = Math.max(1, options.page || 1);
   const limit = Math.min(100, Math.max(1, options.limit || 20)); // Max 100 items per page
@@ -148,12 +147,12 @@ export async function paginateQuery<T>(
     model.findMany({
       where,
       include,
-      orderBy: options.orderBy || { createdAt: 'desc' },
+      orderBy: options.orderBy || { createdAt: "desc" },
       skip,
       take: limit,
-      ...(options.cursor ? { cursor: { id: options.cursor } } : {})
+      ...(options.cursor ? { cursor: { id: options.cursor } } : {}),
     }),
-    model.count({ where })
+    model.count({ where }),
   ]);
 
   const totalPages = Math.ceil(total / limit);
@@ -169,8 +168,8 @@ export async function paginateQuery<T>(
       totalPages,
       hasNext,
       hasPrev,
-      cursor: data.length > 0 ? data[data.length - 1].id : undefined
-    }
+      cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+    },
   };
 }
 
@@ -181,13 +180,13 @@ export class BedrijfQueryOptimizer {
   // Optimized opdrachten query with intelligent joins
   async getOpdrachtForBedrijf(
     bedrijfId: string,
-    role: 'leverancier' | 'opdrachtgever',
+    role: "leverancier" | "opdrachtgever",
     filters: {
       status?: string;
       page?: number;
       limit?: number;
       includeStats?: boolean;
-    } = {}
+    } = {},
   ) {
     const cacheKey = `bedrijf:${bedrijfId}:opdrachten:${role}:${JSON.stringify(filters)}`;
 
@@ -196,22 +195,22 @@ export class BedrijfQueryOptimizer {
       async () => {
         const whereClause: Prisma.OpdrachtWhereInput = {};
 
-        if (role === 'opdrachtgever') {
-          whereClause.creatorType = 'BEDRIJF';
+        if (role === "opdrachtgever") {
+          whereClause.creatorType = "BEDRIJF";
           whereClause.creatorBedrijfId = bedrijfId;
         } else {
           whereClause.OR = [
             {
-              targetAudience: 'ALLEEN_BEDRIJVEN',
-              creatorType: 'OPDRACHTGEVER'
+              targetAudience: "ALLEEN_BEDRIJVEN",
+              creatorType: "OPDRACHTGEVER",
             },
             {
-              targetAudience: 'BEIDEN',
-              creatorType: 'OPDRACHTGEVER'
-            }
+              targetAudience: "BEIDEN",
+              creatorType: "OPDRACHTGEVER",
+            },
           ];
           whereClause.NOT = {
-            creatorBedrijfId: bedrijfId
+            creatorBedrijfId: bedrijfId,
           };
         }
 
@@ -224,19 +223,19 @@ export class BedrijfQueryOptimizer {
           opdrachtgever: {
             select: {
               bedrijfsnaam: true,
-              contactpersoon: true
-            }
+              contactpersoon: true,
+            },
           },
           creatorBedrijf: {
             select: {
-              bedrijfsnaam: true
-            }
+              bedrijfsnaam: true,
+            },
           },
           _count: {
             select: {
-              sollicitaties: true
-            }
-          }
+              sollicitaties: true,
+            },
+          },
         };
 
         // Only include sollicitaties if needed
@@ -246,8 +245,8 @@ export class BedrijfQueryOptimizer {
             take: 1,
             select: {
               id: true,
-              status: true
-            }
+              status: true,
+            },
           };
         }
 
@@ -257,19 +256,19 @@ export class BedrijfQueryOptimizer {
           {
             page: filters.page,
             limit: filters.limit,
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: "desc" },
           },
-          include
+          include,
         );
       },
-      { ttl: 1000 * 60 * 2 } // 2 minutes cache
+      { ttl: 1000 * 60 * 2 }, // 2 minutes cache
     );
   }
 
   // Optimized planning query with team availability
   async getPlanningForBedrijf(
     bedrijfId: string,
-    dateRange: { start: Date; end: Date }
+    dateRange: { start: Date; end: Date },
   ) {
     const cacheKey = `bedrijf:${bedrijfId}:planning:${dateRange.start.toISOString()}:${dateRange.end.toISOString()}`;
 
@@ -282,23 +281,23 @@ export class BedrijfQueryOptimizer {
             where: {
               OR: [
                 {
-                  creatorType: 'BEDRIJF',
+                  creatorType: "BEDRIJF",
                   creatorBedrijfId: bedrijfId,
-                  status: { in: ['OPEN', 'IN_PROGRESS', 'ASSIGNED'] }
+                  status: { in: ["OPEN", "IN_PROGRESS", "ASSIGNED"] },
                 },
                 {
                   acceptedBedrijfId: bedrijfId,
-                  status: { in: ['IN_PROGRESS', 'ASSIGNED'] }
-                }
+                  status: { in: ["IN_PROGRESS", "ASSIGNED"] },
+                },
               ],
               startDatum: {
                 gte: dateRange.start,
-                lte: dateRange.end
-              }
+                lte: dateRange.end,
+              },
             },
             include: {
               sollicitaties: {
-                where: { status: 'ACCEPTED' },
+                where: { status: "ACCEPTED" },
                 include: {
                   zzpProfile: {
                     select: {
@@ -307,19 +306,19 @@ export class BedrijfQueryOptimizer {
                       achternaam: true,
                       telefoon: true,
                       user: {
-                        select: { email: true }
-                      }
-                    }
-                  }
-                }
+                        select: { email: true },
+                      },
+                    },
+                  },
+                },
               },
               opdrachtgever: {
                 select: {
                   bedrijfsnaam: true,
-                  contactpersoon: true
-                }
-              }
-            }
+                  contactpersoon: true,
+                },
+              },
+            },
           }),
 
           // Get available team members efficiently
@@ -335,15 +334,15 @@ export class BedrijfQueryOptimizer {
               WHERE (o."creatorBedrijfId" = ${bedrijfId} OR o."acceptedBedrijfId" = ${bedrijfId})
               AND s.status = 'ACCEPTED'
             )
-          `
+          `,
         ]);
 
         return {
           activeOpdrachten,
-          teamMembers
+          teamMembers,
         };
       },
-      { ttl: 1000 * 60 * 3 } // 3 minutes cache for planning
+      { ttl: 1000 * 60 * 3 }, // 3 minutes cache for planning
     );
   }
 
@@ -352,10 +351,10 @@ export class BedrijfQueryOptimizer {
     bedrijfId: string,
     filters: {
       search?: string;
-      status?: 'active' | 'inactive' | 'all';
+      status?: "active" | "inactive" | "all";
       page?: number;
       limit?: number;
-    } = {}
+    } = {},
   ) {
     const cacheKey = `bedrijf:${bedrijfId}:klanten:${JSON.stringify(filters)}`;
 
@@ -364,26 +363,26 @@ export class BedrijfQueryOptimizer {
       async () => {
         // First get client IDs who have worked with this bedrijf
         const clientRelations = await this.prisma.opdracht.groupBy({
-          by: ['opdrachtgeverId'],
+          by: ["opdrachtgeverId"],
           where: {
             OR: [
               {
-                creatorType: 'BEDRIJF',
-                creatorBedrijfId: bedrijfId
+                creatorType: "BEDRIJF",
+                creatorBedrijfId: bedrijfId,
               },
               {
-                acceptedBedrijfId: bedrijfId
-              }
+                acceptedBedrijfId: bedrijfId,
+              },
             ],
-            opdrachtgeverId: { not: null }
+            opdrachtgeverId: { not: null },
           },
           _count: {
-            id: true
+            id: true,
           },
           _sum: {
             uurloon: true,
-            aantalPersonen: true
-          }
+            aantalPersonen: true,
+          },
         });
 
         if (clientRelations.length === 0) {
@@ -393,25 +392,31 @@ export class BedrijfQueryOptimizer {
               totalKlanten: 0,
               activeKlanten: 0,
               totalRevenue: 0,
-              averageOrderValue: 0
-            }
+              averageOrderValue: 0,
+            },
           };
         }
 
         const validClientIds = clientRelations
-          .map(c => c.opdrachtgeverId)
-          .filter(id => id !== null) as string[];
+          .map((c) => c.opdrachtgeverId)
+          .filter((id) => id !== null) as string[];
 
         // Build search conditions
         const searchConditions: Prisma.OpdrachtgeverWhereInput = {
-          id: { in: validClientIds }
+          id: { in: validClientIds },
         };
 
         if (filters.search) {
           searchConditions.OR = [
-            { bedrijfsnaam: { contains: filters.search, mode: 'insensitive' } },
-            { contactpersoon: { contains: filters.search, mode: 'insensitive' } },
-            { user: { email: { contains: filters.search, mode: 'insensitive' } } }
+            { bedrijfsnaam: { contains: filters.search, mode: "insensitive" } },
+            {
+              contactpersoon: { contains: filters.search, mode: "insensitive" },
+            },
+            {
+              user: {
+                email: { contains: filters.search, mode: "insensitive" },
+              },
+            },
           ];
         }
 
@@ -422,20 +427,20 @@ export class BedrijfQueryOptimizer {
             user: {
               select: {
                 email: true,
-                createdAt: true
-              }
+                createdAt: true,
+              },
             },
             opdrachten: {
               where: {
                 OR: [
                   {
-                    creatorType: 'BEDRIJF',
-                    creatorBedrijfId: bedrijfId
+                    creatorType: "BEDRIJF",
+                    creatorBedrijfId: bedrijfId,
                   },
                   {
-                    acceptedBedrijfId: bedrijfId
-                  }
-                ]
+                    acceptedBedrijfId: bedrijfId,
+                  },
+                ],
               },
               select: {
                 id: true,
@@ -444,41 +449,44 @@ export class BedrijfQueryOptimizer {
                 startDatum: true,
                 uurloon: true,
                 aantalPersonen: true,
-                createdAt: true
+                createdAt: true,
               },
-              orderBy: { createdAt: 'desc' },
-              take: 5 // Recent opdrachten preview
-            }
+              orderBy: { createdAt: "desc" },
+              take: 5, // Recent opdrachten preview
+            },
           },
           take: filters.limit || 20,
-          skip: ((filters.page || 1) - 1) * (filters.limit || 20)
+          skip: ((filters.page || 1) - 1) * (filters.limit || 20),
         });
 
         return {
           klanten,
-          clientRelations // Include aggregated stats
+          clientRelations, // Include aggregated stats
         };
       },
-      { ttl: 1000 * 60 * 5 } // 5 minutes cache for client data
+      { ttl: 1000 * 60 * 5 }, // 5 minutes cache for client data
     );
   }
 
   // Optimized dashboard stats with pre-calculated metrics
   async getDashboardStats(
     bedrijfId: string,
-    period: 'week' | 'month' | 'quarter' | 'year' = 'month'
+    period: "week" | "month" | "quarter" | "year" = "month",
   ) {
     const cacheKey = `bedrijf:${bedrijfId}:stats:${period}`;
 
-    return statsCache.get(cacheKey) || await cachedQuery(
-      cacheKey,
-      async () => {
-        const now = new Date();
-        const dateRanges = calculateDateRanges(now, period);
+    return (
+      statsCache.get(cacheKey) ||
+      (await cachedQuery(
+        cacheKey,
+        async () => {
+          const now = new Date();
+          const dateRanges = calculateDateRanges(now, period);
 
-        // Use raw SQL for complex aggregations (better performance)
-        const [currentStats, previousStats, statusBreakdown] = await Promise.all([
-          this.prisma.$queryRaw`
+          // Use raw SQL for complex aggregations (better performance)
+          const [currentStats, previousStats, statusBreakdown] =
+            await Promise.all([
+              this.prisma.$queryRaw`
             SELECT
               COUNT(*)::int as total_opdrachten,
               SUM("uurloon" * "aantalPersonen")::int as estimated_revenue,
@@ -492,7 +500,7 @@ export class BedrijfQueryOptimizer {
             AND "createdAt" <= ${dateRanges.current.end}
           `,
 
-          this.prisma.$queryRaw`
+              this.prisma.$queryRaw`
             SELECT
               COUNT(*)::int as total_opdrachten,
               SUM("uurloon" * "aantalPersonen")::int as estimated_revenue
@@ -505,36 +513,37 @@ export class BedrijfQueryOptimizer {
             AND "createdAt" < ${dateRanges.previous.end}
           `,
 
-          this.prisma.opdracht.groupBy({
-            by: ['status'],
-            where: {
-              OR: [
-                {
-                  creatorType: 'BEDRIJF',
-                  creatorBedrijfId: bedrijfId
+              this.prisma.opdracht.groupBy({
+                by: ["status"],
+                where: {
+                  OR: [
+                    {
+                      creatorType: "BEDRIJF",
+                      creatorBedrijfId: bedrijfId,
+                    },
+                    {
+                      acceptedBedrijfId: bedrijfId,
+                    },
+                  ],
+                  createdAt: {
+                    gte: dateRanges.current.start,
+                    lte: dateRanges.current.end,
+                  },
                 },
-                {
-                  acceptedBedrijfId: bedrijfId
-                }
-              ],
-              createdAt: {
-                gte: dateRanges.current.start,
-                lte: dateRanges.current.end
-              }
-            },
-            _count: { id: true }
-          })
-        ]);
+                _count: { id: true },
+              }),
+            ]);
 
-        return {
-          currentStats: (currentStats as any)[0],
-          previousStats: (previousStats as any)[0],
-          statusBreakdown,
-          period,
-          generatedAt: new Date().toISOString()
-        };
-      },
-      { ttl: 1000 * 60 * 5 } // 5 minutes for dashboard stats
+          return {
+            currentStats: (currentStats as any)[0],
+            previousStats: (previousStats as any)[0],
+            statusBreakdown,
+            period,
+            generatedAt: new Date().toISOString(),
+          };
+        },
+        { ttl: 1000 * 60 * 5 }, // 5 minutes for dashboard stats
+      ))
     );
   }
 }
@@ -543,24 +552,41 @@ export class BedrijfQueryOptimizer {
 function calculateDateRanges(now: Date, period: string) {
   const ranges = {
     current: { start: new Date(), end: new Date() },
-    previous: { start: new Date(), end: new Date() }
+    previous: { start: new Date(), end: new Date() },
   };
 
   switch (period) {
-    case 'week':
-      ranges.current.start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    case "week":
+      ranges.current.start = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 7,
+      );
       ranges.current.end = now;
-      ranges.previous.start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14);
-      ranges.previous.end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+      ranges.previous.start = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 14,
+      );
+      ranges.previous.end = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 7,
+      );
       break;
-    case 'quarter':
+    case "quarter": {
       const currentQuarter = Math.floor(now.getMonth() / 3);
       ranges.current.start = new Date(now.getFullYear(), currentQuarter * 3, 1);
       ranges.current.end = now;
-      ranges.previous.start = new Date(now.getFullYear(), (currentQuarter - 1) * 3, 1);
+      ranges.previous.start = new Date(
+        now.getFullYear(),
+        (currentQuarter - 1) * 3,
+        1,
+      );
       ranges.previous.end = new Date(now.getFullYear(), currentQuarter * 3, 1);
       break;
-    case 'year':
+    }
+    case "year":
       ranges.current.start = new Date(now.getFullYear(), 0, 1);
       ranges.current.end = now;
       ranges.previous.start = new Date(now.getFullYear() - 1, 0, 1);
@@ -569,7 +595,11 @@ function calculateDateRanges(now: Date, period: string) {
     default: // month
       ranges.current.start = new Date(now.getFullYear(), now.getMonth(), 1);
       ranges.current.end = now;
-      ranges.previous.start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      ranges.previous.start = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        1,
+      );
       ranges.previous.end = new Date(now.getFullYear(), now.getMonth(), 1);
   }
 
@@ -586,14 +616,16 @@ function recordQueryMetric(metric: QueryMetrics) {
 
   // Log slow queries
   if (metric.duration > 3000 && !metric.cached) {
-    console.warn(`Slow database query: ${metric.query} took ${metric.duration}ms`);
+    console.warn(
+      `Slow database query: ${metric.query} took ${metric.duration}ms`,
+    );
   }
 }
 
 // Cache management utilities
 export function clearCache(pattern?: string) {
   if (pattern) {
-    queryCache.forEach((value, key) => {
+    queryCache.forEach((_value, key) => {
       if (key.includes(pattern)) {
         queryCache.delete(key);
       }
@@ -609,19 +641,19 @@ export function getCacheStats() {
       size: queryCache.size,
       calculatedSize: queryCache.calculatedSize,
       hits: queryCache.hits,
-      misses: queryCache.misses
+      misses: queryCache.misses,
     },
     statsCache: {
       size: statsCache.size,
       calculatedSize: statsCache.calculatedSize,
       hits: statsCache.hits,
-      misses: statsCache.misses
+      misses: statsCache.misses,
     },
     recentQueries: queryMetrics.slice(-10),
     slowQueries: queryMetrics
-      .filter(m => m.duration > 1000)
+      .filter((m) => m.duration > 1000)
       .sort((a, b) => b.duration - a.duration)
-      .slice(0, 10)
+      .slice(0, 10),
   };
 }
 

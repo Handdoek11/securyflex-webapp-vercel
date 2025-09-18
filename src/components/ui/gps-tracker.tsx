@@ -1,13 +1,22 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { MapPin, Navigation, AlertTriangle, CheckCircle, Loader2, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Loader2,
+  MapPin,
+  Navigation,
+  RefreshCw,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { gpsToast, toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { toast, gpsToast } from "@/components/ui/toast";
 
 // GPS location interface
 export interface GPSLocation {
@@ -21,7 +30,13 @@ export interface GPSLocation {
 }
 
 // GPS status types
-type GPSStatus = "idle" | "requesting" | "granted" | "denied" | "unavailable" | "error";
+type GPSStatus =
+  | "idle"
+  | "requesting"
+  | "granted"
+  | "denied"
+  | "unavailable"
+  | "error";
 
 interface GPSTrackerProps {
   onLocationUpdate?: (location: GPSLocation) => void;
@@ -76,7 +91,9 @@ export function GPSTracker({
   const getCurrentLocation = useCallback(async (): Promise<GPSLocation> => {
     return new Promise((resolve, reject) => {
       if (!isGeolocationSupported) {
-        reject(new Error("Geolocation wordt niet ondersteund door deze browser"));
+        reject(
+          new Error("Geolocation wordt niet ondersteund door deze browser"),
+        );
         return;
       }
 
@@ -115,33 +132,36 @@ export function GPSTracker({
           handleGeolocationError(error);
           reject(error);
         },
-        options
+        options,
       );
     });
-  }, [isGeolocationSupported, isOnline]);
+  }, [isGeolocationSupported, isOnline, handleGeolocationError]);
 
   // Handle geolocation errors
-  const handleGeolocationError = useCallback((error: GeolocationPositionError) => {
-    switch (error.code) {
-      case error.PERMISSION_DENIED:
-        setStatus("denied");
-        gpsToast.locationRequired();
-        break;
-      case error.POSITION_UNAVAILABLE:
-        setStatus("unavailable");
-        toast.error("GPS locatie niet beschikbaar");
-        break;
-      case error.TIMEOUT:
-        setStatus("error");
-        toast.error("GPS timeout - probeer opnieuw");
-        break;
-      default:
-        setStatus("error");
-        gpsToast.locationError();
-        break;
-    }
-    onError?.(error);
-  }, [onError]);
+  const handleGeolocationError = useCallback(
+    (error: GeolocationPositionError) => {
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          setStatus("denied");
+          gpsToast.locationRequired();
+          break;
+        case error.POSITION_UNAVAILABLE:
+          setStatus("unavailable");
+          toast.error("GPS locatie niet beschikbaar");
+          break;
+        case error.TIMEOUT:
+          setStatus("error");
+          toast.error("GPS timeout - probeer opnieuw");
+          break;
+        default:
+          setStatus("error");
+          gpsToast.locationError();
+          break;
+      }
+      onError?.(error);
+    },
+    [onError],
+  );
 
   // Start continuous tracking
   const startTracking = useCallback(() => {
@@ -175,12 +195,18 @@ export function GPSTracker({
         onLocationUpdate?.(gpsLocation);
       },
       handleGeolocationError,
-      options
+      options,
     );
 
     setWatchId(id);
     setIsTracking(true);
-  }, [isGeolocationSupported, isOnline, watchId, onLocationUpdate, handleGeolocationError]);
+  }, [
+    isGeolocationSupported,
+    isOnline,
+    watchId,
+    onLocationUpdate,
+    handleGeolocationError,
+  ]);
 
   // Stop tracking
   const stopTracking = useCallback(() => {
@@ -228,17 +254,41 @@ export function GPSTracker({
   const getStatusBadge = () => {
     switch (status) {
       case "requesting":
-        return { variant: "secondary" as const, label: "Ophalen...", icon: <Loader2 className="h-3 w-3 animate-spin" /> };
+        return {
+          variant: "secondary" as const,
+          label: "Ophalen...",
+          icon: <Loader2 className="h-3 w-3 animate-spin" />,
+        };
       case "granted":
-        return { variant: "default" as const, label: "Actief", icon: <CheckCircle className="h-3 w-3" /> };
+        return {
+          variant: "default" as const,
+          label: "Actief",
+          icon: <CheckCircle className="h-3 w-3" />,
+        };
       case "denied":
-        return { variant: "destructive" as const, label: "Geweigerd", icon: <AlertTriangle className="h-3 w-3" /> };
+        return {
+          variant: "destructive" as const,
+          label: "Geweigerd",
+          icon: <AlertTriangle className="h-3 w-3" />,
+        };
       case "unavailable":
-        return { variant: "destructive" as const, label: "Niet beschikbaar", icon: <AlertTriangle className="h-3 w-3" /> };
+        return {
+          variant: "destructive" as const,
+          label: "Niet beschikbaar",
+          icon: <AlertTriangle className="h-3 w-3" />,
+        };
       case "error":
-        return { variant: "destructive" as const, label: "Fout", icon: <AlertTriangle className="h-3 w-3" /> };
+        return {
+          variant: "destructive" as const,
+          label: "Fout",
+          icon: <AlertTriangle className="h-3 w-3" />,
+        };
       default:
-        return { variant: "outline" as const, label: "Inactief", icon: <MapPin className="h-3 w-3" /> };
+        return {
+          variant: "outline" as const,
+          label: "Inactief",
+          icon: <MapPin className="h-3 w-3" />,
+        };
     }
   };
 
@@ -274,7 +324,9 @@ export function GPSTracker({
             <span className="ml-1">{statusBadge.label}</span>
           </Badge>
           {location && showAccuracy && (
-            <span className={cn("text-xs", getAccuracyColor(location.accuracy))}>
+            <span
+              className={cn("text-xs", getAccuracyColor(location.accuracy))}
+            >
               ±{Math.round(location.accuracy)}m
             </span>
           )}
@@ -287,7 +339,12 @@ export function GPSTracker({
             onClick={refreshLocation}
             disabled={status === "requesting" || !isOnline}
           >
-            <RefreshCw className={cn("h-3 w-3", status === "requesting" && "animate-spin")} />
+            <RefreshCw
+              className={cn(
+                "h-3 w-3",
+                status === "requesting" && "animate-spin",
+              )}
+            />
           </Button>
         )}
       </div>
@@ -337,7 +394,12 @@ export function GPSTracker({
             {showAccuracy && (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Nauwkeurigheid:</span>
-                <span className={cn("font-medium", getAccuracyColor(location.accuracy))}>
+                <span
+                  className={cn(
+                    "font-medium",
+                    getAccuracyColor(location.accuracy),
+                  )}
+                >
                   ±{Math.round(location.accuracy)} meter
                 </span>
               </div>
@@ -348,10 +410,17 @@ export function GPSTracker({
               <div>
                 <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>Signaal kwaliteit</span>
-                  <span>{location.accuracy <= requiredAccuracy ? "Goed" : "Onvoldoende"}</span>
+                  <span>
+                    {location.accuracy <= requiredAccuracy
+                      ? "Goed"
+                      : "Onvoldoende"}
+                  </span>
                 </div>
                 <Progress
-                  value={Math.max(0, 100 - (location.accuracy / requiredAccuracy) * 100)}
+                  value={Math.max(
+                    0,
+                    100 - (location.accuracy / requiredAccuracy) * 100,
+                  )}
                   className="h-2"
                 />
               </div>
@@ -366,7 +435,9 @@ export function GPSTracker({
         )}
 
         {/* Error state */}
-        {(status === "denied" || status === "unavailable" || status === "error") && (
+        {(status === "denied" ||
+          status === "unavailable" ||
+          status === "error") && (
           <div className="text-center p-4 border border-red-200 rounded-lg bg-red-50 dark:border-red-800 dark:bg-red-900/20">
             <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
             <p className="text-sm text-red-700 dark:text-red-300 mb-2">
@@ -410,7 +481,12 @@ export function GPSTracker({
               onClick={refreshLocation}
               disabled={status === "requesting" || !isOnline}
             >
-              <RefreshCw className={cn("h-4 w-4", status === "requesting" && "animate-spin")} />
+              <RefreshCw
+                className={cn(
+                  "h-4 w-4",
+                  status === "requesting" && "animate-spin",
+                )}
+              />
             </Button>
           )}
         </div>
@@ -434,7 +510,7 @@ export function calculateDistance(
   lat1: number,
   lng1: number,
   lat2: number,
-  lng2: number
+  lng2: number,
 ): number {
   const R = 6371e3; // Earth's radius in meters
   const φ1 = (lat1 * Math.PI) / 180;
@@ -455,9 +531,14 @@ export function isWithinGeofence(
   currentLng: number,
   targetLat: number,
   targetLng: number,
-  radiusMeters: number
+  radiusMeters: number,
 ): boolean {
-  const distance = calculateDistance(currentLat, currentLng, targetLat, targetLng);
+  const distance = calculateDistance(
+    currentLat,
+    currentLng,
+    targetLat,
+    targetLng,
+  );
   return distance <= radiusMeters;
 }
 
@@ -465,7 +546,9 @@ export function formatGPSCoordinates(lat: number, lng: number): string {
   return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 }
 
-export function getGPSAccuracyLevel(accuracy: number): "excellent" | "good" | "fair" | "poor" {
+export function getGPSAccuracyLevel(
+  accuracy: number,
+): "excellent" | "good" | "fair" | "poor" {
   if (accuracy <= 5) return "excellent";
   if (accuracy <= 20) return "good";
   if (accuracy <= 50) return "fair";

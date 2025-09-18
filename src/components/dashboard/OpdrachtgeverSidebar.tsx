@@ -1,37 +1,42 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
-  CalendarPlus,
-  Users,
-  MoreVertical,
-  ChevronLeft,
-  Menu,
-  LogOut,
-  Settings,
-  HelpCircle,
   Bell,
-  Shield,
+  CalendarPlus,
+  ChevronLeft,
   Clock,
   FileText,
+  HelpCircle,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MoreVertical,
+  Settings,
+  Shield,
   TrendingUp,
+  Users,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge as BadgeComponent } from "@/components/ui/badge";
-import { useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 import { useIsTablet } from "@/hooks/useResponsive";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   href: string;
   label: string;
   icon: typeof LayoutDashboard;
   badge?: number | string;
-  badgeVariant?: "default" | "secondary" | "destructive" | "outline" | "success";
+  badgeVariant?:
+    | "default"
+    | "secondary"
+    | "destructive"
+    | "outline"
+    | "success";
 }
 
 const navItems: NavItem[] = [
@@ -88,7 +93,7 @@ interface OpdrachtgeverSidebarProps {
 
 export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const _router = useRouter();
   const { data: session } = useSession();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isTablet = useIsTablet();
@@ -110,13 +115,16 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
       className={cn(
         "hidden md:flex flex-col bg-card border-r transition-all duration-300 ease-in-out",
         effectiveCollapsed ? "w-20" : "w-64",
-        className
+        className,
       )}
     >
       {/* Header with Logo/Toggle */}
       <div className="h-16 border-b flex items-center justify-between px-4">
         {!effectiveCollapsed && (
-          <Link href="/dashboard/opdrachtgever" className="flex items-center gap-2">
+          <Link
+            href="/dashboard/opdrachtgever"
+            className="flex items-center gap-2"
+          >
             <Shield className="h-8 w-8 text-primary" />
             <span className="font-semibold text-lg">SecuryFlex</span>
           </Link>
@@ -140,7 +148,8 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
         <nav className="space-y-1 px-3">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
               <Link
@@ -151,13 +160,13 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "hover:bg-accent hover:text-accent-foreground",
-                  effectiveCollapsed && "justify-center px-2"
+                  effectiveCollapsed && "justify-center px-2",
                 )}
               >
                 <Icon
                   className={cn(
                     "h-5 w-5 flex-shrink-0 transition-all",
-                    isActive && "scale-110"
+                    isActive && "scale-110",
                   )}
                 />
                 {!effectiveCollapsed && <span>{item.label}</span>}
@@ -166,10 +175,13 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
                     variant={item.badgeVariant || "secondary"}
                     className={cn(
                       "ml-auto",
-                      effectiveCollapsed && "absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center"
+                      effectiveCollapsed &&
+                        "absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center",
                     )}
                   >
-                    {effectiveCollapsed && Number(item.badge) > 9 ? "9+" : item.badge}
+                    {effectiveCollapsed && Number(item.badge) > 9
+                      ? "9+"
+                      : item.badge}
                   </BadgeComponent>
                 )}
 
@@ -192,7 +204,8 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
         <nav className="space-y-1 px-3">
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
               <Link
@@ -203,7 +216,7 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "hover:bg-accent hover:text-accent-foreground",
-                  effectiveCollapsed && "justify-center px-2"
+                  effectiveCollapsed && "justify-center px-2",
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
@@ -227,7 +240,7 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
         <div
           className={cn(
             "mb-2 p-2 rounded-lg bg-primary/10 text-primary",
-            effectiveCollapsed && "text-center"
+            effectiveCollapsed && "text-center",
           )}
         >
           {effectiveCollapsed ? (
@@ -245,7 +258,7 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
           variant="ghost"
           className={cn(
             "w-full justify-start gap-3 mb-2",
-            effectiveCollapsed && "justify-center px-2"
+            effectiveCollapsed && "justify-center px-2",
           )}
         >
           <div className="relative">
@@ -261,7 +274,7 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
         <div
           className={cn(
             "flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors cursor-pointer",
-            effectiveCollapsed && "justify-center"
+            effectiveCollapsed && "justify-center",
           )}
         >
           <Avatar className="h-9 w-9">
@@ -285,7 +298,7 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
           onClick={() => signOut()}
           className={cn(
             "w-full justify-start gap-2 mt-2",
-            effectiveCollapsed && "justify-center px-2"
+            effectiveCollapsed && "justify-center px-2",
           )}
         >
           <LogOut className="h-4 w-4" />

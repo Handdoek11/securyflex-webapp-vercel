@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { AlertCircle, Loader2, Lock, Mail, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Lock, Mail, AlertCircle, Loader2 } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -17,20 +24,10 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Admin whitelist
-  const adminEmails = ['stef@securyflex.com', 'robert@securyflex.com'];
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
-    // Check if email is in admin whitelist
-    if (!adminEmails.includes(email.toLowerCase())) {
-      setError("Dit e-mailadres heeft geen admin toegang");
-      setLoading(false);
-      return;
-    }
 
     try {
       const result = await signIn("credentials", {
@@ -49,7 +46,7 @@ export default function AdminLoginPage() {
         // Redirect to auth monitor
         router.push("/admin/auth-monitor");
       }
-    } catch (err) {
+    } catch (_err) {
       setError("Er is een fout opgetreden bij het inloggen");
     } finally {
       setLoading(false);
@@ -60,9 +57,12 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
 
       <Card className="w-full max-w-md relative bg-white/95 backdrop-blur shadow-2xl">
@@ -127,8 +127,13 @@ export default function AdminLoginPage() {
                 <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
                 <div className="text-xs text-amber-800">
                   <p className="font-semibold mb-1">Beveiligde Toegang</p>
-                  <p>Dit portaal is alleen toegankelijk voor geregistreerde admin accounts.</p>
-                  <p className="mt-1">Alle login pogingen worden gelogd voor security doeleinden.</p>
+                  <p>
+                    Dit portaal is alleen toegankelijk voor geregistreerde admin
+                    accounts.
+                  </p>
+                  <p className="mt-1">
+                    Alle login pogingen worden gelogd voor security doeleinden.
+                  </p>
                 </div>
               </div>
             </div>
@@ -168,7 +173,8 @@ export default function AdminLoginPage() {
         <div className="px-6 pb-4">
           <div className="border-t pt-4">
             <p className="text-xs text-center text-gray-500">
-              🔒 Beveiligde verbinding • IP wordt gelogd • 2FA vereist voor kritieke acties
+              🔒 Beveiligde verbinding • IP wordt gelogd • 2FA vereist voor
+              kritieke acties
             </p>
           </div>
         </div>

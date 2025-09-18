@@ -4,25 +4,25 @@ const nextConfig: NextConfig = {
   // Enable Turbopack features for better performance
   turbopack: {
     rules: {
-      '*.svg': ['@svgr/webpack'],
+      "*.svg": ["@svgr/webpack"],
     },
   },
 
   // Enable experimental features
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
   },
 
   // External packages for server components
-  serverExternalPackages: ['prisma'],
+  serverExternalPackages: ["prisma"],
 
   // Image optimization
   images: {
-    domains: ['localhost', 'securyflex.nl'],
-    formats: ['image/webp', 'image/avif'],
+    domains: ["localhost", "securyflex.nl"],
+    formats: ["image/webp", "image/avif"],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
+    contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
@@ -31,60 +31,60 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
 
   // Build optimizations
-  output: 'standalone',
+  output: "standalone",
 
   // Headers for security and performance
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: "/(.*)",
         headers: [
           {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
+            key: "X-DNS-Prefetch-Control",
+            value: "on",
           },
           {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block'
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
           },
           {
-            key: 'X-Frame-Options',
-            value: 'DENY'
+            key: "X-Frame-Options",
+            value: "DENY",
           },
           {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
+            key: "X-Content-Type-Options",
+            value: "nosniff",
           },
           {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
+            key: "Referrer-Policy",
+            value: "origin-when-cross-origin",
           },
           {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self)'
-          }
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(self)",
+          },
         ],
       },
       // Cache static assets
       {
-        source: '/static/(.*)',
+        source: "/static/(.*)",
         headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
-          }
-        ]
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
       },
       // Cache API routes with shorter duration
       {
-        source: '/api/(.*)',
+        source: "/api/(.*)",
         headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=300, s-maxage=300'
-          }
-        ]
-      }
+            key: "Cache-Control",
+            value: "public, max-age=300, s-maxage=300",
+          },
+        ],
+      },
     ];
   },
 
@@ -95,18 +95,18 @@ const nextConfig: NextConfig = {
       config.optimization = {
         ...config.optimization,
         splitChunks: {
-          chunks: 'all',
+          chunks: "all",
           cacheGroups: {
             vendor: {
               test: /[\\/]node_modules[\\/]/,
-              name: 'vendors',
-              chunks: 'all',
+              name: "vendors",
+              chunks: "all",
               priority: 10,
             },
             common: {
-              name: 'common',
+              name: "common",
               minChunks: 2,
-              chunks: 'all',
+              chunks: "all",
               priority: 5,
               reuseExistingChunk: true,
             },
@@ -116,13 +116,13 @@ const nextConfig: NextConfig = {
     }
 
     // Bundle analyzer in development
-    if (dev && process.env.ANALYZE === 'true') {
-      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+    if (dev && process.env.ANALYZE === "true") {
+      const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
       config.plugins.push(
         new BundleAnalyzerPlugin({
-          analyzerMode: 'server',
+          analyzerMode: "server",
           openAnalyzer: true,
-        })
+        }),
       );
     }
 
@@ -130,7 +130,7 @@ const nextConfig: NextConfig = {
   },
 
   // Performance budgets (warnings in development)
-  ...(process.env.NODE_ENV === 'development' && {
+  ...(process.env.NODE_ENV === "development" && {
     onDemandEntries: {
       maxInactiveAge: 25 * 1000,
       pagesBufferLength: 2,
@@ -149,7 +149,7 @@ const nextConfig: NextConfig = {
 
   // Environment variables validation
   env: {
-    NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version || '1.0.0',
+    NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version || "1.0.0",
   },
 };
 

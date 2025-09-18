@@ -1,8 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { z } from "zod";
-import { broadcastSollicitatieEvent, broadcastOpdrachtEvent, BroadcastEvent } from "@/lib/supabase/broadcast";
+import {
+  BroadcastEvent,
+  broadcastOpdrachtEvent,
+  broadcastSollicitatieEvent,
+} from "@/lib/supabase/broadcast";
 
 interface RouteParams {
   params: Promise<{
@@ -18,7 +22,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -30,7 +34,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       voorgesteldTarief: z.number().optional(),
       teamGrootte: z.number().optional(), // For bedrijf sollicitaties
       beschikbareTeamLeden: z.array(z.string()).optional(), // Team member IDs
-      requestDirectPayment: z.boolean().optional()
+      requestDirectPayment: z.boolean().optional(),
     });
 
     const body = await request.json();
@@ -44,17 +48,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         bedrijfProfile: {
           include: {
             teamLeden: {
-              where: { status: "ACTIVE" }
-            }
-          }
-        }
-      }
+              where: { status: "ACTIVE" },
+            },
+          },
+        },
+      },
     });
 
     if (!user?.zzpProfile && !user?.bedrijfProfile) {
       return NextResponse.json(
         { success: false, error: "Only ZZP'ers and bedrijven can apply" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -67,28 +71,31 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (user.zzpProfile) {
       ndNummerStatus = user.zzpProfile.ndNummerStatus;
       ndNummerExpiry = user.zzpProfile.ndNummerVervalDatum;
-      ndNummerValid = ndNummerStatus === 'ACTIEF' &&
-                      ndNummerExpiry &&
-                      new Date(ndNummerExpiry) > new Date();
+      ndNummerValid =
+        ndNummerStatus === "ACTIEF" &&
+        ndNummerExpiry &&
+        new Date(ndNummerExpiry) > new Date();
     } else if (user.bedrijfProfile) {
       ndNummerStatus = user.bedrijfProfile.ndNummerStatus;
       ndNummerExpiry = user.bedrijfProfile.ndNummerVervalDatum;
-      ndNummerValid = ndNummerStatus === 'ACTIEF' &&
-                      ndNummerExpiry &&
-                      new Date(ndNummerExpiry) > new Date();
+      ndNummerValid =
+        ndNummerStatus === "ACTIEF" &&
+        ndNummerExpiry &&
+        new Date(ndNummerExpiry) > new Date();
     }
 
     // Block application if ND-nummer is not valid
     if (!ndNummerValid) {
-      const errorMessage = !ndNummerStatus || ndNummerStatus === 'NIET_GEREGISTREERD'
-        ? "Een geldig ND-nummer is verplicht voor beveiligingsopdrachten. Registreer uw ND-nummer in uw dashboard."
-        : ndNummerStatus === 'VERLOPEN'
-        ? "Uw ND-nummer is verlopen. Vernieuw uw ND-nummer om opdrachten te kunnen accepteren."
-        : ndNummerStatus === 'GESCHORST'
-        ? "Uw ND-nummer is geschorst. Neem contact op met Justis voor meer informatie."
-        : ndNummerStatus === 'INGETROKKEN'
-        ? "Uw ND-nummer is ingetrokken. U kunt geen beveiligingsopdrachten meer uitvoeren."
-        : "Uw ND-nummer is niet actief. Controleer uw compliance status in het dashboard.";
+      const errorMessage =
+        !ndNummerStatus || ndNummerStatus === "NIET_GEREGISTREERD"
+          ? "Een geldig ND-nummer is verplicht voor beveiligingsopdrachten. Registreer uw ND-nummer in uw dashboard."
+          : ndNummerStatus === "VERLOPEN"
+            ? "Uw ND-nummer is verlopen. Vernieuw uw ND-nummer om opdrachten te kunnen accepteren."
+            : ndNummerStatus === "GESCHORST"
+              ? "Uw ND-nummer is geschorst. Neem contact op met Justis voor meer informatie."
+              : ndNummerStatus === "INGETROKKEN"
+                ? "Uw ND-nummer is ingetrokken. U kunt geen beveiligingsopdrachten meer uitvoeren."
+                : "Uw ND-nummer is niet actief. Controleer uw compliance status in het dashboard.";
 
       return NextResponse.json(
         {
@@ -96,21 +103,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           error: errorMessage,
           complianceError: true,
           ndNummerStatus,
-          actionUrl: "/dashboard/compliance"
+          actionUrl: "/dashboard/compliance",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Warn if ND-nummer expires soon (within 30 days)
     if (ndNummerExpiry) {
       const daysUntilExpiry = Math.ceil(
-        (new Date(ndNummerExpiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+        (new Date(ndNummerExpiry).getTime() - Date.now()) /
+          (1000 * 60 * 60 * 24),
       );
 
       if (daysUntilExpiry <= 30 && daysUntilExpiry > 0) {
         // Log warning but allow application
-        console.warn(`User ${user.id} applying with ND-nummer expiring in ${daysUntilExpiry} days`);
+        console.warn(
+          `User ${user.id} applying with ND-nummer expiring in ${daysUntilExpiry} days`,
+        );
       }
     }
 
@@ -121,22 +131,25 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         sollicitaties: true,
         assignments: true,
         opdrachtgever: true,
-        creatorBedrijf: true
-      }
+        creatorBedrijf: true,
+      },
     });
 
     if (!opdracht) {
       return NextResponse.json(
         { success: false, error: "Opdracht not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Check if opdracht is open for applications
     if (!["OPEN", "URGENT"].includes(opdracht.status)) {
       return NextResponse.json(
-        { success: false, error: "Deze opdracht is niet meer open voor sollicitaties" },
-        { status: 400 }
+        {
+          success: false,
+          error: "Deze opdracht is niet meer open voor sollicitaties",
+        },
+        { status: 400 },
       );
     }
 
@@ -149,83 +162,106 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       if (opdracht.targetAudience === "ALLEEN_BEDRIJVEN") {
         return NextResponse.json(
           { success: false, error: "Deze opdracht is alleen voor bedrijven" },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
-      if (!opdracht.directZZPAllowed && opdracht.targetAudience !== "ALLEEN_ZZP") {
+      if (
+        !opdracht.directZZPAllowed &&
+        opdracht.targetAudience !== "ALLEEN_ZZP"
+      ) {
         return NextResponse.json(
-          { success: false, error: "Directe ZZP sollicitaties zijn niet toegestaan" },
-          { status: 403 }
+          {
+            success: false,
+            error: "Directe ZZP sollicitaties zijn niet toegestaan",
+          },
+          { status: 403 },
         );
       }
 
       // Check if already applied
       const existingSollicitatie = opdracht.sollicitaties.find(
-        s => s.zzpId === user.zzpProfile!.id
+        (s) => s.zzpId === user.zzpProfile?.id,
       );
 
       if (existingSollicitatie) {
         return NextResponse.json(
-          { success: false, error: "Je hebt al gesolliciteerd op deze opdracht" },
-          { status: 409 }
+          {
+            success: false,
+            error: "Je hebt al gesolliciteerd op deze opdracht",
+          },
+          { status: 409 },
         );
       }
     } else if (user.bedrijfProfile) {
       // Bedrijf checks
       if (opdracht.targetAudience === "ALLEEN_ZZP") {
         return NextResponse.json(
-          { success: false, error: "Deze opdracht is alleen voor individuele ZZP'ers" },
-          { status: 403 }
+          {
+            success: false,
+            error: "Deze opdracht is alleen voor individuele ZZP'ers",
+          },
+          { status: 403 },
         );
       }
 
-      if (opdracht.targetAudience === "EIGEN_TEAM" && opdracht.creatorBedrijfId !== user.bedrijfProfile.id) {
+      if (
+        opdracht.targetAudience === "EIGEN_TEAM" &&
+        opdracht.creatorBedrijfId !== user.bedrijfProfile.id
+      ) {
         return NextResponse.json(
-          { success: false, error: "Deze opdracht is alleen voor het eigen team van het bedrijf" },
-          { status: 403 }
+          {
+            success: false,
+            error:
+              "Deze opdracht is alleen voor het eigen team van het bedrijf",
+          },
+          { status: 403 },
         );
       }
 
       // Check team size requirements
-      const teamSize = validatedData.teamGrootte || user.bedrijfProfile.teamLeden.length;
+      const teamSize =
+        validatedData.teamGrootte || user.bedrijfProfile.teamLeden.length;
 
       if (opdracht.minTeamSize && teamSize < opdracht.minTeamSize) {
         return NextResponse.json(
           {
             success: false,
-            error: `Minimaal ${opdracht.minTeamSize} teamleden vereist, je hebt er ${teamSize}`
+            error: `Minimaal ${opdracht.minTeamSize} teamleden vereist, je hebt er ${teamSize}`,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       // Check if already applied
       const existingSollicitatie = opdracht.sollicitaties.find(
-        s => s.bedrijfId === user.bedrijfProfile!.id
+        (s) => s.bedrijfId === user.bedrijfProfile?.id,
       );
 
       if (existingSollicitatie) {
         return NextResponse.json(
-          { success: false, error: "Je bedrijf heeft al gesolliciteerd op deze opdracht" },
-          { status: 409 }
+          {
+            success: false,
+            error: "Je bedrijf heeft al gesolliciteerd op deze opdracht",
+          },
+          { status: 409 },
         );
       }
     }
 
     // Check available spots
     const acceptedSollicitaties = opdracht.sollicitaties.filter(
-      s => s.status === "ACCEPTED"
+      (s) => s.status === "ACCEPTED",
     ).length;
     const confirmedAssignments = opdracht.assignments.filter(
-      a => a.status === "CONFIRMED"
+      (a) => a.status === "CONFIRMED",
     ).length;
     const totalAccepted = acceptedSollicitaties + confirmedAssignments;
 
     if (totalAccepted >= opdracht.aantalBeveiligers) {
       return NextResponse.json(
         { success: false, error: "Alle plekken zijn al bezet" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -245,27 +281,30 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           ndNummerStatus,
           ndNummerExpiry,
           complianceCheckedAt: new Date(),
-          daysUntilExpiry: ndNummerExpiry ? Math.ceil(
-            (new Date(ndNummerExpiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-          ) : null
-        }
-      }
+          daysUntilExpiry: ndNummerExpiry
+            ? Math.ceil(
+                (new Date(ndNummerExpiry).getTime() - Date.now()) /
+                  (1000 * 60 * 60 * 24),
+              )
+            : null,
+        },
+      },
     });
 
     // Create ND-nummer audit log entry for job application
     if (user.zzpProfile?.ndNummer || user.bedrijfProfile?.ndNummer) {
       await prisma.nDNummerAuditLog.create({
         data: {
-          profileType: user.zzpProfile ? 'ZZP' : 'BEDRIJF',
+          profileType: user.zzpProfile ? "ZZP" : "BEDRIJF",
           zzpProfileId: user.zzpProfile?.id,
           bedrijfProfileId: user.bedrijfProfile?.id,
           ndNummer: user.zzpProfile?.ndNummer || user.bedrijfProfile?.ndNummer,
-          action: 'VERIFICATIE',
+          action: "VERIFICATIE",
           newStatus: ndNummerStatus as any,
-          verificationSource: 'Job Application',
+          verificationSource: "Job Application",
           complianceNotes: `ND-nummer gebruikt voor sollicitatie op opdracht ${opdracht.titel}`,
-          performedBy: session.user.id
-        }
+          performedBy: session.user.id,
+        },
       });
     }
 
@@ -276,7 +315,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       if (newTotalAccepted >= opdracht.aantalBeveiligers) {
         await prisma.opdracht.update({
           where: { id: opdrachtId },
-          data: { status: "TOEGEWEZEN" }
+          data: { status: "TOEGEWEZEN" },
         });
       }
 
@@ -290,8 +329,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             startTijd: opdracht.startDatum,
             eindTijd: opdracht.eindDatum,
             uurtarief: validatedData.voorgesteldTarief || opdracht.uurtarief,
-            status: "SCHEDULED"
-          }
+            status: "SCHEDULED",
+          },
         });
       }
     }
@@ -300,7 +339,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     await broadcastSollicitatieEvent(
       BroadcastEvent.SOLLICITATIE_CREATED,
       sollicitatie,
-      opdracht
+      opdracht,
     );
 
     // If auto-accepted, also broadcast the acceptance
@@ -308,12 +347,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       await broadcastSollicitatieEvent(
         BroadcastEvent.SOLLICITATIE_ACCEPTED,
         sollicitatie,
-        opdracht
+        opdracht,
       );
     }
 
     // Create notification for opdracht owner
-    const ownerName = opdracht.opdrachtgever?.bedrijfsnaam || opdracht.creatorBedrijf?.bedrijfsnaam;
+    const _ownerName =
+      opdracht.opdrachtgever?.bedrijfsnaam ||
+      opdracht.creatorBedrijf?.bedrijfsnaam;
     const sollicitantName = user.zzpProfile
       ? user.name
       : user.bedrijfProfile?.bedrijfsnaam;
@@ -325,8 +366,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         category: "OPDRACHT",
         title: "Nieuwe sollicitatie ontvangen",
         message: `${sollicitantName} heeft gesolliciteerd op "${opdracht.titel}"`,
-        actionUrl: `/dashboard/opdrachten/${opdrachtId}/sollicitaties`
-      }
+        actionUrl: `/dashboard/opdrachten/${opdrachtId}/sollicitaties`,
+      },
     });
 
     return NextResponse.json({
@@ -336,36 +377,35 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         status: sollicitatie.status,
         message: opdracht.autoAccept
           ? "Sollicitatie automatisch geaccepteerd!"
-          : "Sollicitatie verstuurd!"
-      }
+          : "Sollicitatie verstuurd!",
+      },
     });
-
   } catch (error) {
     console.error("Error applying for opdracht:", error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Invalid input", details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
       { success: false, error: "Failed to apply for opdracht" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // GET /api/opdrachten/[id]/solliciteer - Get sollicitaties for opdracht
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth();
 
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -385,30 +425,30 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                   select: {
                     name: true,
                     email: true,
-                    image: true
-                  }
-                }
-              }
+                    image: true,
+                  },
+                },
+              },
             },
             bedrijf: {
               select: {
                 bedrijfsnaam: true,
                 kvkNummer: true,
-                teamSize: true
-              }
-            }
+                teamSize: true,
+              },
+            },
           },
           orderBy: {
-            sollicitatiedatum: "desc"
-          }
-        }
-      }
+            sollicitatiedatum: "desc",
+          },
+        },
+      },
     });
 
     if (!opdracht) {
       return NextResponse.json(
         { success: false, error: "Opdracht not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -417,23 +457,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       where: { id: session.user.id },
       include: {
         opdrachtgever: true,
-        bedrijfProfile: true
-      }
+        bedrijfProfile: true,
+      },
     });
 
     const canView =
-      (opdracht.opdrachtgever && opdracht.opdrachtgeverId === user?.opdrachtgever?.id) ||
-      (opdracht.creatorBedrijf && opdracht.creatorBedrijfId === user?.bedrijfProfile?.id);
+      (opdracht.opdrachtgever &&
+        opdracht.opdrachtgeverId === user?.opdrachtgever?.id) ||
+      (opdracht.creatorBedrijf &&
+        opdracht.creatorBedrijfId === user?.bedrijfProfile?.id);
 
     if (!canView) {
       return NextResponse.json(
         { success: false, error: "Not authorized to view sollicitaties" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Format sollicitaties
-    const formattedSollicitaties = opdracht.sollicitaties.map(s => ({
+    const formattedSollicitaties = opdracht.sollicitaties.map((s) => ({
       id: s.id,
       type: s.sollicitantType,
       name: s.zzp ? s.zzp.user.name : s.bedrijf?.bedrijfsnaam,
@@ -444,8 +486,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       teamSize: s.teamGrootte || s.bedrijf?.teamSize,
       status: s.status,
       motivatie: s.motivatie,
-      voorgesteldTarief: s.voorgesteldTarief ? Number(s.voorgesteldTarief) : null,
-      sollicitatiedatum: s.sollicitatiedatum
+      voorgesteldTarief: s.voorgesteldTarief
+        ? Number(s.voorgesteldTarief)
+        : null,
+      sollicitatiedatum: s.sollicitatiedatum,
     }));
 
     return NextResponse.json({
@@ -454,23 +498,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         opdracht: {
           id: opdracht.id,
           titel: opdracht.titel,
-          aantalBeveiligers: opdracht.aantalBeveiligers
+          aantalBeveiligers: opdracht.aantalBeveiligers,
         },
         sollicitaties: formattedSollicitaties,
         stats: {
           total: formattedSollicitaties.length,
-          pending: formattedSollicitaties.filter(s => s.status === "PENDING").length,
-          accepted: formattedSollicitaties.filter(s => s.status === "ACCEPTED").length,
-          rejected: formattedSollicitaties.filter(s => s.status === "REJECTED").length
-        }
-      }
+          pending: formattedSollicitaties.filter((s) => s.status === "PENDING")
+            .length,
+          accepted: formattedSollicitaties.filter(
+            (s) => s.status === "ACCEPTED",
+          ).length,
+          rejected: formattedSollicitaties.filter(
+            (s) => s.status === "REJECTED",
+          ).length,
+        },
+      },
     });
-
   } catch (error) {
     console.error("Error fetching sollicitaties:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch sollicitaties" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -483,13 +531,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const updateSchema = z.object({
       sollicitatieId: z.string(),
-      action: z.enum(["accept", "reject"])
+      action: z.enum(["accept", "reject"]),
     });
 
     const body = await request.json();
@@ -502,16 +550,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         opdracht: {
           include: {
             opdrachtgever: true,
-            creatorBedrijf: true
-          }
-        }
-      }
+            creatorBedrijf: true,
+          },
+        },
+      },
     });
 
     if (!sollicitatie) {
       return NextResponse.json(
         { success: false, error: "Sollicitatie not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -520,31 +568,32 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       where: { id: session.user.id },
       include: {
         opdrachtgever: true,
-        bedrijfProfile: true
-      }
+        bedrijfProfile: true,
+      },
     });
 
     const canManage =
-      (sollicitatie.opdracht.opdrachtgeverId === user?.opdrachtgever?.id) ||
-      (sollicitatie.opdracht.creatorBedrijfId === user?.bedrijfProfile?.id);
+      sollicitatie.opdracht.opdrachtgeverId === user?.opdrachtgever?.id ||
+      sollicitatie.opdracht.creatorBedrijfId === user?.bedrijfProfile?.id;
 
     if (!canManage) {
       return NextResponse.json(
         { success: false, error: "Not authorized to manage this sollicitatie" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Update sollicitatie status
-    const newStatus = validatedData.action === "accept" ? "ACCEPTED" : "REJECTED";
+    const newStatus =
+      validatedData.action === "accept" ? "ACCEPTED" : "REJECTED";
 
     const updated = await prisma.opdrachtSollicitatie.update({
       where: { id: validatedData.sollicitatieId },
       data: {
         status: newStatus,
         beoordeeldOp: new Date(),
-        beoordeeldDoor: session.user.id
-      }
+        beoordeeldDoor: session.user.id,
+      },
     });
 
     // If accepting a bedrijf, also update opdracht
@@ -553,8 +602,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         where: { id: sollicitatie.opdrachtId },
         data: {
           acceptedBedrijfId: sollicitatie.bedrijfId,
-          status: "TOEGEWEZEN"
-        }
+          status: "TOEGEWEZEN",
+        },
       });
     }
 
@@ -564,15 +613,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         ? BroadcastEvent.SOLLICITATIE_ACCEPTED
         : BroadcastEvent.SOLLICITATIE_REJECTED,
       updated,
-      sollicitatie.opdracht
+      sollicitatie.opdracht,
     );
 
     // If status changed to TOEGEWEZEN, broadcast opdracht update
     if (newStatus === "ACCEPTED" && sollicitatie.bedrijfId) {
-      await broadcastOpdrachtEvent(
-        BroadcastEvent.OPDRACHT_STATUS_CHANGED,
-        { ...sollicitatie.opdracht, status: "TOEGEWEZEN" }
-      );
+      await broadcastOpdrachtEvent(BroadcastEvent.OPDRACHT_STATUS_CHANGED, {
+        ...sollicitatie.opdracht,
+        status: "TOEGEWEZEN",
+      });
     }
 
     // Send notification to sollicitant
@@ -581,36 +630,39 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       await prisma.notification.create({
         data: {
           userId: sollicitantUserId,
-          type: newStatus === "ACCEPTED" ? "OPDRACHT_ASSIGNED" : "OPDRACHT_UPDATED",
+          type:
+            newStatus === "ACCEPTED" ? "OPDRACHT_ASSIGNED" : "OPDRACHT_UPDATED",
           category: "OPDRACHT",
-          title: newStatus === "ACCEPTED" ? "Sollicitatie geaccepteerd!" : "Sollicitatie afgewezen",
+          title:
+            newStatus === "ACCEPTED"
+              ? "Sollicitatie geaccepteerd!"
+              : "Sollicitatie afgewezen",
           message: `Je sollicitatie voor "${sollicitatie.opdracht.titel}" is ${
             newStatus === "ACCEPTED" ? "geaccepteerd" : "afgewezen"
           }`,
-          actionUrl: `/dashboard/opdrachten/${sollicitatie.opdrachtId}`
-        }
+          actionUrl: `/dashboard/opdrachten/${sollicitatie.opdrachtId}`,
+        },
       });
     }
 
     return NextResponse.json({
       success: true,
       data: updated,
-      message: `Sollicitatie ${newStatus === "ACCEPTED" ? "geaccepteerd" : "afgewezen"}`
+      message: `Sollicitatie ${newStatus === "ACCEPTED" ? "geaccepteerd" : "afgewezen"}`,
     });
-
   } catch (error) {
     console.error("Error updating sollicitatie:", error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Invalid input", details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
       { success: false, error: "Failed to update sollicitatie" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

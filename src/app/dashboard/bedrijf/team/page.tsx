@@ -1,41 +1,30 @@
 "use client";
 
-import { useState } from "react";
 import {
-  Users,
-  UserCheck,
-  FileText,
-  Award,
   AlertCircle,
-  Clock,
+  Award,
   Calendar,
-  Search,
-  Filter,
-  Download,
-  Upload,
-  Mail,
-  Shield,
   CheckCircle,
-  XCircle,
+  Download,
+  ExternalLink,
+  FileText,
+  Mail,
+  MoreVertical,
+  Plus,
+  Search,
   Star,
   TrendingUp,
-  MoreVertical,
-  ExternalLink,
-  Plus
+  Upload,
+  UserCheck,
+  Users,
+  XCircle,
 } from "lucide-react";
+import { useState } from "react";
+import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,7 +32,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TeamMember {
   id: string;
@@ -98,14 +95,14 @@ export default function BedrijfTeamPage() {
         { type: "VOG", status: "geldig", expiryDate: "2025-12-31" },
         { type: "Diploma Beveiliging", status: "geldig" },
         { type: "EHBO", status: "verloopt", expiryDate: "2025-02-15" },
-        { type: "BHV", status: "geldig", expiryDate: "2025-08-20" }
+        { type: "BHV", status: "geldig", expiryDate: "2025-08-20" },
       ],
       skills: ["Evenement", "VIP Begeleiding", "Engels", "EHBO"],
       performance: {
         rating: 4.8,
         completedShifts: 156,
         hoursWorked: 1248,
-        lastShift: "2025-01-15"
+        lastShift: "2025-01-15",
       },
       availability: {
         monday: true,
@@ -114,8 +111,8 @@ export default function BedrijfTeamPage() {
         thursday: true,
         friday: true,
         saturday: true,
-        sunday: false
-      }
+        sunday: false,
+      },
     },
     {
       id: "2",
@@ -129,14 +126,14 @@ export default function BedrijfTeamPage() {
       documents: [
         { type: "VOG", status: "geldig", expiryDate: "2025-11-30" },
         { type: "Diploma Beveiliging", status: "geldig" },
-        { type: "EHBO", status: "verlopen", expiryDate: "2024-12-01" }
+        { type: "EHBO", status: "verlopen", expiryDate: "2024-12-01" },
       ],
       skills: ["Object Beveiliging", "Receptie", "Duits"],
       performance: {
         rating: 4.5,
         completedShifts: 89,
         hoursWorked: 712,
-        lastShift: "2025-01-14"
+        lastShift: "2025-01-14",
       },
       availability: {
         monday: false,
@@ -145,8 +142,8 @@ export default function BedrijfTeamPage() {
         thursday: true,
         friday: true,
         saturday: true,
-        sunday: true
-      }
+        sunday: true,
+      },
     },
     {
       id: "3",
@@ -159,14 +156,14 @@ export default function BedrijfTeamPage() {
       documents: [
         { type: "VOG", status: "geldig", expiryDate: "2025-09-15" },
         { type: "Diploma Beveiliging", status: "geldig" },
-        { type: "Leidinggevende", status: "geldig" }
+        { type: "Leidinggevende", status: "geldig" },
       ],
       skills: ["Crowd Control", "Airport Security", "Engels", "Arabisch"],
       performance: {
         rating: 4.9,
         completedShifts: 234,
         hoursWorked: 1872,
-        lastShift: "2025-01-10"
+        lastShift: "2025-01-10",
       },
       availability: {
         monday: false,
@@ -175,25 +172,30 @@ export default function BedrijfTeamPage() {
         thursday: false,
         friday: false,
         saturday: false,
-        sunday: false
-      }
-    }
+        sunday: false,
+      },
+    },
   ];
 
-  const filteredMembers = teamMembers.filter(member => {
-    const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          member.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || member.status === statusFilter;
-    const matchesDocument = documentFilter === "all" ||
-                           (documentFilter === "expired" && member.documents.some(d => d.status === "verlopen")) ||
-                           (documentFilter === "expiring" && member.documents.some(d => d.status === "verloopt"));
+  const filteredMembers = teamMembers.filter((member) => {
+    const matchesSearch =
+      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || member.status === statusFilter;
+    const matchesDocument =
+      documentFilter === "all" ||
+      (documentFilter === "expired" &&
+        member.documents.some((d) => d.status === "verlopen")) ||
+      (documentFilter === "expiring" &&
+        member.documents.some((d) => d.status === "verloopt"));
 
     return matchesSearch && matchesStatus && matchesDocument;
   });
 
   const handleSelectMember = (id: string) => {
-    setSelectedMembers(prev =>
-      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
+    setSelectedMembers((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id],
     );
   };
 
@@ -251,7 +253,7 @@ export default function BedrijfTeamPage() {
             <div>
               <p className="text-sm text-muted-foreground">Actief</p>
               <p className="text-2xl font-semibold">
-                {teamMembers.filter(m => m.status === "actief").length}
+                {teamMembers.filter((m) => m.status === "actief").length}
               </p>
             </div>
             <UserCheck className="h-8 w-8 text-green-600" />
@@ -263,9 +265,11 @@ export default function BedrijfTeamPage() {
             <div>
               <p className="text-sm text-muted-foreground">Documenten Alert</p>
               <p className="text-2xl font-semibold">
-                {teamMembers.filter(m =>
-                  m.documents.some(d => d.status !== "geldig")
-                ).length}
+                {
+                  teamMembers.filter((m) =>
+                    m.documents.some((d) => d.status !== "geldig"),
+                  ).length
+                }
               </p>
             </div>
             <AlertCircle className="h-8 w-8 text-orange-600" />
@@ -277,7 +281,10 @@ export default function BedrijfTeamPage() {
             <div>
               <p className="text-sm text-muted-foreground">Finqle Ready</p>
               <p className="text-2xl font-semibold">
-                {teamMembers.filter(m => m.finqleStatus === "onboarded").length}
+                {
+                  teamMembers.filter((m) => m.finqleStatus === "onboarded")
+                    .length
+                }
               </p>
             </div>
             <CheckCircle className="h-8 w-8 text-blue-600" />
@@ -340,7 +347,9 @@ export default function BedrijfTeamPage() {
                   Stuur Finqle Uitnodiging
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleBulkAction("deactivate")}>
+                <DropdownMenuItem
+                  onClick={() => handleBulkAction("deactivate")}
+                >
                   Deactiveer Geselecteerde
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -366,21 +375,33 @@ export default function BedrijfTeamPage() {
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={member.avatar} />
                     <AvatarFallback>
-                      {member.name.split(' ').map(n => n[0]).join('')}
+                      {member.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <h3 className="font-semibold">{member.name}</h3>
-                    <p className="text-sm text-muted-foreground">{member.role}</p>
-                    <p className="text-xs text-muted-foreground">{member.email} • {member.phone}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {member.role}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {member.email} • {member.phone}
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Badge variant={
-                    member.status === "actief" ? "success" :
-                    member.status === "verlof" ? "warning" : "secondary"
-                  }>
+                  <Badge
+                    variant={
+                      member.status === "actief"
+                        ? "success"
+                        : member.status === "verlof"
+                          ? "warning"
+                          : "secondary"
+                    }
+                  >
                     {member.status}
                   </Badge>
                   {getFinqleStatusBadge(member.finqleStatus)}
@@ -422,7 +443,10 @@ export default function BedrijfTeamPage() {
                   </p>
                   <div className="space-y-1">
                     {member.documents.slice(0, 3).map((doc, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs">
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 text-xs"
+                      >
                         {doc.status === "geldig" ? (
                           <CheckCircle className="h-3 w-3 text-green-600" />
                         ) : doc.status === "verloopt" ? (
@@ -430,9 +454,13 @@ export default function BedrijfTeamPage() {
                         ) : (
                           <XCircle className="h-3 w-3 text-red-600" />
                         )}
-                        <span className={
-                          doc.status !== "geldig" ? "text-muted-foreground" : ""
-                        }>
+                        <span
+                          className={
+                            doc.status !== "geldig"
+                              ? "text-muted-foreground"
+                              : ""
+                          }
+                        >
                           {doc.type}
                         </span>
                       </div>
@@ -469,15 +497,23 @@ export default function BedrijfTeamPage() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <Star className="h-3 w-3 text-yellow-500" />
-                      <span className="text-sm font-medium">{member.performance.rating}</span>
-                      <span className="text-xs text-muted-foreground">/ 5.0</span>
+                      <span className="text-sm font-medium">
+                        {member.performance.rating}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        / 5.0
+                      </span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {member.performance.completedShifts} shifts • {member.performance.hoursWorked} uur
+                      {member.performance.completedShifts} shifts •{" "}
+                      {member.performance.hoursWorked} uur
                     </p>
                     {member.performance.lastShift && (
                       <p className="text-xs text-muted-foreground">
-                        Laatste: {new Date(member.performance.lastShift).toLocaleDateString("nl-NL")}
+                        Laatste:{" "}
+                        {new Date(
+                          member.performance.lastShift,
+                        ).toLocaleDateString("nl-NL")}
                       </p>
                     )}
                   </div>
@@ -491,24 +527,30 @@ export default function BedrijfTeamPage() {
                   </p>
                   <div className="space-y-1">
                     <Progress
-                      value={(getAvailabilityCount(member.availability) / 7) * 100}
+                      value={
+                        (getAvailabilityCount(member.availability) / 7) * 100
+                      }
                       className="h-2"
                     />
                     <p className="text-xs text-muted-foreground">
                       {getAvailabilityCount(member.availability)} dagen per week
                     </p>
                     <div className="flex gap-1">
-                      {Object.entries(member.availability).map(([day, available]) => (
-                        <div
-                          key={day}
-                          className={`w-4 h-4 rounded-full text-xs flex items-center justify-center ${
-                            available ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
-                          }`}
-                          title={day}
-                        >
-                          {day[0].toUpperCase()}
-                        </div>
-                      ))}
+                      {Object.entries(member.availability).map(
+                        ([day, available]) => (
+                          <div
+                            key={day}
+                            className={`w-4 h-4 rounded-full text-xs flex items-center justify-center ${
+                              available
+                                ? "bg-green-100 text-green-600"
+                                : "bg-gray-100 text-gray-400"
+                            }`}
+                            title={day}
+                          >
+                            {day[0].toUpperCase()}
+                          </div>
+                        ),
+                      )}
                     </div>
                   </div>
                 </div>
@@ -519,7 +561,8 @@ export default function BedrijfTeamPage() {
                 <div className="pt-3 border-t">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-muted-foreground">
-                      Dit teamlid moet nog worden uitgenodigd voor Finqle direct payment
+                      Dit teamlid moet nog worden uitgenodigd voor Finqle direct
+                      payment
                     </p>
                     <Button size="sm" variant="outline">
                       <Mail className="h-4 w-4 mr-2" />
@@ -529,13 +572,21 @@ export default function BedrijfTeamPage() {
                 </div>
               )}
 
-              {member.documents.some(d => d.status !== "geldig") && (
+              {member.documents.some((d) => d.status !== "geldig") && (
                 <div className="pt-3 border-t">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-orange-600 flex items-center gap-2">
                       <AlertCircle className="h-4 w-4" />
-                      {member.documents.filter(d => d.status === "verlopen").length} document(en) verlopen,
-                      {" "}{member.documents.filter(d => d.status === "verloopt").length} verloopt binnenkort
+                      {
+                        member.documents.filter((d) => d.status === "verlopen")
+                          .length
+                      }{" "}
+                      document(en) verlopen,{" "}
+                      {
+                        member.documents.filter((d) => d.status === "verloopt")
+                          .length
+                      }{" "}
+                      verloopt binnenkort
                     </p>
                     <Button size="sm" variant="outline">
                       Herinner Teamlid

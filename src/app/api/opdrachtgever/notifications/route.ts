@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { z } from "zod";
 import { broadcastNotificationEvent } from "@/lib/supabase/broadcast";
 
 // Schema for updating notification status
 const updateNotificationSchema = z.object({
   notificationIds: z.array(z.string()).optional(),
   markAsRead: z.boolean().optional(),
-  markAsUnread: z.boolean().optional()
+  markAsUnread: z.boolean().optional(),
 });
 
 // GET /api/opdrachtgever/notifications - Get notifications for opdrachtgever
@@ -19,20 +19,20 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Get user's Opdrachtgever profile
     const opdrachtgeverProfile = await prisma.opdrachtgever.findUnique({
       where: { userId: session.user.id },
-      select: { id: true, bedrijfsnaam: true }
+      select: { id: true, bedrijfsnaam: true },
     });
 
     if (!opdrachtgeverProfile) {
       return NextResponse.json(
         { success: false, error: "Opdrachtgever profile not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const unreadOnly = searchParams.get("unreadOnly") === "true";
     const category = searchParams.get("category"); // shift, application, system, payment
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
     const priority = searchParams.get("priority"); // high, normal, low
 
     try {
@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
           { type: "BEVEILIGER_LATE" },
           { type: "PAYMENT_DUE" },
           { type: "SYSTEM_UPDATE" },
-          { type: "URGENT_SHIFT" }
-        ]
+          { type: "URGENT_SHIFT" },
+        ],
       };
 
       if (unreadOnly) {
@@ -66,10 +66,19 @@ export async function GET(request: NextRequest) {
 
       if (category) {
         const categoryMap: Record<string, string[]> = {
-          shift: ["SHIFT_APPLICATION", "SHIFT_CANCELLED", "SHIFT_COMPLETED", "URGENT_SHIFT"],
-          application: ["SHIFT_APPLICATION", "APPLICATION_APPROVED", "APPLICATION_REJECTED"],
+          shift: [
+            "SHIFT_APPLICATION",
+            "SHIFT_CANCELLED",
+            "SHIFT_COMPLETED",
+            "URGENT_SHIFT",
+          ],
+          application: [
+            "SHIFT_APPLICATION",
+            "APPLICATION_APPROVED",
+            "APPLICATION_REJECTED",
+          ],
           system: ["SYSTEM_UPDATE", "ACCOUNT_UPDATE"],
-          payment: ["PAYMENT_DUE", "PAYMENT_COMPLETED", "INVOICE_READY"]
+          payment: ["PAYMENT_DUE", "PAYMENT_COMPLETED", "INVOICE_READY"],
         };
 
         if (categoryMap[category]) {
@@ -87,23 +96,20 @@ export async function GET(request: NextRequest) {
           where,
           include: {
             // Include related opdracht data if available
-            relatedData: true
+            relatedData: true,
           },
-          orderBy: [
-            { priority: "desc" },
-            { createdAt: "desc" }
-          ],
+          orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
           skip: (page - 1) * limit,
-          take: limit
+          take: limit,
         }),
         prisma.notification.count({ where }),
         prisma.notification.count({
           where: {
             userId: session.user.id,
             isRead: false,
-            OR: where.OR
-          }
-        })
+            OR: where.OR,
+          },
+        }),
       ]);
 
       // Transform notifications for frontend
@@ -114,33 +120,35 @@ export async function GET(request: NextRequest) {
           // Add context-specific information based on notification type
           if (notification.relatedId) {
             switch (notification.type) {
-              case "SHIFT_APPLICATION":
-                const application = await prisma.opdrachtSollicitatie.findUnique({
-                  where: { id: notification.relatedId },
-                  include: {
-                    beveiliger: {
-                      include: {
-                        user: { select: { name: true } }
-                      }
+              case "SHIFT_APPLICATION": {
+                const application =
+                  await prisma.opdrachtSollicitatie.findUnique({
+                    where: { id: notification.relatedId },
+                    include: {
+                      beveiliger: {
+                        include: {
+                          user: { select: { name: true } },
+                        },
+                      },
+                      opdracht: {
+                        select: { titel: true, datum: true, locatie: true },
+                      },
                     },
-                    opdracht: {
-                      select: { titel: true, datum: true, locatie: true }
-                    }
-                  }
-                });
+                  });
                 if (application) {
                   relatedInfo = {
                     beveiliger: application.beveiliger.user.name,
                     shift: application.opdracht.titel,
                     date: application.opdracht.datum,
-                    location: application.opdracht.locatie
+                    location: application.opdracht.locatie,
                   };
                 }
                 break;
+              }
 
               case "SHIFT_COMPLETED":
               case "SHIFT_CANCELLED":
-              case "URGENT_SHIFT":
+              case "URGENT_SHIFT": {
                 const shift = await prisma.opdracht.findUnique({
                   where: { id: notification.relatedId },
                   select: {
@@ -150,10 +158,10 @@ export async function GET(request: NextRequest) {
                     status: true,
                     acceptedBeveiliger: {
                       include: {
-                        user: { select: { name: true } }
-                      }
-                    }
-                  }
+                        user: { select: { name: true } },
+                      },
+                    },
+                  },
                 });
                 if (shift) {
                   relatedInfo = {
@@ -161,33 +169,35 @@ export async function GET(request: NextRequest) {
                     date: shift.datum,
                     location: shift.locatie,
                     status: shift.status,
-                    beveiliger: shift.acceptedBeveiliger?.user.name
+                    beveiliger: shift.acceptedBeveiliger?.user.name,
                   };
                 }
                 break;
+              }
 
-              case "BEVEILIGER_LATE":
+              case "BEVEILIGER_LATE": {
                 const lateInfo = await prisma.werkuur.findUnique({
                   where: { id: notification.relatedId },
                   include: {
                     beveiliger: {
                       include: {
-                        user: { select: { name: true } }
-                      }
+                        user: { select: { name: true } },
+                      },
                     },
                     opdracht: {
-                      select: { titel: true, locatie: true }
-                    }
-                  }
+                      select: { titel: true, locatie: true },
+                    },
+                  },
                 });
                 if (lateInfo) {
                   relatedInfo = {
                     beveiliger: lateInfo.beveiliger.user.name,
                     shift: lateInfo.opdracht.titel,
-                    location: lateInfo.opdracht.locatie
+                    location: lateInfo.opdracht.locatie,
                   };
                 }
                 break;
+              }
             }
           }
 
@@ -207,9 +217,9 @@ export async function GET(request: NextRequest) {
             // UI helpers
             icon: getNotificationIcon(notification.type),
             color: getNotificationColor(notification.priority),
-            timeAgo: getTimeAgo(notification.createdAt)
+            timeAgo: getTimeAgo(notification.createdAt),
           };
-        })
+        }),
       );
 
       // Calculate category counts
@@ -218,30 +228,43 @@ export async function GET(request: NextRequest) {
           where: {
             userId: session.user.id,
             isRead: false,
-            type: { in: ["SHIFT_APPLICATION", "SHIFT_CANCELLED", "SHIFT_COMPLETED", "URGENT_SHIFT"] }
-          }
+            type: {
+              in: [
+                "SHIFT_APPLICATION",
+                "SHIFT_CANCELLED",
+                "SHIFT_COMPLETED",
+                "URGENT_SHIFT",
+              ],
+            },
+          },
         }),
         prisma.notification.count({
           where: {
             userId: session.user.id,
             isRead: false,
-            type: { in: ["SHIFT_APPLICATION", "APPLICATION_APPROVED", "APPLICATION_REJECTED"] }
-          }
+            type: {
+              in: [
+                "SHIFT_APPLICATION",
+                "APPLICATION_APPROVED",
+                "APPLICATION_REJECTED",
+              ],
+            },
+          },
         }),
         prisma.notification.count({
           where: {
             userId: session.user.id,
             isRead: false,
-            type: { in: ["SYSTEM_UPDATE", "ACCOUNT_UPDATE"] }
-          }
+            type: { in: ["SYSTEM_UPDATE", "ACCOUNT_UPDATE"] },
+          },
         }),
         prisma.notification.count({
           where: {
             userId: session.user.id,
             isRead: false,
-            type: { in: ["PAYMENT_DUE", "PAYMENT_COMPLETED", "INVOICE_READY"] }
-          }
-        })
+            type: { in: ["PAYMENT_DUE", "PAYMENT_COMPLETED", "INVOICE_READY"] },
+          },
+        }),
       ]);
 
       const totalPages = Math.ceil(totalCount / limit);
@@ -255,7 +278,7 @@ export async function GET(request: NextRequest) {
             shift: categoryCounts[0],
             application: categoryCounts[1],
             system: categoryCounts[2],
-            payment: categoryCounts[3]
+            payment: categoryCounts[3],
           },
           pagination: {
             page,
@@ -263,11 +286,10 @@ export async function GET(request: NextRequest) {
             total: totalCount,
             totalPages,
             hasNext: page < totalPages,
-            hasPrev: page > 1
-          }
-        }
+            hasPrev: page > 1,
+          },
+        },
       });
-
     } catch (dbError) {
       console.error("Database error fetching notifications:", dbError);
 
@@ -280,14 +302,15 @@ export async function GET(request: NextRequest) {
               id: "mock-1",
               type: "SHIFT_APPLICATION",
               title: "Nieuwe sollicitatie",
-              message: "Jan de Vries heeft gesolliciteerd voor Terminal 1 - Nachtdienst",
+              message:
+                "Jan de Vries heeft gesolliciteerd voor Terminal 1 - Nachtdienst",
               priority: "HIGH",
               category: "application",
               isRead: false,
               createdAt: new Date(),
               icon: "👤",
               color: "blue",
-              timeAgo: "5 minuten geleden"
+              timeAgo: "5 minuten geleden",
             },
             {
               id: "mock-2",
@@ -300,15 +323,15 @@ export async function GET(request: NextRequest) {
               createdAt: new Date(Date.now() - 30 * 60 * 1000),
               icon: "🚨",
               color: "red",
-              timeAgo: "30 minuten geleden"
-            }
+              timeAgo: "30 minuten geleden",
+            },
           ],
           unreadCount: 7,
           categoryCounts: {
             shift: 3,
             application: 2,
             system: 1,
-            payment: 1
+            payment: 1,
           },
           pagination: {
             page: 1,
@@ -316,17 +339,16 @@ export async function GET(request: NextRequest) {
             total: 7,
             totalPages: 1,
             hasNext: false,
-            hasPrev: false
-          }
-        }
+            hasPrev: false,
+          },
+        },
       });
     }
-
   } catch (error) {
     console.error("Opdrachtgever notifications GET error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch notifications" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -339,24 +361,25 @@ export async function PUT(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Parse and validate request body
     const body = await request.json();
-    const { notificationIds, markAsRead, markAsUnread } = updateNotificationSchema.parse(body);
+    const { notificationIds, markAsRead, markAsUnread } =
+      updateNotificationSchema.parse(body);
 
     if (!notificationIds || notificationIds.length === 0) {
       return NextResponse.json(
         { success: false, error: "No notification IDs provided" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     try {
       const updateData: any = {
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       if (markAsRead) {
@@ -371,12 +394,14 @@ export async function PUT(request: NextRequest) {
       const updatedNotifications = await prisma.notification.updateMany({
         where: {
           id: { in: notificationIds },
-          userId: session.user.id
+          userId: session.user.id,
         },
-        data: updateData
+        data: updateData,
       });
 
-      console.log(`Updated ${updatedNotifications.count} notifications for user ${session.user.id}`);
+      console.log(
+        `Updated ${updatedNotifications.count} notifications for user ${session.user.id}`,
+      );
 
       // Broadcast notification read status change (optional, for real-time UI updates)
       if (markAsRead && notificationIds && notificationIds.length > 0) {
@@ -384,7 +409,7 @@ export async function PUT(request: NextRequest) {
           await broadcastNotificationEvent(session.user.id, {
             id: notificationId,
             isRead: true,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           });
         }
       }
@@ -392,35 +417,33 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          updatedCount: updatedNotifications.count
+          updatedCount: updatedNotifications.count,
         },
-        message: `${updatedNotifications.count} meldingen bijgewerkt`
+        message: `${updatedNotifications.count} meldingen bijgewerkt`,
       });
-
     } catch (dbError) {
       console.error("Database error updating notifications:", dbError);
       return NextResponse.json(
         { success: false, error: "Failed to update notifications" },
-        { status: 500 }
+        { status: 500 },
       );
     }
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
           success: false,
           error: "Validation error",
-          details: error.errors
+          details: error.errors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     console.error("Update notifications error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update notifications" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -434,7 +457,7 @@ function getNotificationIcon(type: string): string {
     BEVEILIGER_LATE: "⏰",
     PAYMENT_DUE: "💰",
     SYSTEM_UPDATE: "🔔",
-    URGENT_SHIFT: "🚨"
+    URGENT_SHIFT: "🚨",
   };
   return iconMap[type] || "📢";
 }
@@ -443,7 +466,7 @@ function getNotificationColor(priority: string): string {
   const colorMap: Record<string, string> = {
     HIGH: "red",
     NORMAL: "blue",
-    LOW: "gray"
+    LOW: "gray",
   };
   return colorMap[priority] || "gray";
 }
@@ -456,12 +479,12 @@ function getTimeAgo(date: Date): string {
     return "Zojuist";
   } else if (diffInSeconds < 3600) {
     const minutes = Math.floor(diffInSeconds / 60);
-    return `${minutes} ${minutes === 1 ? 'minuut' : 'minuten'} geleden`;
+    return `${minutes} ${minutes === 1 ? "minuut" : "minuten"} geleden`;
   } else if (diffInSeconds < 86400) {
     const hours = Math.floor(diffInSeconds / 3600);
-    return `${hours} ${hours === 1 ? 'uur' : 'uren'} geleden`;
+    return `${hours} ${hours === 1 ? "uur" : "uren"} geleden`;
   } else {
     const days = Math.floor(diffInSeconds / 86400);
-    return `${days} ${days === 1 ? 'dag' : 'dagen'} geleden`;
+    return `${days} ${days === 1 ? "dag" : "dagen"} geleden`;
   }
 }

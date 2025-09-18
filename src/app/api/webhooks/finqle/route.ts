@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
+import { type NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { broadcastPaymentEvent, BroadcastEvent } from "@/lib/supabase/broadcast";
-import crypto from "crypto";
+import {
+  BroadcastEvent,
+  broadcastPaymentEvent,
+} from "@/lib/supabase/broadcast";
 
 // Webhook event types from Finqle
 enum FinqleWebhookEvent {
@@ -19,7 +22,7 @@ enum FinqleWebhookEvent {
   FACTORING_APPROVED = "factoring.approved",
   FACTORING_REJECTED = "factoring.rejected",
   WEEKLY_PAYOUT_INITIATED = "weekly_payout.initiated",
-  WEEKLY_PAYOUT_COMPLETED = "weekly_payout.completed"
+  WEEKLY_PAYOUT_COMPLETED = "weekly_payout.completed",
 }
 
 interface FinqleWebhookPayload {
@@ -33,7 +36,7 @@ interface FinqleWebhookPayload {
 function verifyWebhookSignature(
   body: string,
   signature: string,
-  secret: string
+  secret: string,
 ): boolean {
   const expectedSignature = crypto
     .createHmac("sha256", secret)
@@ -42,7 +45,7 @@ function verifyWebhookSignature(
 
   return crypto.timingSafeEqual(
     Buffer.from(signature),
-    Buffer.from(expectedSignature)
+    Buffer.from(expectedSignature),
   );
 }
 
@@ -58,11 +61,15 @@ export async function POST(request: NextRequest) {
     const webhookSecret = process.env.FINQLE_WEBHOOK_SECRET;
 
     if (signature && webhookSecret) {
-      const isValid = verifyWebhookSignature(bodyText, signature, webhookSecret);
+      const isValid = verifyWebhookSignature(
+        bodyText,
+        signature,
+        webhookSecret,
+      );
       if (!isValid) {
         return NextResponse.json(
           { success: false, error: "Invalid signature" },
-          { status: 401 }
+          { status: 401 },
         );
       }
     }
@@ -121,14 +128,13 @@ export async function POST(request: NextRequest) {
 
     // Always return 200 OK to acknowledge receipt
     return NextResponse.json({ success: true, received: true });
-
   } catch (error) {
     console.error("Error processing Finqle webhook:", error);
 
     // Still return 200 to prevent retries for malformed requests
     return NextResponse.json(
       { success: false, error: "Webhook processing failed" },
-      { status: 200 }
+      { status: 200 },
     );
   }
 }
@@ -139,18 +145,18 @@ async function handlePaymentInitiated(data: any) {
   const { paymentId, invoiceId, amount, merchantId } = data;
 
   // Update payment record
-  const payment = await prisma.betaling.updateMany({
+  const _payment = await prisma.betaling.updateMany({
     where: {
       factuurId: invoiceId,
-      externalId: paymentId
+      externalId: paymentId,
     },
     data: {
       status: "PROCESSING",
       metadata: {
         finqleStatus: "initiated",
-        initiatedAt: new Date().toISOString()
-      }
-    }
+        initiatedAt: new Date().toISOString(),
+      },
+    },
   });
 
   // Create notification
@@ -161,15 +167,17 @@ async function handlePaymentInitiated(data: any) {
       category: "PAYMENT",
       title: "Betaling wordt verwerkt",
       message: `Je betaling van €${amount} wordt verwerkt door Finqle`,
-      actionUrl: `/dashboard/betalingen/${paymentId}`
-    }
+      actionUrl: `/dashboard/betalingen/${paymentId}`,
+    },
   });
 
   // Broadcast payment event
-  await broadcastPaymentEvent(
-    BroadcastEvent.PAYMENT_INITIATED,
-    { paymentId, invoiceId, amount, status: "PROCESSING" }
-  );
+  await broadcastPaymentEvent(BroadcastEvent.PAYMENT_INITIATED, {
+    paymentId,
+    invoiceId,
+    amount,
+    status: "PROCESSING",
+  });
 }
 
 async function handlePaymentCompleted(data: any) {
@@ -178,7 +186,7 @@ async function handlePaymentCompleted(data: any) {
   // Update payment record
   const payment = await prisma.betaling.update({
     where: {
-      externalId: paymentId
+      externalId: paymentId,
     },
     data: {
       status: "COMPLETED",
@@ -186,22 +194,22 @@ async function handlePaymentCompleted(data: any) {
       metadata: {
         finqleStatus: "completed",
         completedAt: new Date().toISOString(),
-        payoutDate
-      }
+        payoutDate,
+      },
     },
     include: {
       factuur: true,
       zzp: true,
       bedrijf: true,
-      opdrachtgever: true
-    }
+      opdrachtgever: true,
+    },
   });
 
   // Update related invoice
   if (payment.factuurId) {
     await prisma.factuur.update({
       where: { id: payment.factuurId },
-      data: { status: "BETAALD" }
+      data: { status: "BETAALD" },
     });
   }
 
@@ -215,35 +223,33 @@ async function handlePaymentCompleted(data: any) {
         category: "PAYMENT",
         title: "Betaling ontvangen!",
         message: `Je hebt €${amount} ontvangen via Finqle`,
-        actionUrl: `/dashboard/betalingen/${paymentId}`
-      }
+        actionUrl: `/dashboard/betalingen/${paymentId}`,
+      },
     });
   }
 
   // Broadcast payment completed event
-  await broadcastPaymentEvent(
-    BroadcastEvent.PAYMENT_COMPLETED,
-    payment,
-    { payoutDate }
-  );
+  await broadcastPaymentEvent(BroadcastEvent.PAYMENT_COMPLETED, payment, {
+    payoutDate,
+  });
 }
 
 async function handlePaymentFailed(data: any) {
   const { paymentId, invoiceId, amount, merchantId, reason } = data;
 
   // Update payment record
-  const payment = await prisma.betaling.updateMany({
+  const _payment = await prisma.betaling.updateMany({
     where: {
-      externalId: paymentId
+      externalId: paymentId,
     },
     data: {
       status: "FAILED",
       metadata: {
         finqleStatus: "failed",
         failedAt: new Date().toISOString(),
-        failureReason: reason
-      }
-    }
+        failureReason: reason,
+      },
+    },
   });
 
   // Create notification
@@ -255,22 +261,24 @@ async function handlePaymentFailed(data: any) {
       title: "Betaling mislukt",
       message: `Je betaling van €${amount} is mislukt: ${reason}`,
       actionUrl: `/dashboard/betalingen/${paymentId}`,
-      priority: "HIGH"
-    }
+      priority: "HIGH",
+    },
   });
 
   // Broadcast payment failed event
-  await broadcastPaymentEvent(
-    BroadcastEvent.PAYMENT_FAILED,
-    { paymentId, invoiceId, amount, reason }
-  );
+  await broadcastPaymentEvent(BroadcastEvent.PAYMENT_FAILED, {
+    paymentId,
+    invoiceId,
+    amount,
+    reason,
+  });
 }
 
 async function handleInvoiceCreated(data: any) {
   const { invoiceId, merchantId, amount, dueDate, opdrachtId } = data;
 
   // Create or update invoice record
-  const invoice = await prisma.factuur.upsert({
+  const _invoice = await prisma.factuur.upsert({
     where: { externalId: invoiceId },
     create: {
       externalId: invoiceId,
@@ -282,15 +290,15 @@ async function handleInvoiceCreated(data: any) {
       // Need to determine which profile this belongs to
       metadata: {
         finqleInvoiceId: invoiceId,
-        createdVia: "finqle_webhook"
-      }
+        createdVia: "finqle_webhook",
+      },
     },
     update: {
       status: "OPEN",
       metadata: {
-        finqleInvoiceId: invoiceId
-      }
-    }
+        finqleInvoiceId: invoiceId,
+      },
+    },
   });
 }
 
@@ -304,13 +312,13 @@ async function handleInvoicePaid(data: any) {
       status: "BETAALD",
       metadata: {
         paidAt: paymentDate,
-        paidAmount: amount
-      }
+        paidAmount: amount,
+      },
     },
     include: {
       zzp: true,
-      bedrijf: true
-    }
+      bedrijf: true,
+    },
   });
 
   // Create notification
@@ -323,8 +331,8 @@ async function handleInvoicePaid(data: any) {
         category: "PAYMENT",
         title: "Factuur betaald",
         message: `Factuur ${invoice.nummer} is betaald (€${amount})`,
-        actionUrl: `/dashboard/facturen/${invoice.id}`
-      }
+        actionUrl: `/dashboard/facturen/${invoice.id}`,
+      },
     });
   }
 }
@@ -339,26 +347,26 @@ async function handleInvoiceOverdue(data: any) {
       status: "ACHTERSTALLIG",
       metadata: {
         overdueNotificationSent: new Date().toISOString(),
-        daysOverdue
-      }
+        daysOverdue,
+      },
     },
     include: {
-      opdrachtgever: true
-    }
+      opdrachtgever: true,
+    },
   });
 
   // Create notification for opdrachtgever
   if (invoice.opdrachtgeverId) {
     await prisma.notification.create({
       data: {
-        userId: invoice.opdrachtgever!.userId,
+        userId: invoice.opdrachtgever?.userId,
         type: "INVOICE_OVERDUE",
         category: "PAYMENT",
         title: "Factuur achterstallig",
         message: `Factuur ${invoice.nummer} is ${daysOverdue} dagen achterstallig (€${amount})`,
         actionUrl: `/dashboard/facturen/${invoice.id}`,
-        priority: "HIGH"
-      }
+        priority: "HIGH",
+      },
     });
   }
 }
@@ -367,32 +375,32 @@ async function handleKYCApproved(data: any) {
   const { merchantId, approvedAt } = data;
 
   // Update user's Finqle status
-  const profiles = await Promise.all([
+  const _profiles = await Promise.all([
     prisma.zZPProfile.updateMany({
       where: { finqleId: merchantId },
       data: {
         finqleKYCStatus: "APPROVED",
-        finqleVerifiedAt: new Date(approvedAt)
-      }
+        finqleVerifiedAt: new Date(approvedAt),
+      },
     }),
     prisma.bedrijfProfile.updateMany({
       where: { finqleId: merchantId },
       data: {
         finqleKYCStatus: "APPROVED",
-        finqleVerifiedAt: new Date(approvedAt)
-      }
-    })
+        finqleVerifiedAt: new Date(approvedAt),
+      },
+    }),
   ]);
 
   // Find user and create notification
   const zzp = await prisma.zZPProfile.findFirst({
     where: { finqleId: merchantId },
-    include: { user: true }
+    include: { user: true },
   });
 
   const bedrijf = await prisma.bedrijfProfile.findFirst({
     where: { finqleId: merchantId },
-    include: { user: true }
+    include: { user: true },
   });
 
   const user = zzp?.user || bedrijf?.user;
@@ -405,8 +413,8 @@ async function handleKYCApproved(data: any) {
         category: "PAYMENT",
         title: "Finqle verificatie goedgekeurd!",
         message: "Je kunt nu directe betalingen ontvangen via Finqle",
-        actionUrl: "/dashboard/instellingen/betalingen"
-      }
+        actionUrl: "/dashboard/instellingen/betalingen",
+      },
     });
   }
 }
@@ -420,27 +428,27 @@ async function handleKYCRejected(data: any) {
       where: { finqleId: merchantId },
       data: {
         finqleKYCStatus: "REJECTED",
-        finqleKYCRejectionReason: reason
-      }
+        finqleKYCRejectionReason: reason,
+      },
     }),
     prisma.bedrijfProfile.updateMany({
       where: { finqleId: merchantId },
       data: {
         finqleKYCStatus: "REJECTED",
-        finqleKYCRejectionReason: reason
-      }
-    })
+        finqleKYCRejectionReason: reason,
+      },
+    }),
   ]);
 
   // Find user and create notification
   const zzp = await prisma.zZPProfile.findFirst({
     where: { finqleId: merchantId },
-    include: { user: true }
+    include: { user: true },
   });
 
   const bedrijf = await prisma.bedrijfProfile.findFirst({
     where: { finqleId: merchantId },
-    include: { user: true }
+    include: { user: true },
   });
 
   const user = zzp?.user || bedrijf?.user;
@@ -454,8 +462,8 @@ async function handleKYCRejected(data: any) {
         title: "Finqle verificatie afgewezen",
         message: `Je verificatie is afgewezen: ${reason}`,
         actionUrl: "/dashboard/instellingen/betalingen",
-        priority: "HIGH"
-      }
+        priority: "HIGH",
+      },
     });
   }
 }
@@ -466,7 +474,7 @@ async function handleDirectPaymentApproved(data: any) {
   // Create notification for merchant
   const zzp = await prisma.zZPProfile.findFirst({
     where: { finqleId: merchantId },
-    include: { user: true }
+    include: { user: true },
   });
 
   if (zzp?.user) {
@@ -477,8 +485,8 @@ async function handleDirectPaymentApproved(data: any) {
         category: "PAYMENT",
         title: "Directe betaling goedgekeurd",
         message: `Je directe betaling van €${amount} is goedgekeurd`,
-        actionUrl: "/dashboard/betalingen"
-      }
+        actionUrl: "/dashboard/betalingen",
+      },
     });
   }
 }
@@ -489,7 +497,7 @@ async function handleDirectPaymentRejected(data: any) {
   // Create notification for merchant
   const zzp = await prisma.zZPProfile.findFirst({
     where: { finqleId: merchantId },
-    include: { user: true }
+    include: { user: true },
   });
 
   if (zzp?.user) {
@@ -501,8 +509,8 @@ async function handleDirectPaymentRejected(data: any) {
         title: "Directe betaling afgewezen",
         message: `Je directe betaling van €${amount} is afgewezen: ${reason}`,
         actionUrl: "/dashboard/betalingen",
-        priority: "HIGH"
-      }
+        priority: "HIGH",
+      },
     });
   }
 }
@@ -513,12 +521,12 @@ async function handleWeeklyPayoutCompleted(data: any) {
   // Find merchant
   const zzp = await prisma.zZPProfile.findFirst({
     where: { finqleId: merchantId },
-    include: { user: true }
+    include: { user: true },
   });
 
   const bedrijf = await prisma.bedrijfProfile.findFirst({
     where: { finqleId: merchantId },
-    include: { user: true }
+    include: { user: true },
   });
 
   const user = zzp?.user || bedrijf?.user;
@@ -532,27 +540,24 @@ async function handleWeeklyPayoutCompleted(data: any) {
         category: "PAYMENT",
         title: "Wekelijkse uitbetaling voltooid",
         message: `€${totalAmount} voor ${invoiceCount} facturen is uitbetaald`,
-        actionUrl: "/dashboard/betalingen"
-      }
+        actionUrl: "/dashboard/betalingen",
+      },
     });
 
     // Update payment records
     await prisma.betaling.updateMany({
       where: {
-        OR: [
-          { zzpId: zzp?.id },
-          { bedrijfId: bedrijf?.id }
-        ],
+        OR: [{ zzpId: zzp?.id }, { bedrijfId: bedrijf?.id }],
         status: "PROCESSING",
         metadata: {
           path: ["payoutBatch"],
-          equals: payoutId
-        }
+          equals: payoutId,
+        },
       },
       data: {
         status: "COMPLETED",
-        betaalDatum: new Date(payoutDate)
-      }
+        betaalDatum: new Date(payoutDate),
+      },
     });
   }
 }

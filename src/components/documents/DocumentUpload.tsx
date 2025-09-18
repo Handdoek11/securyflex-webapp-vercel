@@ -1,30 +1,31 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { CheckCircle, Loader2, Upload, XCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { Card } from "@/components/ui/card";
+import { useRef, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Upload,
-  FileText,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Loader2
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DocumentUploadProps {
   onUploadComplete?: (document: any) => void;
   className?: string;
 }
 
-export default function DocumentUpload({ onUploadComplete, className }: DocumentUploadProps) {
+export default function DocumentUpload({
+  onUploadComplete,
+  className,
+}: DocumentUploadProps) {
   const { data: session } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,8 +52,14 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
     { value: "TOESTEMMINGSBEWIJS", label: "Toestemmingsbewijs" },
     { value: "VOG_P_CERTIFICAAT", label: "VOG P Certificaat" },
     { value: "SVPB_DIPLOMA_BEVEILIGER", label: "SVPB Diploma Beveiliger" },
-    { value: "SVPB_CERTIFICAAT_PERSOONSBEVEILIGING", label: "SVPB Persoonsbeveiliging" },
-    { value: "SVPB_CERTIFICAAT_WINKELSURVEILLANCE", label: "SVPB Winkelsurveillance" },
+    {
+      value: "SVPB_CERTIFICAAT_PERSOONSBEVEILIGING",
+      label: "SVPB Persoonsbeveiliging",
+    },
+    {
+      value: "SVPB_CERTIFICAAT_WINKELSURVEILLANCE",
+      label: "SVPB Winkelsurveillance",
+    },
     { value: "SVPB_CERTIFICAAT_EVENT_SECURITY", label: "SVPB Event Security" },
     { value: "SVPB_CERTIFICAAT_CENTRALIST", label: "SVPB Centralist" },
     { value: "BOA_CERTIFICAAT", label: "BOA Certificaat" },
@@ -69,7 +76,7 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
     { value: "FREELANCER_OVEREENKOMST", label: "Freelancer Overeenkomst" },
     { value: "DIPLOMA_OVERIG", label: "Diploma (Overig)" },
     { value: "CERTIFICAAT_OVERIG", label: "Certificaat (Overig)" },
-    { value: "OVERIGE", label: "Overige" }
+    { value: "OVERIGE", label: "Overige" },
   ];
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,17 +86,24 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
       if (file.size > 10 * 1024 * 1024) {
         setUploadResult({
           success: false,
-          message: "Bestand is te groot. Maximum bestandsgrootte is 10MB."
+          message: "Bestand is te groot. Maximum bestandsgrootte is 10MB.",
         });
         return;
       }
 
       // Check file type
-      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const allowedTypes = [
+        "application/pdf",
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
       if (!allowedTypes.includes(file.type)) {
         setUploadResult({
           success: false,
-          message: "Bestandstype niet toegestaan. Alleen PDF, JPG, PNG en WebP bestanden zijn toegestaan."
+          message:
+            "Bestandstype niet toegestaan. Alleen PDF, JPG, PNG en WebP bestanden zijn toegestaan.",
         });
         return;
       }
@@ -118,7 +132,7 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
     if (!selectedFile || !documentType) {
       setUploadResult({
         success: false,
-        message: "Selecteer een bestand en document type."
+        message: "Selecteer een bestand en document type.",
       });
       return;
     }
@@ -126,7 +140,7 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
     if (!session?.user) {
       setUploadResult({
         success: false,
-        message: "Je moet ingelogd zijn om documenten te uploaden."
+        message: "Je moet ingelogd zijn om documenten te uploaden.",
       });
       return;
     }
@@ -137,20 +151,20 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
       setUploadResult(null);
 
       const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('documentType', documentType);
-      if (documentNummer) formData.append('documentNummer', documentNummer);
-      if (geldigTot) formData.append('geldigTot', geldigTot);
+      formData.append("file", selectedFile);
+      formData.append("documentType", documentType);
+      if (documentNummer) formData.append("documentNummer", documentNummer);
+      if (geldigTot) formData.append("geldigTot", geldigTot);
 
       // Simulate progress for better UX
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 10, 90));
+        setUploadProgress((prev) => Math.min(prev + 10, 90));
       }, 200);
 
-      const response = await fetch('/api/documents/upload', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
+      const response = await fetch("/api/documents/upload", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
       });
 
       clearInterval(progressInterval);
@@ -158,15 +172,16 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+        throw new Error(errorData.error || "Upload failed");
       }
 
       const result = await response.json();
 
       setUploadResult({
         success: true,
-        message: "Document succesvol geüpload! Het wordt nu beoordeeld door onze beheerders.",
-        document: result.document
+        message:
+          "Document succesvol geüpload! Het wordt nu beoordeeld door onze beheerders.",
+        document: result.document,
       });
 
       // Reset form
@@ -182,12 +197,14 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
       if (onUploadComplete) {
         onUploadComplete(result.document);
       }
-
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       setUploadResult({
         success: false,
-        message: error instanceof Error ? error.message : "Er is een fout opgetreden bij het uploaden."
+        message:
+          error instanceof Error
+            ? error.message
+            : "Er is een fout opgetreden bij het uploaden.",
       });
     } finally {
       setUploading(false);
@@ -210,15 +227,16 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
         <div>
           <h3 className="text-lg font-semibold mb-2">Document Uploaden</h3>
           <p className="text-sm text-muted-foreground">
-            Upload uw documenten voor verificatie. Toegestane formaten: PDF, JPG, PNG (max 10MB)
+            Upload uw documenten voor verificatie. Toegestane formaten: PDF,
+            JPG, PNG (max 10MB)
           </p>
         </div>
 
         {/* File Upload Area */}
         <div
           className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors
-            ${selectedFile ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-gray-400'}
-            ${uploading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+            ${selectedFile ? "border-green-300 bg-green-50" : "border-gray-300 hover:border-gray-400"}
+            ${uploading ? "pointer-events-none opacity-50" : "cursor-pointer"}
           `}
           onClick={() => !uploading && fileInputRef.current?.click()}
           onDrop={handleDrop}
@@ -291,7 +309,9 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
           </div>
 
           <div>
-            <Label htmlFor="documentNummer">Document/Certificaat Nummer (optioneel)</Label>
+            <Label htmlFor="documentNummer">
+              Document/Certificaat Nummer (optioneel)
+            </Label>
             <Input
               id="documentNummer"
               value={documentNummer}
@@ -317,7 +337,13 @@ export default function DocumentUpload({ onUploadComplete, className }: Document
 
         {/* Upload Result */}
         {uploadResult && (
-          <Alert className={uploadResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+          <Alert
+            className={
+              uploadResult.success
+                ? "border-green-200 bg-green-50"
+                : "border-red-200 bg-red-50"
+            }
+          >
             <div className="flex items-start gap-2">
               {uploadResult.success ? (
                 <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />

@@ -17,10 +17,11 @@ async function seedVerzekeringen() {
     const zakelijkCat = await prisma.verzekeringCategorie.create({
       data: {
         naam: "Zakelijke verzekeringen",
-        beschrijving: "Bescherm je onderneming met de juiste zakelijke verzekeringen",
+        beschrijving:
+          "Bescherm je onderneming met de juiste zakelijke verzekeringen",
         sortOrder: 1,
-        isActief: true
-      }
+        isActief: true,
+      },
     });
 
     const particulierCat = await prisma.verzekeringCategorie.create({
@@ -28,8 +29,8 @@ async function seedVerzekeringen() {
         naam: "Particuliere verzekeringen",
         beschrijving: "Voor jou en je gezin, met aantrekkelijke kortingen",
         sortOrder: 2,
-        isActief: true
-      }
+        isActief: true,
+      },
     });
 
     const pensioenCat = await prisma.verzekeringCategorie.create({
@@ -37,8 +38,8 @@ async function seedVerzekeringen() {
         naam: "Pensioen & Inkomen",
         beschrijving: "Bouw aan je toekomst met fiscaal voordelige regelingen",
         sortOrder: 3,
-        isActief: true
-      }
+        isActief: true,
+      },
     });
 
     console.log("✅ Categories created");
@@ -47,120 +48,125 @@ async function seedVerzekeringen() {
     const avbProduct = await prisma.verzekeringProduct.create({
       data: {
         naam: "Beroepsaansprakelijkheid (AVB)",
-        beschrijving: "De beroepsaansprakelijkheidsverzekering dekt schade die je tijdens je werkzaamheden als beveiliger veroorzaakt aan derden. Essentieel voor iedere beveiliger.",
+        beschrijving:
+          "De beroepsaansprakelijkheidsverzekering dekt schade die je tijdens je werkzaamheden als beveiliger veroorzaakt aan derden. Essentieel voor iedere beveiliger.",
         korteBeschrijving: "Verplichte verzekering voor beveiligers",
         categorieId: zakelijkCat.id,
         verzekeraar: "Schouten Zekerheid",
         verzekeraarLogo: "/logos/schouten-zekerheid.png",
-        basispremie: 42.50,
+        basispremie: 42.5,
         kortingPercentage: 15,
         vereisteBasisdata: {
           fields: [
             { name: "kvkNummer", label: "KvK Nummer", required: true },
             { name: "startDatum", label: "Ingangsdatum", required: true },
-            { name: "ervaring", label: "Jaren ervaring", required: true }
-          ]
+            { name: "ervaring", label: "Jaren ervaring", required: true },
+          ],
         },
         productFeatures: [
           "Dekking tot €2.500.000 per aanspraak",
           "Inclusief rechtsbijstand",
           "Werelddekking (excl. USA/Canada)",
           "Geen eigen risico",
-          "24/7 schademeldservice"
+          "24/7 schademeldservice",
         ],
         externalProductId: "SCH-AVB-001",
         isActief: true,
         isFeatured: true,
-        sortOrder: 1
-      }
+        sortOrder: 1,
+      },
     });
 
     const bedrijfsautoProduct = await prisma.verzekeringProduct.create({
       data: {
         naam: "Bedrijfsauto verzekering",
-        beschrijving: "All-risk dekking voor je bedrijfsauto met uitgebreide dekking en pechhulp in heel Europa.",
+        beschrijving:
+          "All-risk dekking voor je bedrijfsauto met uitgebreide dekking en pechhulp in heel Europa.",
         korteBeschrijving: "Voor je bedrijfsvoertuig",
         categorieId: zakelijkCat.id,
         verzekeraar: "Veko Adviesgroep",
-        basispremie: 89.00,
+        basispremie: 89.0,
         kortingPercentage: 10,
         vereisteBasisdata: {
           fields: [
             { name: "kenteken", label: "Kenteken", required: true },
-            { name: "bouwjaar", label: "Bouwjaar", required: true }
-          ]
+            { name: "bouwjaar", label: "Bouwjaar", required: true },
+          ],
         },
         productFeatures: [
           "All-risk dekking",
           "Gratis vervangend vervoer",
           "No-claim beschermer",
-          "Pechhulp Europa"
+          "Pechhulp Europa",
         ],
         isActief: true,
         isFeatured: false,
-        sortOrder: 2
-      }
+        sortOrder: 2,
+      },
     });
 
     const aovProduct = await prisma.verzekeringProduct.create({
       data: {
         naam: "Arbeidsongeschiktheid (AOV)",
-        beschrijving: "Verzekerd inkomen bij arbeidsongeschiktheid door ziekte of ongeval. Essentieel voor ZZP'ers.",
+        beschrijving:
+          "Verzekerd inkomen bij arbeidsongeschiktheid door ziekte of ongeval. Essentieel voor ZZP'ers.",
         korteBeschrijving: "Inkomen bij ziekte of ongeval",
         categorieId: zakelijkCat.id,
         verzekeraar: "Schouten Zekerheid",
-        basispremie: 125.00,
+        basispremie: 125.0,
         kortingPercentage: 20,
         vereisteBasisdata: {
           fields: [
             { name: "geboortedatum", label: "Geboortedatum", required: true },
-            { name: "inkomen", label: "Jaarinkomen", required: true }
-          ]
+            { name: "inkomen", label: "Jaarinkomen", required: true },
+          ],
         },
         productFeatures: [
           "80% inkomensdekking",
           "Kortere wachttijd (30 dagen)",
           "Premievrijstelling bij AO",
-          "Re-integratie ondersteuning"
+          "Re-integratie ondersteuning",
         ],
         isActief: true,
         isFeatured: true,
-        sortOrder: 3
-      }
+        sortOrder: 3,
+      },
     });
 
     // Create products - Particulier
     const autoProduct = await prisma.verzekeringProduct.create({
       data: {
         naam: "Autoverzekering Privé",
-        beschrijving: "Scherpe premie voor je persoonlijke auto met uitgebreide dekking.",
+        beschrijving:
+          "Scherpe premie voor je persoonlijke auto met uitgebreide dekking.",
         korteBeschrijving: "Voor je privé auto",
         categorieId: particulierCat.id,
         verzekeraar: "Veko Adviesgroep",
-        basispremie: 45.00,
+        basispremie: 45.0,
         kortingPercentage: 8,
         vereisteBasisdata: {
           fields: [
             { name: "kenteken", label: "Kenteken", required: true },
-            { name: "geboortedatum", label: "Geboortedatum", required: true }
-          ]
+            { name: "geboortedatum", label: "Geboortedatum", required: true },
+          ],
         },
         productFeatures: [
           "WA + Casco dekking",
           "No-claim korting behoud",
           "Gratis pechhulp",
-          "Ruitschade zonder eigen risico"
+          "Ruitschade zonder eigen risico",
         ],
         isActief: true,
         isFeatured: false,
-        sortOrder: 1
-      }
+        sortOrder: 1,
+      },
     });
 
     const aansprakelijkheidProduct = await prisma.verzekeringProduct.create({
       data: {
         naam: "Aansprakelijkheid Particulier",
-        beschrijving: "Dekt schade die je per ongeluk aan anderen toebrengt. Onmisbaar voor ieder huishouden.",
+        beschrijving:
+          "Dekt schade die je per ongeluk aan anderen toebrengt. Onmisbaar voor ieder huishouden.",
         korteBeschrijving: "Bij schade aan anderen",
         categorieId: particulierCat.id,
         verzekeraar: "Veko Adviesgroep",
@@ -168,48 +174,57 @@ async function seedVerzekeringen() {
         kortingPercentage: 15,
         vereisteBasisdata: {
           fields: [
-            { name: "gezinssamenstelling", label: "Gezinssamenstelling", required: true }
-          ]
+            {
+              name: "gezinssamenstelling",
+              label: "Gezinssamenstelling",
+              required: true,
+            },
+          ],
         },
         productFeatures: [
           "Gezinsdekking",
           "Werelddekking",
           "Oppas dekking",
-          "Sport & hobby dekking"
+          "Sport & hobby dekking",
         ],
         isActief: true,
         isFeatured: true,
-        sortOrder: 2
-      }
+        sortOrder: 2,
+      },
     });
 
     // Create products - Pensioen
     const pensioenProduct = await prisma.verzekeringProduct.create({
       data: {
         naam: "Pensioenregeling ZZP",
-        beschrijving: "Flexibele pensioenopbouw met fiscale voordelen. Speciaal voor ZZP'ers in de beveiliging.",
+        beschrijving:
+          "Flexibele pensioenopbouw met fiscale voordelen. Speciaal voor ZZP'ers in de beveiliging.",
         korteBeschrijving: "Bouw pensioen op met belastingvoordeel",
         categorieId: pensioenCat.id,
         verzekeraar: "Brand New Day",
-        basispremie: 150.00,
+        basispremie: 150.0,
         kortingPercentage: 0, // Special promo instead
         vereisteBasisdata: {
           fields: [
             { name: "geboortedatum", label: "Geboortedatum", required: true },
-            { name: "gewenstInleg", label: "Maandelijkse inleg", required: true }
-          ]
+            {
+              name: "gewenstInleg",
+              label: "Maandelijkse inleg",
+              required: true,
+            },
+          ],
         },
         productFeatures: [
           "Fiscaal aftrekbaar",
           "Flexibele inleg",
           "Lage kosten (0.59%)",
           "Online beheer",
-          "Eerste maand gratis"
+          "Eerste maand gratis",
         ],
         isActief: true,
         isFeatured: true,
-        sortOrder: 1
-      }
+        sortOrder: 1,
+      },
     });
 
     console.log("✅ Products created");
@@ -228,8 +243,8 @@ async function seedVerzekeringen() {
         gebruiktAantal: 0,
         maxPerGebruiker: 1,
         nieuweKlantenOnly: true,
-        isActief: true
-      }
+        isActief: true,
+      },
     });
 
     const loyaltyKorting = await prisma.verzekeringKorting.create({
@@ -243,8 +258,8 @@ async function seedVerzekeringen() {
         geldigTot: new Date("2025-12-31"),
         minAbonnementDuur: 3,
         maxPerGebruiker: 3,
-        isActief: true
-      }
+        isActief: true,
+      },
     });
 
     const eersteGratis = await prisma.verzekeringKorting.create({
@@ -259,21 +274,27 @@ async function seedVerzekeringen() {
         maxGebruik: 100,
         gebruiktAantal: 12,
         maxPerGebruiker: 1,
-        isActief: true
-      }
+        isActief: true,
+      },
     });
 
     console.log("✅ Discount codes created");
 
     // Link discounts to products
     // SECURYFLEX25 - works on all products
-    const allProducts = [avbProduct, bedrijfsautoProduct, aovProduct, autoProduct, aansprakelijkheidProduct];
+    const allProducts = [
+      avbProduct,
+      bedrijfsautoProduct,
+      aovProduct,
+      autoProduct,
+      aansprakelijkheidProduct,
+    ];
     for (const product of allProducts) {
       await prisma.verzekeringProductKorting.create({
         data: {
           productId: product.id,
-          kortingId: nieuweKlantKorting.id
-        }
+          kortingId: nieuweKlantKorting.id,
+        },
       });
     }
 
@@ -283,8 +304,8 @@ async function seedVerzekeringen() {
       await prisma.verzekeringProductKorting.create({
         data: {
           productId: product.id,
-          kortingId: loyaltyKorting.id
-        }
+          kortingId: loyaltyKorting.id,
+        },
       });
     }
 
@@ -292,8 +313,8 @@ async function seedVerzekeringen() {
     await prisma.verzekeringProductKorting.create({
       data: {
         productId: pensioenProduct.id,
-        kortingId: eersteGratis.id
-      }
+        kortingId: eersteGratis.id,
+      },
     });
 
     console.log("✅ Discount codes linked to products");
@@ -302,9 +323,9 @@ async function seedVerzekeringen() {
     const sampleZZP = await prisma.zZPProfile.findFirst({
       where: {
         subscription: {
-          status: "active"
-        }
-      }
+          status: "active",
+        },
+      },
     });
 
     if (sampleZZP) {
@@ -319,22 +340,21 @@ async function seedVerzekeringen() {
             email: "jan@example.com",
             telefoon: "0612345678",
             kvkNummer: "12345678",
-            startDatum: "2025-02-01"
+            startDatum: "2025-02-01",
           },
-          offertePremie: 42.50,
+          offertePremie: 42.5,
           platformKorting: 6.38, // 15%
           codeKorting: 10.63, // 25%
           finaalPremie: 25.49,
           status: "OFFERTE",
-          externalRef: "REF-2025-001"
-        }
+          externalRef: "REF-2025-001",
+        },
       });
 
       console.log("✅ Sample application created");
     }
 
     console.log("🎉 Verzekeringen seeding completed successfully!");
-
   } catch (error) {
     console.error("❌ Error seeding verzekeringen:", error);
     throw error;
@@ -344,8 +364,7 @@ async function seedVerzekeringen() {
 }
 
 // Run the seed function
-seedVerzekeringen()
-  .catch((error) => {
-    console.error("Fatal error:", error);
-    process.exit(1);
-  });
+seedVerzekeringen().catch((error) => {
+  console.error("Fatal error:", error);
+  process.exit(1);
+});

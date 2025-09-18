@@ -1,37 +1,41 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
 import {
-  Search,
-  Calendar,
-  Clock,
-  User,
-  Badge,
-  ChevronLeft,
-  Menu,
-  LogOut,
-  Settings,
-  HelpCircle,
   Bell,
+  Calendar,
+  ChevronLeft,
+  Clock,
+  HelpCircle,
+  LogOut,
+  Menu,
+  Search,
+  Settings,
   Shield,
+  User,
 } from "lucide-react";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge as BadgeComponent } from "@/components/ui/badge";
-import { useState } from "react";
-import { useSession, signOut } from "next-auth/react";
-import { useIsTablet } from "@/hooks/useResponsive";
+import { Button } from "@/components/ui/button";
 import { useApiData } from "@/hooks/useApiData";
+import { useIsTablet } from "@/hooks/useResponsive";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   href: string;
   label: string;
   icon: typeof Search;
   badge?: number | string;
-  badgeVariant?: "default" | "secondary" | "destructive" | "outline" | "success";
+  badgeVariant?:
+    | "default"
+    | "secondary"
+    | "destructive"
+    | "outline"
+    | "success";
 }
 
 const navItems: NavItem[] = [
@@ -85,7 +89,7 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const _router = useRouter();
   const { data: session } = useSession();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isTablet = useIsTablet();
@@ -98,7 +102,7 @@ export function Sidebar({ className }: SidebarProps) {
     endpoint: "/api/notifications?unreadOnly=true&limit=0",
     fallbackData: { unreadCount: 0 },
     requireAuth: true,
-    enabled: !!session?.user?.id
+    enabled: !!session?.user?.id,
   });
 
   const unreadCount = notificationData?.unreadCount || 0;
@@ -117,7 +121,7 @@ export function Sidebar({ className }: SidebarProps) {
       className={cn(
         "hidden md:flex flex-col bg-card border-r transition-all duration-300 ease-in-out",
         effectiveCollapsed ? "w-20" : "w-64",
-        className
+        className,
       )}
     >
       {/* Header with Logo/Toggle */}
@@ -163,13 +167,13 @@ export function Sidebar({ className }: SidebarProps) {
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "hover:bg-accent hover:text-accent-foreground",
-                  effectiveCollapsed && "justify-center px-2"
+                  effectiveCollapsed && "justify-center px-2",
                 )}
               >
                 <Icon
                   className={cn(
                     "h-5 w-5 flex-shrink-0 transition-all",
-                    isActive && "scale-110"
+                    isActive && "scale-110",
                   )}
                 />
                 {!effectiveCollapsed && <span>{item.label}</span>}
@@ -178,10 +182,13 @@ export function Sidebar({ className }: SidebarProps) {
                     variant={item.badgeVariant || "secondary"}
                     className={cn(
                       "ml-auto",
-                      effectiveCollapsed && "absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center"
+                      effectiveCollapsed &&
+                        "absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center",
                     )}
                   >
-                    {effectiveCollapsed && Number(item.badge) > 9 ? "9+" : item.badge}
+                    {effectiveCollapsed && Number(item.badge) > 9
+                      ? "9+"
+                      : item.badge}
                   </BadgeComponent>
                 )}
 
@@ -215,7 +222,7 @@ export function Sidebar({ className }: SidebarProps) {
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "hover:bg-accent hover:text-accent-foreground",
-                  effectiveCollapsed && "justify-center px-2"
+                  effectiveCollapsed && "justify-center px-2",
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
@@ -241,8 +248,9 @@ export function Sidebar({ className }: SidebarProps) {
             variant="ghost"
             className={cn(
               "w-full justify-start gap-3 mb-2",
-              pathname === "/dashboard/notifications" && "bg-accent text-accent-foreground",
-              effectiveCollapsed && "justify-center px-2"
+              pathname === "/dashboard/notifications" &&
+                "bg-accent text-accent-foreground",
+              effectiveCollapsed && "justify-center px-2",
             )}
           >
             <div className="relative">
@@ -261,7 +269,7 @@ export function Sidebar({ className }: SidebarProps) {
         <div
           className={cn(
             "flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors cursor-pointer",
-            effectiveCollapsed && "justify-center"
+            effectiveCollapsed && "justify-center",
           )}
         >
           <Avatar className="h-9 w-9">
@@ -285,7 +293,7 @@ export function Sidebar({ className }: SidebarProps) {
           onClick={() => signOut()}
           className={cn(
             "w-full justify-start gap-2 mt-2",
-            effectiveCollapsed && "justify-center px-2"
+            effectiveCollapsed && "justify-center px-2",
           )}
         >
           <LogOut className="h-4 w-4" />

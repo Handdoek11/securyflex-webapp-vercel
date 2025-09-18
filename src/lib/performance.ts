@@ -1,6 +1,16 @@
 // Performance optimization utilities for SecuryFlex
-import React from "react";
+
 import { debounce } from "lodash";
+import React from "react";
+
+// Type definitions for browser-specific APIs
+interface PerformanceMemory {
+  memory: {
+    usedJSHeapSize: number;
+    totalJSHeapSize: number;
+    jsHeapSizeLimit: number;
+  };
+}
 
 // Debounced search function for input fields
 export const createDebouncedSearch = (callback: (query: string) => void, delay = 300) => {
@@ -8,9 +18,9 @@ export const createDebouncedSearch = (callback: (query: string) => void, delay =
 };
 
 // Lazy loading utility for heavy components
-export function createLazyComponent<T extends React.ComponentType<any>>(
+export function createLazyComponent<P = object, T extends React.ComponentType<P> = React.ComponentType<P>>(
   importFunc: () => Promise<{ default: T }>,
-  fallback?: React.ComponentType
+  _fallback?: React.ComponentType
 ) {
   return React.lazy(importFunc);
 }
@@ -78,15 +88,15 @@ export function OptimizedImage({
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [hasError, setHasError] = React.useState(false);
 
-  const handleLoad = () => {
+  const handleLoad = React.useCallback(() => {
     setIsLoaded(true);
     onLoad?.();
-  };
+  }, [onLoad]);
 
-  const handleError = () => {
+  const handleError = React.useCallback(() => {
     setHasError(true);
     onError?.();
-  };
+  }, [onError]);
 
   if (hasError) {
     return (
@@ -125,13 +135,14 @@ export function OptimizedImage({
 }
 
 // Request deduplication for API calls
-const requestCache = new Map<string, Promise<any>>();
+const requestCache = new Map<string, Promise<unknown>>();
 
 export function dedupedFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
   const key = `${url}-${JSON.stringify(options)}`;
 
-  if (requestCache.has(key)) {
-    return requestCache.get(key);
+  const cached = requestCache.get(key);
+  if (cached) {
+    return cached as Promise<T>;
   }
 
   const request = fetch(url, options)
@@ -166,7 +177,7 @@ export function logBundleInfo() {
   if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
     // Log memory usage
     if ('memory' in performance) {
-      const memory = (performance as any).memory;
+      const memory = (performance as PerformanceMemory).memory;
       console.log('Memory usage:', {
         used: Math.round(memory.usedJSHeapSize / 1024 / 1024) + ' MB',
         total: Math.round(memory.totalJSHeapSize / 1024 / 1024) + ' MB',
@@ -217,17 +228,17 @@ export function usePerformanceMonitor(componentName: string) {
         console.log(`${componentName} render time: ${endTime - startTime}ms`);
       };
     }
-  });
+  }, [componentName]);
 }
 
 // Memoization helpers
-export const memoizeWithExpiry = <T extends (...args: any[]) => any>(
-  fn: T,
+export const memoizeWithExpiry = <TArgs extends readonly unknown[], TResult>(
+  fn: (...args: TArgs) => TResult,
   ttl: number = 60000 // 1 minute default
-): T => {
-  const cache = new Map<string, { value: ReturnType<T>; expiry: number }>();
+) => {
+  const cache = new Map<string, { value: TResult; expiry: number }>();
 
-  return ((...args: Parameters<T>): ReturnType<T> => {
+  return ((...args: TArgs): TResult => {
     const key = JSON.stringify(args);
     const now = Date.now();
     const cached = cache.get(key);
@@ -247,7 +258,7 @@ export const memoizeWithExpiry = <T extends (...args: any[]) => any>(
     }
 
     return result;
-  }) as T;
+  });
 };
 
 // Critical CSS detection
@@ -264,7 +275,7 @@ export function loadCriticalCSS() {
     link.rel = 'stylesheet';
     link.href = '/css/non-critical.css';
     link.media = 'print';
-    link.onload = function() {
+    link.onload = () => {
       link.media = 'all';
     };
     document.head.appendChild(link);

@@ -1,14 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import type { DocumentType } from "@prisma/client";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
-import crypto from "crypto";
 import {
+  sendAdminNewDocumentNotification,
   sendDocumentUploadNotification,
-  sendAdminNewDocumentNotification
 } from "@/lib/documents/notifications";
+import prisma from "@/lib/prisma";
 
 const UPLOAD_DIR = join(process.cwd(), "uploads", "documents");
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -17,7 +18,7 @@ const ALLOWED_TYPES = [
   "image/jpeg",
   "image/jpg",
   "image/png",
-  "image/webp"
+  "image/webp",
 ];
 
 // Ensure upload directory exists
@@ -31,10 +32,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const formData = await request.formData();
@@ -47,14 +45,14 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json(
         { error: "Geen bestand gevonden" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!documentType) {
       return NextResponse.json(
         { error: "Document type is vereist" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -62,7 +60,7 @@ export async function POST(request: NextRequest) {
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { error: "Bestand is te groot (max 10MB)" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: "Bestandstype niet toegestaan" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -78,7 +76,7 @@ export async function POST(request: NextRequest) {
     await ensureUploadDir();
 
     // Generate secure filename
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const fileExtension = file.name.split(".").pop()?.toLowerCase();
     const secureFileName = `${crypto.randomUUID()}.${fileExtension}`;
     const filePath = join(UPLOAD_DIR, secureFileName);
 
@@ -88,7 +86,8 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer);
 
     // Get client IP and User Agent
-    const ipAddress = request.ip ||
+    const ipAddress =
+      request.ip ||
       request.headers.get("x-forwarded-for") ||
       request.headers.get("x-real-ip") ||
       "unknown";
@@ -98,7 +97,7 @@ export async function POST(request: NextRequest) {
     const document = await prisma.documentVerificatie.create({
       data: {
         userId: session.user.id,
-        documentType: documentType as any,
+        documentType: documentType as DocumentType,
         documentNummer: documentNummer || null,
         fileName: secureFileName,
         originalFileName: file.name,
@@ -108,16 +107,16 @@ export async function POST(request: NextRequest) {
         geldigTot: geldigTot ? new Date(geldigTot) : null,
         ipAddress,
         userAgent,
-        status: "PENDING"
+        status: "PENDING",
       },
       include: {
         user: {
           select: {
             name: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
 
     // Log verification history
@@ -129,8 +128,8 @@ export async function POST(request: NextRequest) {
         performedBy: session.user.id,
         performedByName: session.user.name || session.user.email,
         ipAddress,
-        userAgent
-      }
+        userAgent,
+      },
     });
 
     // Send notifications
@@ -139,28 +138,28 @@ export async function POST(request: NextRequest) {
       await sendDocumentUploadNotification({
         user: {
           name: document.user.name || "Gebruiker",
-          email: document.user.email
+          email: document.user.email,
         },
         document: {
           id: document.id,
           documentType: document.documentType,
           originalFileName: document.originalFileName,
-          status: document.status
-        }
+          status: document.status,
+        },
       });
 
       // Send notification to admins about new document
       await sendAdminNewDocumentNotification({
         user: {
           name: document.user.name || "Gebruiker",
-          email: document.user.email
+          email: document.user.email,
         },
         document: {
           id: document.id,
           documentType: document.documentType,
           originalFileName: document.originalFileName,
-          status: document.status
-        }
+          status: document.status,
+        },
       });
     } catch (notificationError) {
       console.error("Failed to send notifications:", notificationError);
@@ -174,33 +173,29 @@ export async function POST(request: NextRequest) {
         documentType: document.documentType,
         originalFileName: document.originalFileName,
         status: document.status,
-        uploadedAt: document.uploadedAt
-      }
+        uploadedAt: document.uploadedAt,
+      },
     });
-
   } catch (error) {
     console.error("Document upload error:", error);
     return NextResponse.json(
       { error: "Failed to upload document" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // GET endpoint to list user's documents
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const documents = await prisma.documentVerificatie.findMany({
       where: {
-        userId: session.user.id
+        userId: session.user.id,
       },
       select: {
         id: true,
@@ -212,23 +207,22 @@ export async function GET(request: NextRequest) {
         uploadedAt: true,
         verificatieDatum: true,
         rejectionReason: true,
-        adminNotes: true
+        adminNotes: true,
       },
       orderBy: {
-        uploadedAt: "desc"
-      }
+        uploadedAt: "desc",
+      },
     });
 
     return NextResponse.json({
       success: true,
-      documents
+      documents,
     });
-
   } catch (error) {
     console.error("Error fetching documents:", error);
     return NextResponse.json(
       { error: "Failed to fetch documents" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
@@ -7,13 +7,14 @@ const mockJobs = [
   {
     id: "1",
     title: "Evenementbeveiliging - Concert",
-    description: "Beveiliging voor groot muziekfestival. Ervaring met evenementen vereist.",
+    description:
+      "Beveiliging voor groot muziekfestival. Ervaring met evenementen vereist.",
     location: "Amsterdam Zuidoost",
     company: "SecureEvents BV",
     companyId: "company-1",
     startDate: new Date("2025-09-20T18:00:00Z"),
     endDate: new Date("2025-09-21T02:00:00Z"),
-    hourlyRate: 28.50,
+    hourlyRate: 28.5,
     spotsAvailable: 10,
     spotsRemaining: 7,
     applicantCount: 3,
@@ -28,7 +29,7 @@ const mockJobs = [
     image: "/images/jobs/evenement-beveiliging.jpg",
     distance: "2.3 km",
     createdAt: new Date("2025-09-15T10:00:00Z"),
-    updatedAt: new Date("2025-09-15T10:00:00Z")
+    updatedAt: new Date("2025-09-15T10:00:00Z"),
   },
   {
     id: "2",
@@ -39,7 +40,7 @@ const mockJobs = [
     companyId: "company-2",
     startDate: new Date("2025-09-18T22:00:00Z"),
     endDate: new Date("2025-09-19T06:00:00Z"),
-    hourlyRate: 26.00,
+    hourlyRate: 26.0,
     spotsAvailable: 5,
     spotsRemaining: 2,
     applicantCount: 8,
@@ -54,7 +55,7 @@ const mockJobs = [
     image: "/images/jobs/object-beveiliging.jpg",
     distance: "15.2 km",
     createdAt: new Date("2025-09-14T14:30:00Z"),
-    updatedAt: new Date("2025-09-14T14:30:00Z")
+    updatedAt: new Date("2025-09-14T14:30:00Z"),
   },
   {
     id: "3",
@@ -65,7 +66,7 @@ const mockJobs = [
     companyId: "company-3",
     startDate: new Date("2025-09-19T09:00:00Z"),
     endDate: new Date("2025-09-19T17:00:00Z"),
-    hourlyRate: 24.00,
+    hourlyRate: 24.0,
     spotsAvailable: 2,
     spotsRemaining: 1,
     applicantCount: 5,
@@ -80,7 +81,7 @@ const mockJobs = [
     image: "/images/jobs/winkel-beveiliging.jpg",
     distance: "8.7 km",
     createdAt: new Date("2025-09-13T09:15:00Z"),
-    updatedAt: new Date("2025-09-13T09:15:00Z")
+    updatedAt: new Date("2025-09-13T09:15:00Z"),
   },
   {
     id: "4",
@@ -91,7 +92,7 @@ const mockJobs = [
     companyId: "company-4",
     startDate: new Date("2025-09-21T22:00:00Z"),
     endDate: new Date("2025-09-22T04:00:00Z"),
-    hourlyRate: 30.00,
+    hourlyRate: 30.0,
     spotsAvailable: 6,
     spotsRemaining: 4,
     applicantCount: 12,
@@ -106,7 +107,7 @@ const mockJobs = [
     image: "/images/jobs/horeca-beveiliging.jpg",
     distance: "5.1 km",
     createdAt: new Date("2025-09-16T16:45:00Z"),
-    updatedAt: new Date("2025-09-16T16:45:00Z")
+    updatedAt: new Date("2025-09-16T16:45:00Z"),
   },
 ];
 
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -128,16 +129,16 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") || "all";
     const location = searchParams.get("location") || "";
     const minRate = searchParams.get("minRate");
-    const maxDistance = searchParams.get("maxDistance");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const _maxDistance = searchParams.get("maxDistance");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
 
     // Get user's ZZP profile for application status checking
     let zzpProfile = null;
     try {
       zzpProfile = await prisma.zZPProfile.findUnique({
         where: { userId: session.user.id },
-        select: { id: true }
+        select: { id: true },
       });
     } catch (error) {
       console.error("Failed to get ZZP profile:", error);
@@ -151,8 +152,8 @@ export async function GET(request: NextRequest) {
       const where: any = {
         status: "OPEN", // Only show open jobs
         startDatum: {
-          gte: new Date() // Only future jobs
-        }
+          gte: new Date(), // Only future jobs
+        },
       };
 
       // Search filter
@@ -160,7 +161,7 @@ export async function GET(request: NextRequest) {
         where.OR = [
           { titel: { contains: search, mode: "insensitive" } },
           { beschrijving: { contains: search, mode: "insensitive" } },
-          { locatie: { contains: search, mode: "insensitive" } }
+          { locatie: { contains: search, mode: "insensitive" } },
         ];
       }
 
@@ -183,92 +184,117 @@ export async function GET(request: NextRequest) {
               select: {
                 bedrijfsnaam: true,
                 id: true,
-                contactpersoon: true
-              }
+                contactpersoon: true,
+              },
             },
             creatorBedrijf: {
               select: {
                 bedrijfsnaam: true,
-                id: true
-              }
+                id: true,
+              },
             },
             acceptedBedrijf: {
               select: {
                 bedrijfsnaam: true,
-                id: true
-              }
-            },
-            sollicitaties: zzpProfile ? {
-              where: {
-                zzpId: zzpProfile.id // Check if current user has applied
+                id: true,
               },
-              select: {
-                status: true,
-                sollicitatiedatum: true
-              }
-            } : false,
+            },
+            sollicitaties: zzpProfile
+              ? {
+                  where: {
+                    zzpId: zzpProfile.id, // Check if current user has applied
+                  },
+                  select: {
+                    status: true,
+                    sollicitatiedatum: true,
+                  },
+                }
+              : false,
             _count: {
               select: {
-                sollicitaties: true // Count total applicants
-              }
-            }
+                sollicitaties: true, // Count total applicants
+              },
+            },
           },
           orderBy: [
             { isUrgent: "desc" }, // Urgent jobs first
-            { startDatum: "asc" } // Nearest date first
+            { startDatum: "asc" }, // Nearest date first
           ],
           skip: (page - 1) * limit,
-          take: limit
+          take: limit,
         }),
-        prisma.opdracht.count({ where })
+        prisma.opdracht.count({ where }),
       ]);
 
       // Format database jobs
-      jobs = dbJobs.map(job => ({
+      jobs = dbJobs.map((job) => ({
         id: job.id,
         title: job.titel,
         description: job.beschrijving,
         location: job.locatie,
-        company: job.opdrachtgever?.bedrijfsnaam || job.creatorBedrijf?.bedrijfsnaam || job.acceptedBedrijf?.bedrijfsnaam || "Onbekend",
-        companyId: job.opdrachtgeverId || job.creatorBedrijfId || job.acceptedBedrijfId,
+        company:
+          job.opdrachtgever?.bedrijfsnaam ||
+          job.creatorBedrijf?.bedrijfsnaam ||
+          job.acceptedBedrijf?.bedrijfsnaam ||
+          "Onbekend",
+        companyId:
+          job.opdrachtgeverId || job.creatorBedrijfId || job.acceptedBedrijfId,
         startDate: job.startDatum,
         endDate: job.eindDatum,
         hourlyRate: Number(job.uurtarief),
         spotsAvailable: job.aantalBeveiligers,
-        spotsRemaining: Math.max(0, job.aantalBeveiligers - job._count.sollicitaties),
+        spotsRemaining: Math.max(
+          0,
+          job.aantalBeveiligers - job._count.sollicitaties,
+        ),
         applicantCount: job._count.sollicitaties,
-        applicationStatus: job.sollicitaties && job.sollicitaties[0] ? job.sollicitaties[0].status : null,
-        hasApplied: zzpProfile ? job.sollicitaties && job.sollicitaties.length > 0 : false,
+        applicationStatus: job.sollicitaties?.[0]
+          ? job.sollicitaties[0].status
+          : null,
+        hasApplied: zzpProfile
+          ? job.sollicitaties && job.sollicitaties.length > 0
+          : false,
         status: job.status,
-        isUrgent: job.isUrgent || (new Date(job.startDatum).getTime() - Date.now() < 48 * 60 * 60 * 1000),
-        estimatedHours: Math.round((job.eindDatum.getTime() - job.startDatum.getTime()) / (1000 * 60 * 60)),
-        estimatedEarnings: Math.round(((job.eindDatum.getTime() - job.startDatum.getTime()) / (1000 * 60 * 60)) * Number(job.uurtarief) * 0.88),
+        isUrgent:
+          job.isUrgent ||
+          new Date(job.startDatum).getTime() - Date.now() < 48 * 60 * 60 * 1000,
+        estimatedHours: Math.round(
+          (job.eindDatum.getTime() - job.startDatum.getTime()) /
+            (1000 * 60 * 60),
+        ),
+        estimatedEarnings: Math.round(
+          ((job.eindDatum.getTime() - job.startDatum.getTime()) /
+            (1000 * 60 * 60)) *
+            Number(job.uurtarief) *
+            0.88,
+        ),
         type: job.type || "General",
         requirements: Array.isArray(job.vereisten) ? job.vereisten : [],
-        image: `/images/jobs/${(job.type || 'general').toLowerCase()}-beveiliging.jpg`,
+        image: `/images/jobs/${(job.type || "general").toLowerCase()}-beveiliging.jpg`,
         distance: `${(Math.random() * 20 + 1).toFixed(1)} km`, // Mock distance
         createdAt: job.createdAt,
-        updatedAt: job.updatedAt
+        updatedAt: job.updatedAt,
       }));
 
       totalCount = dbTotalCount;
 
       console.log(`Found ${jobs.length} jobs from database`);
-
     } catch (dbError) {
       console.error("Database query failed, using mock data:", dbError);
 
       // Filter mock data
-      jobs = mockJobs.filter(job => {
-        const matchesSearch = !search ||
+      jobs = mockJobs.filter((job) => {
+        const matchesSearch =
+          !search ||
           job.title.toLowerCase().includes(search.toLowerCase()) ||
           job.location.toLowerCase().includes(search.toLowerCase()) ||
           job.company.toLowerCase().includes(search.toLowerCase());
 
-        const matchesType = type === "all" ||
-          job.type.toLowerCase().includes(type.toLowerCase());
+        const matchesType =
+          type === "all" || job.type.toLowerCase().includes(type.toLowerCase());
 
-        const matchesLocation = !location ||
+        const matchesLocation =
+          !location ||
           job.location.toLowerCase().includes(location.toLowerCase());
 
         const matchesRate = !minRate || job.hourlyRate >= parseFloat(minRate);
@@ -279,7 +305,9 @@ export async function GET(request: NextRequest) {
       // Sort mock data
       jobs.sort((a, b) => {
         if (a.isUrgent !== b.isUrgent) return a.isUrgent ? -1 : 1;
-        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+        return (
+          new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+        );
       });
 
       totalCount = jobs.length;
@@ -299,26 +327,30 @@ export async function GET(request: NextRequest) {
           total: totalCount,
           totalPages: Math.ceil(totalCount / limit),
           hasNext: page < Math.ceil(totalCount / limit),
-          hasPrev: page > 1
+          hasPrev: page > 1,
         },
         metadata: {
           totalJobs: totalCount,
-          urgentJobs: jobs.filter(job => job.isUrgent).length,
-          averageRate: jobs.length > 0
-            ? Math.round((jobs.reduce((sum, job) => sum + job.hourlyRate, 0) / jobs.length) * 100) / 100
-            : 0
-        }
-      }
+          urgentJobs: jobs.filter((job) => job.isUrgent).length,
+          averageRate:
+            jobs.length > 0
+              ? Math.round(
+                  (jobs.reduce((sum, job) => sum + job.hourlyRate, 0) /
+                    jobs.length) *
+                    100,
+                ) / 100
+              : 0,
+        },
+      },
     });
-
   } catch (error) {
     console.error("Jobs fetch error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch jobs"
+        error: "Failed to fetch jobs",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -331,19 +363,27 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const data = await request.json();
 
     // Validate required fields
-    const required = ["titel", "beschrijving", "locatie", "startDatum", "eindDatum", "aantalBeveiligers", "uurtarief"];
+    const required = [
+      "titel",
+      "beschrijving",
+      "locatie",
+      "startDatum",
+      "eindDatum",
+      "aantalBeveiligers",
+      "uurtarief",
+    ];
     for (const field of required) {
       if (!data[field]) {
         return NextResponse.json(
           { success: false, error: `Missing required field: ${field}` },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -351,13 +391,13 @@ export async function POST(request: NextRequest) {
     // Check if user is opdrachtgever or bedrijf
     const [opdrachtgever, bedrijf] = await Promise.all([
       prisma.opdrachtgever.findUnique({ where: { userId: session.user.id } }),
-      prisma.bedrijfProfile.findUnique({ where: { userId: session.user.id } })
+      prisma.bedrijfProfile.findUnique({ where: { userId: session.user.id } }),
     ]);
 
     if (!opdrachtgever && !bedrijf) {
       return NextResponse.json(
         { success: false, error: "Only companies can create jobs" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -369,27 +409,29 @@ export async function POST(request: NextRequest) {
         locatie: data.locatie,
         startDatum: new Date(data.startDatum),
         eindDatum: new Date(data.eindDatum),
-        aantalBeveiligers: parseInt(data.aantalBeveiligers),
+        aantalBeveiligers: parseInt(data.aantalBeveiligers, 10),
         uurtarief: parseFloat(data.uurtarief),
         status: data.urgent ? "URGENT" : "OPEN",
         opdrachtgeverId: opdrachtgever?.id,
-        bedrijfId: bedrijf?.id
-      }
+        bedrijfId: bedrijf?.id,
+      },
     });
 
-    return NextResponse.json({
-      success: true,
-      data: job
-    }, { status: 201 });
-
+    return NextResponse.json(
+      {
+        success: true,
+        data: job,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("Error creating job:", error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to create job"
+        error: "Failed to create job",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

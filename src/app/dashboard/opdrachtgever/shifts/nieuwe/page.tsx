@@ -1,30 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  X,
-  MapPin,
   Clock,
-  Users,
-  AlertTriangle,
-  CheckCircle,
-  Euro,
+  Info,
+  MapPin,
   Rocket,
   Save,
-  Info
+  Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ShiftFormData {
   // Step 1 - Basic Info
@@ -97,22 +99,22 @@ const initialFormData: ShiftFormData = {
   physicalRequirements: [],
 
   pricingStrategy: "Marktconform tarief",
-  hourlyRate: 20.50,
+  hourlyRate: 20.5,
   ortAllowance: true,
   travelAllowance: false,
   travelRate: 0.21,
   maxDistance: 50,
   mealAllowance: false,
-  mealAmount: 15.00,
+  mealAmount: 15.0,
   maxBudget: 500,
-  budgetAlert: true
+  budgetAlert: true,
 };
 
 export default function NieuweShiftPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<ShiftFormData>(initialFormData);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [estimatedMatches, setEstimatedMatches] = useState(23);
+  const [estimatedMatches, _setEstimatedMatches] = useState(23);
 
   const progress = (currentStep / 5) * 100;
 
@@ -120,7 +122,7 @@ export default function NieuweShiftPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       // In real app, this would save to localStorage or API
-      console.log('Auto-saving draft...', formData);
+      console.log("Auto-saving draft...", formData);
     }, 2000);
 
     return () => clearTimeout(timer);
@@ -141,15 +143,15 @@ export default function NieuweShiftPage() {
     if (hours === 0) return 0;
 
     let hourlyTotal = formData.hourlyRate;
-    hourlyTotal += 4.10; // Service fee
-    if (formData.ortAllowance) hourlyTotal += 2.50; // ORT allowance
-    if (formData.teamLeaderRequired) hourlyTotal += 3.00; // Team leader fee
+    hourlyTotal += 4.1; // Service fee
+    if (formData.ortAllowance) hourlyTotal += 2.5; // ORT allowance
+    if (formData.teamLeaderRequired) hourlyTotal += 3.0; // Team leader fee
 
     return formData.guardsNeeded * hours * hourlyTotal;
   };
 
   const updateFormData = (updates: Partial<ShiftFormData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData((prev) => ({ ...prev, ...updates }));
   };
 
   const nextStep = () => {
@@ -178,14 +180,21 @@ export default function NieuweShiftPage() {
     <div className="space-y-6">
       <div>
         <Label htmlFor="securityType">TYPE BEVEILIGING *</Label>
-        <Select value={formData.securityType} onValueChange={(value) => updateFormData({ securityType: value })}>
+        <Select
+          value={formData.securityType}
+          onValueChange={(value) => updateFormData({ securityType: value })}
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="Objectbeveiliging">Objectbeveiliging</SelectItem>
-            <SelectItem value="Evenementbeveiliging">Evenementbeveiliging</SelectItem>
-            <SelectItem value="Mobiele surveillance">Mobiele surveillance</SelectItem>
+            <SelectItem value="Evenementbeveiliging">
+              Evenementbeveiliging
+            </SelectItem>
+            <SelectItem value="Mobiele surveillance">
+              Mobiele surveillance
+            </SelectItem>
             <SelectItem value="Horecaportier">Horecaportier</SelectItem>
           </SelectContent>
         </Select>
@@ -215,7 +224,10 @@ export default function NieuweShiftPage() {
 
       <div>
         <Label>RISICOPROFIEL</Label>
-        <RadioGroup value={formData.riskProfile} onValueChange={(value) => updateFormData({ riskProfile: value })}>
+        <RadioGroup
+          value={formData.riskProfile}
+          onValueChange={(value) => updateFormData({ riskProfile: value })}
+        >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Laag risico" id="risk-low" />
             <Label htmlFor="risk-low">Laag risico</Label>
@@ -230,7 +242,9 @@ export default function NieuweShiftPage() {
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Zeer hoog risico" id="risk-very-high" />
-            <Label htmlFor="risk-very-high">Zeer hoog risico (extra vereisten)</Label>
+            <Label htmlFor="risk-very-high">
+              Zeer hoog risico (extra vereisten)
+            </Label>
           </div>
         </RadioGroup>
       </div>
@@ -268,7 +282,10 @@ export default function NieuweShiftPage() {
     <div className="space-y-6">
       <div>
         <Label>SHIFT TYPE</Label>
-        <RadioGroup value={formData.shiftType} onValueChange={(value) => updateFormData({ shiftType: value })}>
+        <RadioGroup
+          value={formData.shiftType}
+          onValueChange={(value) => updateFormData({ shiftType: value })}
+        >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Eenmalige shift" id="shift-once" />
             <Label htmlFor="shift-once">Eenmalige shift</Label>
@@ -305,7 +322,9 @@ export default function NieuweShiftPage() {
           />
         </div>
         {calculateHours() > 0 && (
-          <p className="text-sm text-muted-foreground">Totaal: {calculateHours()} uur</p>
+          <p className="text-sm text-muted-foreground">
+            Totaal: {calculateHours()} uur
+          </p>
         )}
       </div>
 
@@ -315,7 +334,11 @@ export default function NieuweShiftPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => updateFormData({ guardsNeeded: Math.max(1, formData.guardsNeeded - 1) })}
+            onClick={() =>
+              updateFormData({
+                guardsNeeded: Math.max(1, formData.guardsNeeded - 1),
+              })
+            }
           >
             -
           </Button>
@@ -323,7 +346,9 @@ export default function NieuweShiftPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => updateFormData({ guardsNeeded: formData.guardsNeeded + 1 })}
+            onClick={() =>
+              updateFormData({ guardsNeeded: formData.guardsNeeded + 1 })
+            }
           >
             +
           </Button>
@@ -331,7 +356,9 @@ export default function NieuweShiftPage() {
         <div className="flex items-center space-x-2 mt-2">
           <Checkbox
             checked={formData.teamLeaderRequired}
-            onCheckedChange={(checked) => updateFormData({ teamLeaderRequired: checked as boolean })}
+            onCheckedChange={(checked) =>
+              updateFormData({ teamLeaderRequired: checked as boolean })
+            }
           />
           <Label>Teamleider vereist (+€3/uur)</Label>
         </div>
@@ -339,17 +366,24 @@ export default function NieuweShiftPage() {
 
       <div>
         <Label>PAUZE REGELING</Label>
-        <Select value={formData.pauseRule} onValueChange={(value) => updateFormData({ pauseRule: value })}>
+        <Select
+          value={formData.pauseRule}
+          onValueChange={(value) => updateFormData({ pauseRule: value })}
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Standaard CAO pauze">Standaard CAO pauze</SelectItem>
+            <SelectItem value="Standaard CAO pauze">
+              Standaard CAO pauze
+            </SelectItem>
             <SelectItem value="Geen pauze">Geen pauze</SelectItem>
             <SelectItem value="Custom pauze">Custom pauze</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-sm text-muted-foreground mt-1">30 min bij 8 uur dienst</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          30 min bij 8 uur dienst
+        </p>
       </div>
     </div>
   );
@@ -366,7 +400,7 @@ export default function NieuweShiftPage() {
             "VCA Basis",
             "VCA VOL",
             "EHBO certificaat",
-            "BHV certificaat"
+            "BHV certificaat",
           ].map((doc) => (
             <div key={doc} className="flex items-center space-x-2">
               <Checkbox
@@ -375,12 +409,22 @@ export default function NieuweShiftPage() {
                   if (checked) {
                     updateFormData({ documents: [...formData.documents, doc] });
                   } else {
-                    updateFormData({ documents: formData.documents.filter(d => d !== doc) });
+                    updateFormData({
+                      documents: formData.documents.filter((d) => d !== doc),
+                    });
                   }
                 }}
-                disabled={doc === "Geldige beveiligingspas" || doc === "VOG (niet ouder dan 12 mnd)"}
+                disabled={
+                  doc === "Geldige beveiligingspas" ||
+                  doc === "VOG (niet ouder dan 12 mnd)"
+                }
               />
-              <Label>{doc} {(doc === "Geldige beveiligingspas" || doc === "VOG (niet ouder dan 12 mnd)") && "✓"}</Label>
+              <Label>
+                {doc}{" "}
+                {(doc === "Geldige beveiligingspas" ||
+                  doc === "VOG (niet ouder dan 12 mnd)") &&
+                  "✓"}
+              </Label>
             </div>
           ))}
         </div>
@@ -394,16 +438,22 @@ export default function NieuweShiftPage() {
             "Horecaportier",
             "Winkelsurveillance",
             "Persoonsbeveiliging",
-            "Mobiele surveillance (rijbewijs)"
+            "Mobiele surveillance (rijbewijs)",
           ].map((spec) => (
             <div key={spec} className="flex items-center space-x-2">
               <Checkbox
                 checked={formData.specializations.includes(spec)}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    updateFormData({ specializations: [...formData.specializations, spec] });
+                    updateFormData({
+                      specializations: [...formData.specializations, spec],
+                    });
                   } else {
-                    updateFormData({ specializations: formData.specializations.filter(s => s !== spec) });
+                    updateFormData({
+                      specializations: formData.specializations.filter(
+                        (s) => s !== spec,
+                      ),
+                    });
                   }
                 }}
               />
@@ -418,7 +468,10 @@ export default function NieuweShiftPage() {
         <div className="grid grid-cols-2 gap-2">
           <div>
             <Label>Nederlands:</Label>
-            <Select value={formData.languageNL} onValueChange={(value) => updateFormData({ languageNL: value })}>
+            <Select
+              value={formData.languageNL}
+              onValueChange={(value) => updateFormData({ languageNL: value })}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -432,7 +485,10 @@ export default function NieuweShiftPage() {
           </div>
           <div>
             <Label>Engels:</Label>
-            <Select value={formData.languageEN} onValueChange={(value) => updateFormData({ languageEN: value })}>
+            <Select
+              value={formData.languageEN}
+              onValueChange={(value) => updateFormData({ languageEN: value })}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -449,15 +505,28 @@ export default function NieuweShiftPage() {
 
       <div>
         <Label>MINIMUM ERVARING</Label>
-        <Select value={formData.minimumExperience} onValueChange={(value) => updateFormData({ minimumExperience: value })}>
+        <Select
+          value={formData.minimumExperience}
+          onValueChange={(value) =>
+            updateFormData({ minimumExperience: value })
+          }
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Geen ervaring vereist">Geen ervaring vereist</SelectItem>
-            <SelectItem value="Minimaal 1 jaar ervaring">Minimaal 1 jaar ervaring</SelectItem>
-            <SelectItem value="Minimaal 2 jaar ervaring">Minimaal 2 jaar ervaring</SelectItem>
-            <SelectItem value="Minimaal 3 jaar ervaring">Minimaal 3 jaar ervaring</SelectItem>
+            <SelectItem value="Geen ervaring vereist">
+              Geen ervaring vereist
+            </SelectItem>
+            <SelectItem value="Minimaal 1 jaar ervaring">
+              Minimaal 1 jaar ervaring
+            </SelectItem>
+            <SelectItem value="Minimaal 2 jaar ervaring">
+              Minimaal 2 jaar ervaring
+            </SelectItem>
+            <SelectItem value="Minimaal 3 jaar ervaring">
+              Minimaal 3 jaar ervaring
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -468,16 +537,24 @@ export default function NieuweShiftPage() {
           {[
             "Langdurig staan (8+ uur)",
             "Tillen (25+ kg)",
-            "Nachtdienst geschikt"
+            "Nachtdienst geschikt",
           ].map((req) => (
             <div key={req} className="flex items-center space-x-2">
               <Checkbox
                 checked={formData.physicalRequirements.includes(req)}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    updateFormData({ physicalRequirements: [...formData.physicalRequirements, req] });
+                    updateFormData({
+                      physicalRequirements: [
+                        ...formData.physicalRequirements,
+                        req,
+                      ],
+                    });
                   } else {
-                    updateFormData({ physicalRequirements: formData.physicalRequirements.filter(r => r !== req) });
+                    updateFormData({
+                      physicalRequirements:
+                        formData.physicalRequirements.filter((r) => r !== req),
+                    });
                   }
                 }}
               />
@@ -494,19 +571,28 @@ export default function NieuweShiftPage() {
     <div className="space-y-6">
       <div>
         <Label>TARIEF STRATEGIE</Label>
-        <RadioGroup value={formData.pricingStrategy} onValueChange={(value) => updateFormData({ pricingStrategy: value })}>
+        <RadioGroup
+          value={formData.pricingStrategy}
+          onValueChange={(value) => updateFormData({ pricingStrategy: value })}
+        >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Marktconform tarief" id="price-market" />
             <div>
-              <Label htmlFor="price-market">Marktconform tarief (aanbevolen)</Label>
-              <p className="text-sm text-muted-foreground">€19-22/uur voor deze functie</p>
+              <Label htmlFor="price-market">
+                Marktconform tarief (aanbevolen)
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                €19-22/uur voor deze functie
+              </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Eigen tarief" id="price-custom" />
             <div>
               <Label htmlFor="price-custom">Eigen tarief instellen</Label>
-              <p className="text-sm text-muted-foreground">Minimum: €18,00 Maximum: €25,00</p>
+              <p className="text-sm text-muted-foreground">
+                Minimum: €18,00 Maximum: €25,00
+              </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -524,7 +610,9 @@ export default function NieuweShiftPage() {
             type="number"
             step="0.50"
             value={formData.hourlyRate}
-            onChange={(e) => updateFormData({ hourlyRate: parseFloat(e.target.value) || 0 })}
+            onChange={(e) =>
+              updateFormData({ hourlyRate: parseFloat(e.target.value) || 0 })
+            }
             className="w-24"
           />
           <span>per uur</span>
@@ -541,18 +629,24 @@ export default function NieuweShiftPage() {
           <div className="flex items-center space-x-2">
             <Checkbox
               checked={formData.ortAllowance}
-              onCheckedChange={(checked) => updateFormData({ ortAllowance: checked as boolean })}
+              onCheckedChange={(checked) =>
+                updateFormData({ ortAllowance: checked as boolean })
+              }
             />
             <div>
               <Label>ORT (Onregelmatigheidstoeslag)</Label>
-              <p className="text-sm text-muted-foreground">Automatisch berekend volgens CAO</p>
+              <p className="text-sm text-muted-foreground">
+                Automatisch berekend volgens CAO
+              </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
             <Checkbox
               checked={formData.travelAllowance}
-              onCheckedChange={(checked) => updateFormData({ travelAllowance: checked as boolean })}
+              onCheckedChange={(checked) =>
+                updateFormData({ travelAllowance: checked as boolean })
+              }
             />
             <Label>Reiskostenvergoeding</Label>
           </div>
@@ -563,7 +657,11 @@ export default function NieuweShiftPage() {
                   type="number"
                   step="0.01"
                   value={formData.travelRate}
-                  onChange={(e) => updateFormData({ travelRate: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    updateFormData({
+                      travelRate: parseFloat(e.target.value) || 0,
+                    })
+                  }
                   placeholder="0,21"
                 />
                 <Label className="text-xs">€/km</Label>
@@ -572,7 +670,11 @@ export default function NieuweShiftPage() {
                 <Input
                   type="number"
                   value={formData.maxDistance}
-                  onChange={(e) => updateFormData({ maxDistance: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    updateFormData({
+                      maxDistance: parseInt(e.target.value, 10) || 0,
+                    })
+                  }
                   placeholder="50"
                 />
                 <Label className="text-xs">max km</Label>
@@ -583,7 +685,9 @@ export default function NieuweShiftPage() {
           <div className="flex items-center space-x-2">
             <Checkbox
               checked={formData.mealAllowance}
-              onCheckedChange={(checked) => updateFormData({ mealAllowance: checked as boolean })}
+              onCheckedChange={(checked) =>
+                updateFormData({ mealAllowance: checked as boolean })
+              }
             />
             <Label>Maaltijdvergoeding</Label>
           </div>
@@ -594,10 +698,16 @@ export default function NieuweShiftPage() {
                 type="number"
                 step="0.50"
                 value={formData.mealAmount}
-                onChange={(e) => updateFormData({ mealAmount: parseFloat(e.target.value) || 0 })}
+                onChange={(e) =>
+                  updateFormData({
+                    mealAmount: parseFloat(e.target.value) || 0,
+                  })
+                }
                 className="w-20"
               />
-              <span className="text-sm text-muted-foreground">bij 8+ uur dienst</span>
+              <span className="text-sm text-muted-foreground">
+                bij 8+ uur dienst
+              </span>
             </div>
           )}
         </div>
@@ -616,12 +726,25 @@ export default function NieuweShiftPage() {
           </div>
           <div className="flex justify-between">
             <span>Toeslagen:</span>
-            <span>~€{(formData.ortAllowance ? 2.50 : 0) + (formData.teamLeaderRequired ? 3.00 : 0)}/uur</span>
+            <span>
+              ~€
+              {(formData.ortAllowance ? 2.5 : 0) +
+                (formData.teamLeaderRequired ? 3.0 : 0)}
+              /uur
+            </span>
           </div>
           <hr className="border-dashed" />
           <div className="flex justify-between font-semibold">
             <span>Totaal per uur:</span>
-            <span>€{(formData.hourlyRate + 4.10 + (formData.ortAllowance ? 2.50 : 0) + (formData.teamLeaderRequired ? 3.00 : 0)).toFixed(2)}</span>
+            <span>
+              €
+              {(
+                formData.hourlyRate +
+                4.1 +
+                (formData.ortAllowance ? 2.5 : 0) +
+                (formData.teamLeaderRequired ? 3.0 : 0)
+              ).toFixed(2)}
+            </span>
           </div>
           <div className="flex justify-between font-semibold text-green-600 pt-2">
             <span>Geschatte totaal:</span>
@@ -637,14 +760,18 @@ export default function NieuweShiftPage() {
           <Input
             type="number"
             value={formData.maxBudget}
-            onChange={(e) => updateFormData({ maxBudget: parseFloat(e.target.value) || 0 })}
+            onChange={(e) =>
+              updateFormData({ maxBudget: parseFloat(e.target.value) || 0 })
+            }
             className="w-24"
           />
         </div>
         <div className="flex items-center space-x-2">
           <Checkbox
             checked={formData.budgetAlert}
-            onCheckedChange={(checked) => updateFormData({ budgetAlert: checked as boolean })}
+            onCheckedChange={(checked) =>
+              updateFormData({ budgetAlert: checked as boolean })
+            }
           />
           <Label>Waarschuw bij 80% budget</Label>
         </div>
@@ -660,11 +787,16 @@ export default function NieuweShiftPage() {
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
-            <span>{formData.locationName}, {formData.address}</span>
+            <span>
+              {formData.locationName}, {formData.address}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            <span>{formData.date} • {formData.startTime} - {formData.endTime} ({calculateHours()} uur)</span>
+            <span>
+              {formData.date} • {formData.startTime} - {formData.endTime} (
+              {calculateHours()} uur)
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -687,7 +819,7 @@ export default function NieuweShiftPage() {
           <div>
             <strong>Documenten:</strong>
             <ul className="ml-4">
-              {formData.documents.map(doc => (
+              {formData.documents.map((doc) => (
                 <li key={doc}>• {doc} ✓</li>
               ))}
             </ul>
@@ -731,10 +863,20 @@ export default function NieuweShiftPage() {
           <hr className="border-dashed" />
           <div className="flex justify-between font-semibold">
             <span>Totaal per uur:</span>
-            <span>€{(formData.hourlyRate + 4.10 + (formData.ortAllowance ? 2.50 : 0) + (formData.teamLeaderRequired ? 3.00 : 0)).toFixed(2)}</span>
+            <span>
+              €
+              {(
+                formData.hourlyRate +
+                4.1 +
+                (formData.ortAllowance ? 2.5 : 0) +
+                (formData.teamLeaderRequired ? 3.0 : 0)
+              ).toFixed(2)}
+            </span>
           </div>
           <div className="flex justify-between font-semibold text-green-600">
-            <span>{formData.guardsNeeded} beveiligers × {calculateHours()} uur =</span>
+            <span>
+              {formData.guardsNeeded} beveiligers × {calculateHours()} uur =
+            </span>
             <span>€{calculateTotalCost().toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-blue-600">
@@ -760,12 +902,18 @@ export default function NieuweShiftPage() {
 
   const renderCurrentStep = () => {
     switch (currentStep) {
-      case 1: return renderStep1();
-      case 2: return renderStep2();
-      case 3: return renderStep3();
-      case 4: return renderStep4();
-      case 5: return renderStep5();
-      default: return renderStep1();
+      case 1:
+        return renderStep1();
+      case 2:
+        return renderStep2();
+      case 3:
+        return renderStep3();
+      case 4:
+        return renderStep4();
+      case 5:
+        return renderStep5();
+      default:
+        return renderStep1();
     }
   };
 
@@ -778,12 +926,15 @@ export default function NieuweShiftPage() {
               <div className="text-4xl">🎉</div>
               <h2 className="text-xl font-semibold">SHIFT GEPUBLICEERD! ✅</h2>
               <p className="text-muted-foreground">
-                Je shift is succesvol gepubliceerd en wordt nu getoond aan geschikte beveiligers.
+                Je shift is succesvol gepubliceerd en wordt nu getoond aan
+                geschikte beveiligers.
               </p>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2 justify-center">
                   <span>📊</span>
-                  <span>{estimatedMatches} beveiligers komen in aanmerking</span>
+                  <span>
+                    {estimatedMatches} beveiligers komen in aanmerking
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 justify-center">
                   <span>🔔</span>
@@ -796,7 +947,9 @@ export default function NieuweShiftPage() {
               </div>
               <div className="flex gap-2 pt-4">
                 <Button className="flex-1">Bekijk matches</Button>
-                <Button variant="outline" className="flex-1">Naar dashboard</Button>
+                <Button variant="outline" className="flex-1">
+                  Naar dashboard
+                </Button>
               </div>
             </div>
           </Card>
@@ -809,11 +962,15 @@ export default function NieuweShiftPage() {
     <OpdrachtgeverDashboardLayout
       title="Nieuwe Shift"
       subtitle={`Stap ${currentStep} van 5 - ${
-        currentStep === 1 ? 'Basis informatie' :
-        currentStep === 2 ? 'Planning' :
-        currentStep === 3 ? 'Vereisten' :
-        currentStep === 4 ? 'Budget & Tarief' :
-        'Review & Bevestigen'
+        currentStep === 1
+          ? "Basis informatie"
+          : currentStep === 2
+            ? "Planning"
+            : currentStep === 3
+              ? "Vereisten"
+              : currentStep === 4
+                ? "Budget & Tarief"
+                : "Review & Bevestigen"
       }`}
       showBackButton={true}
     >
@@ -830,9 +987,7 @@ export default function NieuweShiftPage() {
         </div>
 
         {/* Step Content */}
-        <div className="mb-6">
-          {renderCurrentStep()}
-        </div>
+        <div className="mb-6">{renderCurrentStep()}</div>
 
         {/* Navigation */}
         <div className="flex justify-between pt-6 border-t">
@@ -868,16 +1023,15 @@ export default function NieuweShiftPage() {
             )}
 
             {currentStep < 5 && (
-              <Button
-                onClick={nextStep}
-                className="flex items-center gap-2"
-              >
-                Volgende: {
-                  currentStep === 1 ? 'Planning' :
-                  currentStep === 2 ? 'Vereisten' :
-                  currentStep === 3 ? 'Budget' :
-                  'Review'
-                }
+              <Button onClick={nextStep} className="flex items-center gap-2">
+                Volgende:{" "}
+                {currentStep === 1
+                  ? "Planning"
+                  : currentStep === 2
+                    ? "Vereisten"
+                    : currentStep === 3
+                      ? "Budget"
+                      : "Review"}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             )}

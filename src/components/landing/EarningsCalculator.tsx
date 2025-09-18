@@ -1,11 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Specialization {
   id: string;
@@ -23,32 +35,37 @@ export function EarningsCalculator() {
   const [hoursPerWeek, setHoursPerWeek] = useState(20);
   const [baseRate, setBaseRate] = useState(26);
   const [weeks, setWeeks] = useState(4);
-  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
+  const [selectedSpecializations, setSelectedSpecializations] = useState<
+    string[]
+  >([]);
 
   const platformFee = 4.99;
 
-  const maxBonus = selectedSpecializations.length > 0
-    ? Math.max(...selectedSpecializations.map(id =>
-        specializations.find(s => s.id === id)?.bonus || 0
-      ))
-    : 0;
+  const maxBonus =
+    selectedSpecializations.length > 0
+      ? Math.max(
+          ...selectedSpecializations.map(
+            (id) => specializations.find((s) => s.id === id)?.bonus || 0,
+          ),
+        )
+      : 0;
 
   const effectiveRate = baseRate + maxBonus;
   const grossMonthly = hoursPerWeek * effectiveRate * weeks;
   const netMonthly = grossMonthly - platformFee;
 
   const handleSpecializationChange = (specId: string, checked: boolean) => {
-    setSelectedSpecializations(prev =>
-      checked
-        ? [...prev, specId]
-        : prev.filter(id => id !== specId)
+    setSelectedSpecializations((prev) =>
+      checked ? [...prev, specId] : prev.filter((id) => id !== specId),
     );
   };
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">💰 BEREKEN JE INKOMEN</CardTitle>
+        <CardTitle className="text-2xl font-bold">
+          💰 BEREKEN JE INKOMEN
+        </CardTitle>
         <CardDescription>
           Zie direct hoeveel je kunt verdienen als ZZP beveiliger via SecuryFlex
         </CardDescription>
@@ -62,7 +79,10 @@ export function EarningsCalculator() {
 
             <div className="space-y-2">
               <Label htmlFor="hours">Uren per week</Label>
-              <Select value={hoursPerWeek.toString()} onValueChange={(v) => setHoursPerWeek(Number(v))}>
+              <Select
+                value={hoursPerWeek.toString()}
+                onValueChange={(v) => setHoursPerWeek(Number(v))}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -80,7 +100,10 @@ export function EarningsCalculator() {
 
             <div className="space-y-2">
               <Label htmlFor="rate">Basisarief</Label>
-              <Select value={baseRate.toString()} onValueChange={(v) => setBaseRate(Number(v))}>
+              <Select
+                value={baseRate.toString()}
+                onValueChange={(v) => setBaseRate(Number(v))}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -98,7 +121,10 @@ export function EarningsCalculator() {
 
             <div className="space-y-2">
               <Label htmlFor="weeks">Weken per maand</Label>
-              <Select value={weeks.toString()} onValueChange={(v) => setWeeks(Number(v))}>
+              <Select
+                value={weeks.toString()}
+                onValueChange={(v) => setWeeks(Number(v))}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -136,18 +162,26 @@ export function EarningsCalculator() {
             <div className="space-y-4 p-4 bg-secondary/50 rounded-lg">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Bruto per maand:</span>
-                <span className="text-xl font-bold">€{grossMonthly.toLocaleString()}</span>
+                <span className="text-xl font-bold">
+                  €{grossMonthly.toLocaleString()}
+                </span>
               </div>
 
               <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">SecuryFlex kosten:</span>
-                <span className="text-muted-foreground">-€{platformFee.toFixed(2)}</span>
+                <span className="text-muted-foreground">
+                  SecuryFlex kosten:
+                </span>
+                <span className="text-muted-foreground">
+                  -€{platformFee.toFixed(2)}
+                </span>
               </div>
 
               <div className="border-t pt-2">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Na kosten:</span>
-                  <span className="text-2xl font-bold text-primary">€{netMonthly.toLocaleString()}</span>
+                  <span className="text-2xl font-bold text-primary">
+                    €{netMonthly.toLocaleString()}
+                  </span>
                 </div>
               </div>
 
@@ -155,7 +189,15 @@ export function EarningsCalculator() {
                 <div className="pt-2 border-t">
                   <div className="text-sm font-medium">MET SPECIALISATIES:</div>
                   <div className="text-lg font-bold text-accent">
-                    Tot €{((hoursPerWeek * (baseRate + Math.max(...specializations.map(s => s.bonus))) * weeks) - platformFee).toLocaleString()}/maand mogelijk
+                    Tot €
+                    {(
+                      hoursPerWeek *
+                        (baseRate +
+                          Math.max(...specializations.map((s) => s.bonus))) *
+                        weeks -
+                      platformFee
+                    ).toLocaleString()}
+                    /maand mogelijk
                   </div>
                 </div>
               )}
@@ -166,7 +208,8 @@ export function EarningsCalculator() {
                 🏆 Top verdieners: €68/uur
               </Badge>
               <div className="text-xs text-muted-foreground">
-                Gemiddelde ZZP beveiliger via SecuryFlex: €{netMonthly.toLocaleString()}/maand
+                Gemiddelde ZZP beveiliger via SecuryFlex: €
+                {netMonthly.toLocaleString()}/maand
                 <br />
                 Traditioneel: €1.800/maand
               </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Star, CheckCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface TestimonialProps {
   name: string;

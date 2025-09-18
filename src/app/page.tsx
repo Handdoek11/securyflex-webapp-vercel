@@ -1,35 +1,35 @@
 "use client";
 
-import { Navigation } from "@/components/landing/Navigation";
-import { HeroSection } from "@/components/landing/HeroSection";
-import { TrustBar } from "@/components/landing/TrustBar";
-import { ProcessSection } from "@/components/landing/ProcessSection";
-import { AppDownloadSection } from "@/components/landing/AppDownloadSection";
-import { LiveShiftTicker } from "@/components/landing/LiveShiftTicker";
-import { EarningsCalculator } from "@/components/landing/EarningsCalculator";
-import { FAQSection } from "@/components/landing/FAQSection";
-import { useRole } from "@/contexts/RoleContext";
-import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { HomePageSchema, RoleSpecificSchema } from "@/components/seo/SchemaMarkup";
-import { DynamicMetadata } from "@/components/seo/DynamicMetadata";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
+import { AppDownloadSection } from "@/components/landing/AppDownloadSection";
+import { EarningsCalculator } from "@/components/landing/EarningsCalculator";
+import { FAQSection } from "@/components/landing/FAQSection";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { LiveShiftTicker } from "@/components/landing/LiveShiftTicker";
+import { Navigation } from "@/components/landing/Navigation";
+import { ProcessSection } from "@/components/landing/ProcessSection";
+import { TrustBar } from "@/components/landing/TrustBar";
+import { DynamicMetadata } from "@/components/seo/DynamicMetadata";
+import { RoleSpecificSchema } from "@/components/seo/SchemaMarkup";
+import { Button } from "@/components/ui/button";
+import { useRole } from "@/contexts/RoleContext";
 
 export default function Home() {
   const { activeRole, setActiveRole } = useRole();
   const searchParams = useSearchParams();
-  const roleParam = searchParams.get('role');
+  const roleParam = searchParams.get("role");
 
   // Auto-set role based on URL parameter for SEO
   useEffect(() => {
-    if (roleParam === 'beveiligers') {
-      setActiveRole('ZZP_BEVEILIGER');
-    } else if (roleParam === 'beveiligingsbedrijven') {
-      setActiveRole('BEDRIJF');
-    } else if (roleParam === 'opdrachtgevers') {
-      setActiveRole('OPDRACHTGEVER');
+    if (roleParam === "beveiligers") {
+      setActiveRole("ZZP_BEVEILIGER");
+    } else if (roleParam === "beveiligingsbedrijven") {
+      setActiveRole("BEDRIJF");
+    } else if (roleParam === "opdrachtgevers") {
+      setActiveRole("OPDRACHTGEVER");
     }
     // If no role parameter, keep current role or default (null)
   }, [roleParam, setActiveRole]);
@@ -80,110 +80,124 @@ export default function Home() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Voor Beveiligers */}
-            <div className="bg-white rounded-xl p-8 shadow-sm flex flex-col h-full">
-              <div>
-                <h3 className="text-xl font-bold mb-4 text-primary">Voor Beveiligers</h3>
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Gemiddeld €28/uur verdienen</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Flexibel werken wanneer je wilt</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Betaald binnen 24 uur</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">GPS check-in voor bewijs</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Automatische facturatie</span>
-                  </li>
-                </ul>
+              {/* Voor Beveiligers */}
+              <div className="bg-white rounded-xl p-8 shadow-sm flex flex-col h-full">
+                <div>
+                  <h3 className="text-xl font-bold mb-4 text-primary">
+                    Voor Beveiligers
+                  </h3>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">
+                        Gemiddeld €28/uur verdienen
+                      </span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">
+                        Flexibel werken wanneer je wilt
+                      </span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Betaald binnen 24 uur</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">GPS check-in voor bewijs</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Automatische facturatie</span>
+                    </li>
+                  </ul>
+                </div>
+                <Link href="/?role=beveiligers" className="mt-auto">
+                  <Button className="w-full">
+                    Start als beveiliger <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
-              <Link href="/?role=beveiligers" className="mt-auto">
-                <Button className="w-full">
-                  Start als beveiliger <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
 
-            {/* Voor Beveiligingsbedrijven */}
-            <div className="bg-white rounded-xl p-8 shadow-sm flex flex-col h-full">
-              <div>
-                <h3 className="text-xl font-bold mb-4 text-primary">Voor Beveiligingsbedrijven</h3>
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Complete team management</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Automatische planning tools</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Real-time monitoring</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Directe facturatie</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Win meer opdrachten</span>
-                  </li>
-                </ul>
+              {/* Voor Beveiligingsbedrijven */}
+              <div className="bg-white rounded-xl p-8 shadow-sm flex flex-col h-full">
+                <div>
+                  <h3 className="text-xl font-bold mb-4 text-primary">
+                    Voor Beveiligingsbedrijven
+                  </h3>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Complete team management</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">
+                        Automatische planning tools
+                      </span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Real-time monitoring</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Directe facturatie</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Win meer opdrachten</span>
+                    </li>
+                  </ul>
+                </div>
+                <Link href="/?role=beveiligingsbedrijven" className="mt-auto">
+                  <Button className="w-full">
+                    Vraag demo aan <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
-              <Link href="/?role=beveiligingsbedrijven" className="mt-auto">
-                <Button className="w-full">
-                  Vraag demo aan <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
 
-            {/* Voor Opdrachtgevers */}
-            <div className="bg-white rounded-xl p-8 shadow-sm flex flex-col h-full">
-              <div>
-                <h3 className="text-xl font-bold mb-4 text-primary">Voor Opdrachtgevers</h3>
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Beveiliging binnen 5 minuten</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Transparante prijzen</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Live GPS tracking</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Digitale rapportages</span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">Betaal achteraf</span>
-                  </li>
-                </ul>
+              {/* Voor Opdrachtgevers */}
+              <div className="bg-white rounded-xl p-8 shadow-sm flex flex-col h-full">
+                <div>
+                  <h3 className="text-xl font-bold mb-4 text-primary">
+                    Voor Opdrachtgevers
+                  </h3>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">
+                        Beveiliging binnen 5 minuten
+                      </span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Transparante prijzen</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Live GPS tracking</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Digitale rapportages</span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Betaal achteraf</span>
+                    </li>
+                  </ul>
+                </div>
+                <Link href="/?role=opdrachtgevers" className="mt-auto">
+                  <Button className="w-full">
+                    Vraag offerte aan <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
-              <Link href="/?role=opdrachtgevers" className="mt-auto">
-                <Button className="w-full">
-                  Vraag offerte aan <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
       )}
 
       {/* App Download Section */}
@@ -207,7 +221,9 @@ export default function Home() {
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <div className="flex items-center space-x-2 mb-4">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
+                    <span key={i} className="text-yellow-400">
+                      ★
+                    </span>
                   ))}
                 </div>
                 <p className="text-sm mb-4">
@@ -216,7 +232,9 @@ export default function Home() {
                 </p>
                 <div>
                   <p className="font-semibold">Mark van den Berg</p>
-                  <p className="text-sm text-muted-foreground">ZZP Beveiliger, Amsterdam</p>
+                  <p className="text-sm text-muted-foreground">
+                    ZZP Beveiliger, Amsterdam
+                  </p>
                 </div>
               </div>
             )}
@@ -225,16 +243,20 @@ export default function Home() {
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <div className="flex items-center space-x-2 mb-4">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
+                    <span key={i} className="text-yellow-400">
+                      ★
+                    </span>
                   ))}
                 </div>
                 <p className="text-sm mb-4">
-                  "Platform geeft toegang tot gekwalificeerde ZZP'ers.
-                  We winnen nu 3x meer opdrachten."
+                  "Platform geeft toegang tot gekwalificeerde ZZP'ers. We winnen
+                  nu 3x meer opdrachten."
                 </p>
                 <div>
                   <p className="font-semibold">SecureForce B.V.</p>
-                  <p className="text-sm text-muted-foreground">45 medewerkers, Rotterdam</p>
+                  <p className="text-sm text-muted-foreground">
+                    45 medewerkers, Rotterdam
+                  </p>
                 </div>
               </div>
             )}
@@ -243,12 +265,14 @@ export default function Home() {
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <div className="flex items-center space-x-2 mb-4">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
+                    <span key={i} className="text-yellow-400">
+                      ★
+                    </span>
                   ))}
                 </div>
                 <p className="text-sm mb-4">
-                  "Binnen 2 uur hadden we beveiliging geregeld voor ons evenement.
-                  Top service!"
+                  "Binnen 2 uur hadden we beveiliging geregeld voor ons
+                  evenement. Top service!"
                 </p>
                 <div>
                   <p className="font-semibold">EventPlaza Utrecht</p>
@@ -263,31 +287,39 @@ export default function Home() {
                 <div className="bg-white rounded-xl p-6 shadow-sm border">
                   <div className="flex items-center space-x-2 mb-4">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i} className="text-yellow-400">★</span>
+                      <span key={i} className="text-yellow-400">
+                        ★
+                      </span>
                     ))}
                   </div>
                   <p className="text-sm mb-4">
-                    "Flexibiliteit is top! Ik werk wanneer ik wil en verdien €28-35 per uur.
-                    Perfecte bijbaan naast mijn studie."
+                    "Flexibiliteit is top! Ik werk wanneer ik wil en verdien
+                    €28-35 per uur. Perfecte bijbaan naast mijn studie."
                   </p>
                   <div>
                     <p className="font-semibold">Sarah de Vries</p>
-                    <p className="text-sm text-muted-foreground">Parttime Beveiliger, Utrecht</p>
+                    <p className="text-sm text-muted-foreground">
+                      Parttime Beveiliger, Utrecht
+                    </p>
                   </div>
                 </div>
                 <div className="bg-white rounded-xl p-6 shadow-sm border">
                   <div className="flex items-center space-x-2 mb-4">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i} className="text-yellow-400">★</span>
+                      <span key={i} className="text-yellow-400">
+                        ★
+                      </span>
                     ))}
                   </div>
                   <p className="text-sm mb-4">
-                    "Automatische facturatie scheelt me uren werk per week.
-                    Kan me nu focussen op het echte werk."
+                    "Automatische facturatie scheelt me uren werk per week. Kan
+                    me nu focussen op het echte werk."
                   </p>
                   <div>
                     <p className="font-semibold">Ahmed Hassan</p>
-                    <p className="text-sm text-muted-foreground">Fulltime Beveiliger, Den Haag</p>
+                    <p className="text-sm text-muted-foreground">
+                      Fulltime Beveiliger, Den Haag
+                    </p>
                   </div>
                 </div>
               </>
@@ -298,31 +330,39 @@ export default function Home() {
                 <div className="bg-white rounded-xl p-6 shadow-sm border">
                   <div className="flex items-center space-x-2 mb-4">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i} className="text-yellow-400">★</span>
+                      <span key={i} className="text-yellow-400">
+                        ★
+                      </span>
                     ))}
                   </div>
                   <p className="text-sm mb-4">
-                    "Perfecte aanvulling op ons vaste team. Bij piekuren schakelen we
-                    direct extra ZZP'ers in."
+                    "Perfecte aanvulling op ons vaste team. Bij piekuren
+                    schakelen we direct extra ZZP'ers in."
                   </p>
                   <div>
                     <p className="font-semibold">Elite Security</p>
-                    <p className="text-sm text-muted-foreground">25 medewerkers, Eindhoven</p>
+                    <p className="text-sm text-muted-foreground">
+                      25 medewerkers, Eindhoven
+                    </p>
                   </div>
                 </div>
                 <div className="bg-white rounded-xl p-6 shadow-sm border">
                   <div className="flex items-center space-x-2 mb-4">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i} className="text-yellow-400">★</span>
+                      <span key={i} className="text-yellow-400">
+                        ★
+                      </span>
                     ))}
                   </div>
                   <p className="text-sm mb-4">
-                    "Real-time GPS monitoring geeft rust. We weten exact waar onze
-                    mensen zijn en klanten waarderen de transparantie."
+                    "Real-time GPS monitoring geeft rust. We weten exact waar
+                    onze mensen zijn en klanten waarderen de transparantie."
                   </p>
                   <div>
                     <p className="font-semibold">ProGuard Solutions</p>
-                    <p className="text-sm text-muted-foreground">60+ medewerkers, Amsterdam</p>
+                    <p className="text-sm text-muted-foreground">
+                      60+ medewerkers, Amsterdam
+                    </p>
                   </div>
                 </div>
               </>
@@ -333,7 +373,9 @@ export default function Home() {
                 <div className="bg-white rounded-xl p-6 shadow-sm border">
                   <div className="flex items-center space-x-2 mb-4">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i} className="text-yellow-400">★</span>
+                      <span key={i} className="text-yellow-400">
+                        ★
+                      </span>
                     ))}
                   </div>
                   <p className="text-sm mb-4">
@@ -342,22 +384,28 @@ export default function Home() {
                   </p>
                   <div>
                     <p className="font-semibold">BAM Bouw</p>
-                    <p className="text-sm text-muted-foreground">Projectmanager</p>
+                    <p className="text-sm text-muted-foreground">
+                      Projectmanager
+                    </p>
                   </div>
                 </div>
                 <div className="bg-white rounded-xl p-6 shadow-sm border">
                   <div className="flex items-center space-x-2 mb-4">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i} className="text-yellow-400">★</span>
+                      <span key={i} className="text-yellow-400">
+                        ★
+                      </span>
                     ))}
                   </div>
                   <p className="text-sm mb-4">
-                    "Transparante prijzen en geen verrassingen achteraf.
-                    Exact wat we zochten voor onze winkelketen."
+                    "Transparante prijzen en geen verrassingen achteraf. Exact
+                    wat we zochten voor onze winkelketen."
                   </p>
                   <div>
                     <p className="font-semibold">Retail Group Nederland</p>
-                    <p className="text-sm text-muted-foreground">Facility Manager</p>
+                    <p className="text-sm text-muted-foreground">
+                      Facility Manager
+                    </p>
                   </div>
                 </div>
               </>
@@ -378,7 +426,8 @@ export default function Home() {
                 START VANDAAG MET VERDIENEN
               </h2>
               <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">
-                Join 2.847+ beveiligers die gemiddeld €3.200 extra per maand verdienen
+                Join 2.847+ beveiligers die gemiddeld €3.200 extra per maand
+                verdienen
               </p>
               <Link href="/?role=beveiligers#registreren">
                 <Button size="lg" variant="secondary" className="text-primary">
@@ -392,7 +441,8 @@ export default function Home() {
                 SCHAAL UW BEDRIJF OP
               </h2>
               <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">
-                Join 127+ beveiligingsbedrijven die flexibel opschalen met SecuryFlex
+                Join 127+ beveiligingsbedrijven die flexibel opschalen met
+                SecuryFlex
               </p>
               <Link href="/?role=beveiligingsbedrijven#demo">
                 <Button size="lg" variant="secondary" className="text-primary">
@@ -420,21 +470,34 @@ export default function Home() {
                 KLAAR OM TE STARTEN?
               </h2>
               <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">
-                Join 2.847+ beveiligers en 127+ bedrijven die al gebruik maken van SecuryFlex
+                Join 2.847+ beveiligers en 127+ bedrijven die al gebruik maken
+                van SecuryFlex
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Link href="/?role=beveiligers">
-                  <Button size="lg" variant="secondary" className="text-primary">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="text-primary"
+                  >
                     Ik ben beveiliger
                   </Button>
                 </Link>
                 <Link href="/?role=beveiligingsbedrijven">
-                  <Button size="lg" variant="secondary" className="text-primary">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="text-primary"
+                  >
                     Wij zijn een beveiligingsbedrijf
                   </Button>
                 </Link>
                 <Link href="/?role=opdrachtgevers">
-                  <Button size="lg" variant="secondary" className="text-primary">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="text-primary"
+                  >
                     Ik zoek beveiliging
                   </Button>
                 </Link>
@@ -449,44 +512,173 @@ export default function Home() {
         <div className="container mx-auto px-4 py-12">
           <div className="grid md:grid-cols-4 gap-8">
             {/* Voor Beveiligers - altijd tonen met conditional styling */}
-            <div className={activeRole && activeRole !== "ZZP_BEVEILIGER" ? "opacity-40 transition-opacity" : "transition-opacity"}>
-              <h3 className={`font-bold mb-4 ${activeRole === "ZZP_BEVEILIGER" ? "text-primary" : ""}`}>
+            <div
+              className={
+                activeRole && activeRole !== "ZZP_BEVEILIGER"
+                  ? "opacity-40 transition-opacity"
+                  : "transition-opacity"
+              }
+            >
+              <h3
+                className={`font-bold mb-4 ${activeRole === "ZZP_BEVEILIGER" ? "text-primary" : ""}`}
+              >
                 Voor Beveiligers
               </h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/?role=beveiligers" className={`hover:text-primary ${activeRole === "ZZP_BEVEILIGER" ? "font-medium" : ""}`}>Hoe het werkt</Link></li>
-                <li><Link href="/?role=beveiligers#app" className="hover:text-primary">Download app</Link></li>
-                <li><Link href="/?role=beveiligers#verdiensten" className="hover:text-primary">Verdiensten</Link></li>
-                <li><Link href="/?role=beveiligers#faq" className="hover:text-primary">Veelgestelde vragen</Link></li>
-                <li><Link href="/?role=beveiligers#registreren" className="hover:text-primary">Start direct</Link></li>
+                <li>
+                  <Link
+                    href="/?role=beveiligers"
+                    className={`hover:text-primary ${activeRole === "ZZP_BEVEILIGER" ? "font-medium" : ""}`}
+                  >
+                    Hoe het werkt
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=beveiligers#app"
+                    className="hover:text-primary"
+                  >
+                    Download app
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=beveiligers#verdiensten"
+                    className="hover:text-primary"
+                  >
+                    Verdiensten
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=beveiligers#faq"
+                    className="hover:text-primary"
+                  >
+                    Veelgestelde vragen
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=beveiligers#registreren"
+                    className="hover:text-primary"
+                  >
+                    Start direct
+                  </Link>
+                </li>
               </ul>
             </div>
 
             {/* Voor Beveiligingsbedrijven - altijd tonen met conditional styling */}
-            <div className={activeRole && activeRole !== "BEDRIJF" ? "opacity-40 transition-opacity" : "transition-opacity"}>
-              <h3 className={`font-bold mb-4 ${activeRole === "BEDRIJF" ? "text-primary" : ""}`}>
+            <div
+              className={
+                activeRole && activeRole !== "BEDRIJF"
+                  ? "opacity-40 transition-opacity"
+                  : "transition-opacity"
+              }
+            >
+              <h3
+                className={`font-bold mb-4 ${activeRole === "BEDRIJF" ? "text-primary" : ""}`}
+              >
                 Voor Bedrijven
               </h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/?role=beveiligingsbedrijven" className={`hover:text-primary ${activeRole === "BEDRIJF" ? "font-medium" : ""}`}>Platform</Link></li>
-                <li><Link href="/?role=beveiligingsbedrijven#demo" className="hover:text-primary">Demo aanvragen</Link></li>
-                <li><Link href="/?role=beveiligingsbedrijven#pricing" className="hover:text-primary">Prijzen</Link></li>
-                <li><Link href="/?role=beveiligingsbedrijven#features" className="hover:text-primary">Features</Link></li>
-                <li><Link href="/?role=beveiligingsbedrijven#cases" className="hover:text-primary">Succesverhalen</Link></li>
+                <li>
+                  <Link
+                    href="/?role=beveiligingsbedrijven"
+                    className={`hover:text-primary ${activeRole === "BEDRIJF" ? "font-medium" : ""}`}
+                  >
+                    Platform
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=beveiligingsbedrijven#demo"
+                    className="hover:text-primary"
+                  >
+                    Demo aanvragen
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=beveiligingsbedrijven#pricing"
+                    className="hover:text-primary"
+                  >
+                    Prijzen
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=beveiligingsbedrijven#features"
+                    className="hover:text-primary"
+                  >
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=beveiligingsbedrijven#cases"
+                    className="hover:text-primary"
+                  >
+                    Succesverhalen
+                  </Link>
+                </li>
               </ul>
             </div>
 
             {/* Voor Opdrachtgevers - altijd tonen met conditional styling */}
-            <div className={activeRole && activeRole !== "OPDRACHTGEVER" ? "opacity-40 transition-opacity" : "transition-opacity"}>
-              <h3 className={`font-bold mb-4 ${activeRole === "OPDRACHTGEVER" ? "text-primary" : ""}`}>
+            <div
+              className={
+                activeRole && activeRole !== "OPDRACHTGEVER"
+                  ? "opacity-40 transition-opacity"
+                  : "transition-opacity"
+              }
+            >
+              <h3
+                className={`font-bold mb-4 ${activeRole === "OPDRACHTGEVER" ? "text-primary" : ""}`}
+              >
                 Voor Opdrachtgevers
               </h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/?role=opdrachtgevers" className={`hover:text-primary ${activeRole === "OPDRACHTGEVER" ? "font-medium" : ""}`}>Beveiliging inhuren</Link></li>
-                <li><Link href="/?role=opdrachtgevers#branches" className="hover:text-primary">Branches</Link></li>
-                <li><Link href="/?role=opdrachtgevers#tarieven" className="hover:text-primary">Tarieven</Link></li>
-                <li><Link href="/?role=opdrachtgevers#offerte" className="hover:text-primary">Offerte aanvragen</Link></li>
-                <li><Link href="/?role=opdrachtgevers#tracking" className="hover:text-primary">Live Tracking</Link></li>
+                <li>
+                  <Link
+                    href="/?role=opdrachtgevers"
+                    className={`hover:text-primary ${activeRole === "OPDRACHTGEVER" ? "font-medium" : ""}`}
+                  >
+                    Beveiliging inhuren
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=opdrachtgevers#branches"
+                    className="hover:text-primary"
+                  >
+                    Branches
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=opdrachtgevers#tarieven"
+                    className="hover:text-primary"
+                  >
+                    Tarieven
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=opdrachtgevers#offerte"
+                    className="hover:text-primary"
+                  >
+                    Offerte aanvragen
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/?role=opdrachtgevers#tracking"
+                    className="hover:text-primary"
+                  >
+                    Live Tracking
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -494,12 +686,36 @@ export default function Home() {
             <div>
               <h3 className="font-bold mb-4">SecuryFlex</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/over-ons" className="hover:text-primary">Over ons</Link></li>
-                <li><Link href="/contact" className="hover:text-primary">Contact</Link></li>
-                <li><Link href="/privacy" className="hover:text-primary">Privacy</Link></li>
-                <li><Link href="/voorwaarden" className="hover:text-primary">Voorwaarden</Link></li>
-                <li><Link href="/blog" className="hover:text-primary">Blog</Link></li>
-                <li><Link href="/support" className="hover:text-primary">Support</Link></li>
+                <li>
+                  <Link href="/over-ons" className="hover:text-primary">
+                    Over ons
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="hover:text-primary">
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="hover:text-primary">
+                    Privacy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/voorwaarden" className="hover:text-primary">
+                    Voorwaarden
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/blog" className="hover:text-primary">
+                    Blog
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/support" className="hover:text-primary">
+                    Support
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

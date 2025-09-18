@@ -1,14 +1,9 @@
 "use client";
 
+import { Calendar, Home, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  Home,
-  Calendar,
-  Users,
-  Settings
-} from "lucide-react";
 
 interface NavItem {
   href: string;
@@ -62,14 +57,14 @@ export function OpdrachtgeverBottomNavigation() {
                   "hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isActive
                     ? "text-primary bg-primary/5"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <div className="relative">
                   <Icon
                     className={cn(
                       "h-5 w-5 transition-all duration-200",
-                      isActive ? "scale-110" : ""
+                      isActive ? "scale-110" : "",
                     )}
                   />
 
@@ -84,7 +79,7 @@ export function OpdrachtgeverBottomNavigation() {
                 <span
                   className={cn(
                     "text-xs font-medium mt-1 transition-all duration-200 leading-none",
-                    isActive ? "text-primary" : "text-muted-foreground"
+                    isActive ? "text-primary" : "text-muted-foreground",
                   )}
                 >
                   {item.label}

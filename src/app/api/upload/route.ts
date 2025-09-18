@@ -1,10 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { fileUploadSchema } from "@/lib/validation/schemas";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { randomUUID } from "crypto";
 
 // File security constants
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -17,32 +16,56 @@ const ALLOWED_MIME_TYPES = {
 };
 
 const DANGEROUS_EXTENSIONS = [
-  '.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js', '.jar',
-  '.app', '.deb', '.pkg', '.dmg', '.rpm', '.msi', '.run', '.bin',
-  '.sh', '.pl', '.py', '.php', '.asp', '.aspx', '.jsp'
+  ".exe",
+  ".bat",
+  ".cmd",
+  ".com",
+  ".pif",
+  ".scr",
+  ".vbs",
+  ".js",
+  ".jar",
+  ".app",
+  ".deb",
+  ".pkg",
+  ".dmg",
+  ".rpm",
+  ".msi",
+  ".run",
+  ".bin",
+  ".sh",
+  ".pl",
+  ".py",
+  ".php",
+  ".asp",
+  ".aspx",
+  ".jsp",
 ];
 
 // Virus scanning simulation (in production use real antivirus API)
-async function scanFileForViruses(buffer: Buffer, filename: string): Promise<{ safe: boolean; threat?: string }> {
+async function scanFileForViruses(
+  buffer: Buffer,
+  filename: string,
+): Promise<{ safe: boolean; threat?: string }> {
   // Simulate virus scanning delay
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
   // Check file extension
-  const extension = filename.toLowerCase().substr(filename.lastIndexOf('.'));
+  const extension = filename.toLowerCase().substr(filename.lastIndexOf("."));
   if (DANGEROUS_EXTENSIONS.includes(extension)) {
     return { safe: false, threat: "Dangerous file extension detected" };
   }
 
   // Check for suspicious patterns in file content
-  const content = buffer.toString('hex').toLowerCase();
+  const content = buffer.toString("hex").toLowerCase();
 
   // Check for executable signatures
   const suspiciousPatterns = [
-    '4d5a', // MZ header (executable)
-    '504b0304', // ZIP header (could contain executable)
-    '7f454c46', // ELF header (Linux executable)
-    'cafebabe', // Java class file
-    'd0cf11e0a1b11ae1', // Microsoft Office (old format, could contain macros)
+    "4d5a", // MZ header (executable)
+    "504b0304", // ZIP header (could contain executable)
+    "7f454c46", // ELF header (Linux executable)
+    "cafebabe", // Java class file
+    "d0cf11e0a1b11ae1", // Microsoft Office (old format, could contain macros)
   ];
 
   for (const pattern of suspiciousPatterns) {
@@ -61,12 +84,17 @@ async function scanFileForViruses(buffer: Buffer, filename: string): Promise<{ s
 }
 
 // Image processing and compression
-async function processImage(buffer: Buffer, maxWidth = 1920, quality = 85): Promise<Buffer> {
+async function processImage(
+  buffer: Buffer,
+  _maxWidth = 1920,
+  _quality = 85,
+): Promise<Buffer> {
   // In production, use proper image processing library like Sharp
   // For now, return original buffer
 
   // Simulated image processing
-  if (buffer.length > 2 * 1024 * 1024) { // 2MB
+  if (buffer.length > 2 * 1024 * 1024) {
+    // 2MB
     // In real implementation, compress the image
     console.log("Image would be compressed here");
   }
@@ -76,12 +104,14 @@ async function processImage(buffer: Buffer, maxWidth = 1920, quality = 85): Prom
 
 // Generate secure filename
 function generateSecureFilename(originalName: string, userId: string): string {
-  const extension = originalName.toLowerCase().substr(originalName.lastIndexOf('.'));
+  const extension = originalName
+    .toLowerCase()
+    .substr(originalName.lastIndexOf("."));
   const uuid = randomUUID();
   const timestamp = Date.now();
 
   // Remove any path traversal attempts
-  const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, '_');
+  const _safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_");
 
   return `${userId}_${timestamp}_${uuid}${extension}`;
 }
@@ -94,7 +124,7 @@ async function storeFileMetadata(
   originalName: string,
   size: number,
   mimeType: string,
-  description?: string
+  description?: string,
 ) {
   const metadata = {
     originalName,
@@ -103,14 +133,14 @@ async function storeFileMetadata(
     uploadedAt: new Date(),
     uploadedBy: userId,
     scanStatus: "CLEAN",
-    description: description || null
+    description: description || null,
   };
 
   if (fileType === "PROFILE_PHOTO") {
     // Update user profile photo
     await prisma.user.update({
       where: { id: userId },
-      data: { image: `/uploads/${filename}` }
+      data: { image: `/uploads/${filename}` },
     });
   }
 
@@ -125,8 +155,8 @@ async function storeFileMetadata(
       mimeType,
       metadata,
       status: "ACTIVE",
-      description
-    }
+      description,
+    },
   });
 }
 
@@ -138,7 +168,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -151,7 +181,7 @@ export async function POST(request: NextRequest) {
     if (!file || !fileType) {
       return NextResponse.json(
         { success: false, error: "File and type are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -159,19 +189,20 @@ export async function POST(request: NextRequest) {
     if (!ALLOWED_MIME_TYPES[fileType as keyof typeof ALLOWED_MIME_TYPES]) {
       return NextResponse.json(
         { success: false, error: "Invalid file type" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Validate MIME type
-    const allowedMimeTypes = ALLOWED_MIME_TYPES[fileType as keyof typeof ALLOWED_MIME_TYPES];
+    const allowedMimeTypes =
+      ALLOWED_MIME_TYPES[fileType as keyof typeof ALLOWED_MIME_TYPES];
     if (!allowedMimeTypes.includes(file.type)) {
       return NextResponse.json(
         {
           success: false,
-          error: `Invalid file format. Allowed: ${allowedMimeTypes.join(", ")}`
+          error: `Invalid file format. Allowed: ${allowedMimeTypes.join(", ")}`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -180,9 +211,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB`
+          error: `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -191,15 +222,16 @@ export async function POST(request: NextRequest) {
       where: {
         userId: session.user.id,
         createdAt: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-        }
-      }
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+        },
+      },
     });
 
-    if (uploadCount >= 20) { // Max 20 uploads per day
+    if (uploadCount >= 20) {
+      // Max 20 uploads per day
       return NextResponse.json(
         { success: false, error: "Daily upload limit exceeded" },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -214,9 +246,9 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "File failed security scan",
-          details: scanResult.threat
+          details: scanResult.threat,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -233,7 +265,7 @@ export async function POST(request: NextRequest) {
     const uploadDir = join(process.cwd(), "public", "uploads");
     try {
       await mkdir(uploadDir, { recursive: true });
-    } catch (error) {
+    } catch (_error) {
       // Directory might already exist
     }
 
@@ -249,11 +281,13 @@ export async function POST(request: NextRequest) {
       file.name,
       processedBuffer.length,
       file.type,
-      description
+      description,
     );
 
     // Log upload activity
-    console.log(`File uploaded: ${secureFilename} by user ${session.user.id} (${file.type}, ${processedBuffer.length} bytes)`);
+    console.log(
+      `File uploaded: ${secureFilename} by user ${session.user.id} (${file.type}, ${processedBuffer.length} bytes)`,
+    );
 
     return NextResponse.json({
       success: true,
@@ -265,15 +299,14 @@ export async function POST(request: NextRequest) {
         size: processedBuffer.length,
         type: fileType,
         url: `/uploads/${secureFilename}`,
-        uploadedAt: documentRecord.createdAt
-      }
+        uploadedAt: documentRecord.createdAt,
+      },
     });
-
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
       { success: false, error: "Upload failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -286,7 +319,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -295,7 +328,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = {
       userId: session.user.id,
-      status: "ACTIVE"
+      status: "ACTIVE",
     };
 
     if (type) {
@@ -305,7 +338,7 @@ export async function GET(request: NextRequest) {
     const documents = await prisma.document.findMany({
       where,
       orderBy: {
-        createdAt: "desc"
+        createdAt: "desc",
       },
       select: {
         id: true,
@@ -317,29 +350,28 @@ export async function GET(request: NextRequest) {
         description: true,
         status: true,
         createdAt: true,
-        metadata: true
-      }
+        metadata: true,
+      },
     });
 
-    const formattedDocuments = documents.map(doc => ({
+    const formattedDocuments = documents.map((doc) => ({
       ...doc,
       url: `/uploads/${doc.filename}`,
-      sizeFormatted: formatFileSize(doc.size)
+      sizeFormatted: formatFileSize(doc.size),
     }));
 
     return NextResponse.json({
       success: true,
       data: {
         documents: formattedDocuments,
-        total: documents.length
-      }
+        total: documents.length,
+      },
     });
-
   } catch (error) {
     console.error("File list error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch files" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -352,7 +384,7 @@ export async function DELETE(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -362,7 +394,7 @@ export async function DELETE(request: NextRequest) {
     if (!fileId) {
       return NextResponse.json(
         { success: false, error: "File ID required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -371,14 +403,14 @@ export async function DELETE(request: NextRequest) {
       where: {
         id: fileId,
         userId: session.user.id,
-        status: "ACTIVE"
-      }
+        status: "ACTIVE",
+      },
     });
 
     if (!document) {
       return NextResponse.json(
         { success: false, error: "File not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -387,8 +419,8 @@ export async function DELETE(request: NextRequest) {
       where: { id: fileId },
       data: {
         status: "DELETED",
-        deletedAt: new Date()
-      }
+        deletedAt: new Date(),
+      },
     });
 
     // In production, you might want to actually delete the file
@@ -396,14 +428,13 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "File deleted successfully"
+      message: "File deleted successfully",
     });
-
   } catch (error) {
     console.error("File deletion error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to delete file" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -414,5 +445,5 @@ function formatFileSize(bytes: number): string {
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  return `${parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
 }

@@ -1,9 +1,8 @@
 "use client";
 
-import React from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import type React from "react";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Base skeleton wrapper
 interface SkeletonWrapperProps {
@@ -13,12 +12,13 @@ interface SkeletonWrapperProps {
   className?: string;
 }
 
-export function SkeletonWrapper({ loading, children, skeleton, className }: SkeletonWrapperProps) {
-  return (
-    <div className={className}>
-      {loading ? skeleton : children}
-    </div>
-  );
+export function SkeletonWrapper({
+  loading,
+  children,
+  skeleton,
+  className,
+}: SkeletonWrapperProps) {
+  return <div className={className}>{loading ? skeleton : children}</div>;
 }
 
 // Job card skeleton
@@ -84,7 +84,7 @@ export function JobDetailsSkeleton() {
 
         <div className="grid grid-cols-2 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-2">
+            <div key={`detail-${i}`} className="flex items-center gap-2">
               <Skeleton className="h-4 w-4" />
               <div className="space-y-1">
                 <Skeleton className="h-4 w-16" />
@@ -138,7 +138,7 @@ export function ShiftCardSkeleton() {
 
       <div className="grid grid-cols-2 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-2">
+          <div key={`shift-detail-${i}`} className="flex items-center gap-2">
             <Skeleton className="h-4 w-4" />
             <Skeleton className="h-4 w-20" />
           </div>
@@ -178,7 +178,7 @@ export function ProfileSkeleton() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="space-y-1">
+                <div key={`profile-stat-${i}`} className="space-y-1">
                   <Skeleton className="h-5 w-12" />
                   <Skeleton className="h-4 w-16" />
                 </div>
@@ -189,7 +189,10 @@ export function ProfileSkeleton() {
 
         <div className="space-y-3 border-t pt-4">
           {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between">
+            <div
+              key={`profile-contact-${i}`}
+              className="flex items-center justify-between"
+            >
               <div className="flex items-center gap-3">
                 <Skeleton className="h-4 w-4" />
                 <Skeleton className="h-4 w-40" />
@@ -202,14 +205,14 @@ export function ProfileSkeleton() {
 
       {/* Additional sections */}
       {Array.from({ length: 3 }).map((_, i) => (
-        <Card key={i} className="p-4">
+        <Card key={`profile-section-${i}`} className="p-4">
           <div className="flex items-center justify-between mb-4">
             <Skeleton className="h-5 w-24" />
             <Skeleton className="h-8 w-8" />
           </div>
           <div className="flex flex-wrap gap-2">
             {Array.from({ length: 3 }).map((_, j) => (
-              <Skeleton key={j} className="h-6 w-20" />
+              <Skeleton key={`profile-tag-${i}-${j}`} className="h-6 w-20" />
             ))}
           </div>
         </Card>
@@ -233,7 +236,7 @@ export function HoursSkeleton() {
       <Card className="p-4">
         <div className="grid grid-cols-3 gap-4 text-center">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="space-y-2">
+            <div key={`week-stat-${i}`} className="space-y-2">
               <Skeleton className="h-8 w-16 mx-auto" />
               <Skeleton className="h-4 w-20 mx-auto" />
             </div>
@@ -244,7 +247,7 @@ export function HoursSkeleton() {
       {/* Time entries */}
       <div className="space-y-3">
         {Array.from({ length: 7 }).map((_, i) => (
-          <Card key={i} className="p-4">
+          <Card key={`time-entry-${i}`} className="p-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <Skeleton className="w-12 h-12 rounded-lg" />
@@ -265,7 +268,7 @@ export function HoursSkeleton() {
 
             <div className="grid grid-cols-4 gap-4 mt-3 p-3 bg-muted/30 rounded-lg">
               {Array.from({ length: 4 }).map((_, j) => (
-                <div key={j} className="space-y-1">
+                <div key={`time-stat-${i}-${j}`} className="space-y-1">
                   <Skeleton className="h-3 w-16" />
                   <Skeleton className="h-4 w-12" />
                 </div>
@@ -279,11 +282,17 @@ export function HoursSkeleton() {
 }
 
 // List skeleton (generic)
-export function ListSkeleton({ count = 3, itemHeight = "h-20" }: { count?: number; itemHeight?: string }) {
+export function ListSkeleton({
+  count = 3,
+  itemHeight = "h-20",
+}: {
+  count?: number;
+  itemHeight?: string;
+}) {
   return (
     <div className="space-y-3">
       {Array.from({ length: count }).map((_, i) => (
-        <Card key={i} className="p-4">
+        <Card key={`list-item-${i}`} className="p-4">
           <div className="flex items-center gap-3">
             <Skeleton className="w-12 h-12 rounded-lg" />
             <div className="flex-1 space-y-2">
@@ -309,7 +318,7 @@ export function FormSkeleton() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="space-y-2">
+          <div key={`form-field-${i}`} className="space-y-2">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-10 w-full" />
           </div>
@@ -330,24 +339,36 @@ export function FormSkeleton() {
 }
 
 // Table skeleton
-export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
+export function TableSkeleton({
+  rows = 5,
+  columns = 4,
+}: {
+  rows?: number;
+  columns?: number;
+}) {
   return (
     <div className="rounded-md border">
       {/* Header */}
       <div className="border-b p-4">
-        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+        <div
+          className="grid gap-4"
+          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+        >
           {Array.from({ length: columns }).map((_, i) => (
-            <Skeleton key={i} className="h-4 w-20" />
+            <Skeleton key={`table-header-${i}`} className="h-4 w-20" />
           ))}
         </div>
       </div>
 
       {/* Rows */}
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="border-b p-4 last:border-b-0">
-          <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+        <div key={`table-row-${i}`} className="border-b p-4 last:border-b-0">
+          <div
+            className="grid gap-4"
+            style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+          >
             {Array.from({ length: columns }).map((_, j) => (
-              <Skeleton key={j} className="h-4 w-full" />
+              <Skeleton key={`table-cell-${i}-${j}`} className="h-4 w-full" />
             ))}
           </div>
         </div>
@@ -376,7 +397,7 @@ export function PageSkeleton() {
             <Skeleton className="h-6 w-32 mb-4" />
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex justify-between">
+                <div key={`sidebar-stat-${i}`} className="flex justify-between">
                   <Skeleton className="h-4 w-20" />
                   <Skeleton className="h-4 w-12" />
                 </div>

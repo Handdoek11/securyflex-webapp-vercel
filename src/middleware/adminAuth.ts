@@ -1,16 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
-
-// Admin email whitelist
-const ADMIN_EMAILS = ['stef@securyflex.com', 'robert@securyflex.com'];
+import { getAdminEmails, isAdminEmail } from "@/lib/admin/auth";
 
 // Admin protected routes
 const ADMIN_ROUTES = [
-  '/api/admin/auth-logs',
-  '/api/admin/document-review',
-  '/api/admin/users',
-  '/api/admin/security',
-  '/api/admin/stats'
+  "/api/admin/auth-logs",
+  "/api/admin/document-review",
+  "/api/admin/users",
+  "/api/admin/security",
+  "/api/admin/stats",
 ];
 
 /**
@@ -20,7 +18,7 @@ export async function validateAdminAccess(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Check if this is an admin protected route
-  const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route));
+  const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
 
   if (!isAdminRoute) {
     return NextResponse.next();
@@ -30,38 +28,39 @@ export async function validateAdminAccess(request: NextRequest) {
     // Get the session token
     const token = await getToken({
       req: request,
-      secret: process.env.NEXTAUTH_SECRET
+      secret: process.env.NEXTAUTH_SECRET,
     });
 
     // Check if user is authenticated
     if (!token || !token.email) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const userEmail = (token.email as string).toLowerCase();
 
     // Validate admin access
-    if (!ADMIN_EMAILS.includes(userEmail)) {
+    if (!isAdminEmail(userEmail)) {
       // Log unauthorized access attempt
-      console.warn(`Unauthorized admin access attempt: ${userEmail} tried to access ${pathname}`);
+      console.warn(
+        `Unauthorized admin access attempt: ${userEmail} tried to access ${pathname}`,
+      );
 
       return NextResponse.json(
         { success: false, error: "Admin access required" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Admin validated - continue to the route
     return NextResponse.next();
-
   } catch (error) {
     console.error("Admin auth middleware error:", error);
     return NextResponse.json(
       { success: false, error: "Authentication validation failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -70,8 +69,7 @@ export async function validateAdminAccess(request: NextRequest) {
  * Helper function to check if a user is an admin
  */
 export function isAdmin(email: string | null | undefined): boolean {
-  if (!email) return false;
-  return ADMIN_EMAILS.includes(email.toLowerCase());
+  return isAdminEmail(email);
 }
 
 /**
@@ -85,14 +83,14 @@ export async function getAdminStatus(request: NextRequest): Promise<{
   try {
     const token = await getToken({
       req: request,
-      secret: process.env.NEXTAUTH_SECRET
+      secret: process.env.NEXTAUTH_SECRET,
     });
 
     if (!token || !token.email) {
       return {
         isAuthenticated: false,
         isAdmin: false,
-        email: null
+        email: null,
       };
     }
 
@@ -100,14 +98,14 @@ export async function getAdminStatus(request: NextRequest): Promise<{
     return {
       isAuthenticated: true,
       isAdmin: isAdmin(email),
-      email: email.toLowerCase()
+      email: email.toLowerCase(),
     };
   } catch (error) {
     console.error("Error getting admin status:", error);
     return {
       isAuthenticated: false,
       isAdmin: false,
-      email: null
+      email: null,
     };
   }
 }

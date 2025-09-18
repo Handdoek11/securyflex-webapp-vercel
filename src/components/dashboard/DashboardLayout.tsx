@@ -1,11 +1,10 @@
 "use client";
 
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
+import { useResponsive } from "@/hooks/useResponsive";
 import { BottomNavigation } from "./BottomNavigation";
 import { DashboardHeader } from "./DashboardHeader";
 import { Sidebar } from "./Sidebar";
-import { useResponsive } from "@/hooks/useResponsive";
-import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -37,9 +36,7 @@ export function DashboardLayout({
         />
 
         {/* Main content met padding voor fixed header en bottom nav */}
-        <main className="pb-20 pt-16">
-          {children}
-        </main>
+        <main className="pb-20 pt-16">{children}</main>
 
         {/* Bottom Navigation - Fixed at bottom */}
         <BottomNavigation />
@@ -66,9 +63,7 @@ export function DashboardLayout({
 
         {/* Main content voor desktop */}
         <main className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="mx-auto max-w-7xl">
-            {children}
-          </div>
+          <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>
     </div>

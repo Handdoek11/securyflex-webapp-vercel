@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { z } from "zod";
-import { Prisma } from "@prisma/client";
 
 // GET /api/bedrijf/klanten - Get client management data
 export async function GET(request: NextRequest) {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!bedrijfProfile) {
       return NextResponse.json(
         { success: false, error: "Alleen bedrijven kunnen klanten beheren" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search");
     const status = searchParams.get("status"); // active, inactive, all
     const sortBy = searchParams.get("sortBy") || "recent"; // recent, name, revenue
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
     const skip = (page - 1) * limit;
 
     // Build search conditions
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       searchConditions.OR = [
         { bedrijfsnaam: { contains: search, mode: "insensitive" } },
         { contactpersoon: { contains: search, mode: "insensitive" } },
-        { user: { email: { contains: search, mode: "insensitive" } } }
+        { user: { email: { contains: search, mode: "insensitive" } } },
       ];
     }
 
@@ -52,22 +52,22 @@ export async function GET(request: NextRequest) {
         OR: [
           {
             creatorType: "BEDRIJF",
-            creatorBedrijfId: bedrijfProfile.id
+            creatorBedrijfId: bedrijfProfile.id,
           },
           {
-            acceptedBedrijfId: bedrijfProfile.id
-          }
-        ]
+            acceptedBedrijfId: bedrijfProfile.id,
+          },
+        ],
       },
       select: {
-        opdrachtgeverId: true
+        opdrachtgeverId: true,
       },
-      distinct: ["opdrachtgeverId"]
+      distinct: ["opdrachtgeverId"],
     });
 
     const validClientIds = clientIds
-      .map(c => c.opdrachtgeverId)
-      .filter(id => id !== null) as string[];
+      .map((c) => c.opdrachtgeverId)
+      .filter((id) => id !== null) as string[];
 
     if (validClientIds.length === 0) {
       return NextResponse.json({
@@ -78,15 +78,15 @@ export async function GET(request: NextRequest) {
             page,
             limit,
             total: 0,
-            totalPages: 0
+            totalPages: 0,
           },
           stats: {
             totalKlanten: 0,
             activeKlanten: 0,
             totalRevenue: 0,
-            averageOrderValue: 0
-          }
-        }
+            averageOrderValue: 0,
+          },
+        },
       });
     }
 
@@ -100,20 +100,20 @@ export async function GET(request: NextRequest) {
           user: {
             select: {
               email: true,
-              createdAt: true
-            }
+              createdAt: true,
+            },
           },
           opdrachten: {
             where: {
               OR: [
                 {
                   creatorType: "BEDRIJF",
-                  creatorBedrijfId: bedrijfProfile.id
+                  creatorBedrijfId: bedrijfProfile.id,
                 },
                 {
-                  acceptedBedrijfId: bedrijfProfile.id
-                }
-              ]
+                  acceptedBedrijfId: bedrijfProfile.id,
+                },
+              ],
             },
             select: {
               id: true,
@@ -123,10 +123,10 @@ export async function GET(request: NextRequest) {
               eindDatum: true,
               uurtarief: true,
               aantalBeveiligers: true,
-              createdAt: true
+              createdAt: true,
             },
             orderBy: { createdAt: "desc" },
-            take: 5 // Recent opdrachten for preview
+            take: 5, // Recent opdrachten for preview
           },
           _count: {
             select: {
@@ -135,26 +135,27 @@ export async function GET(request: NextRequest) {
                   OR: [
                     {
                       creatorType: "BEDRIJF",
-                      creatorBedrijfId: bedrijfProfile.id
+                      creatorBedrijfId: bedrijfProfile.id,
                     },
                     {
-                      acceptedBedrijfId: bedrijfProfile.id
-                    }
-                  ]
-                }
-              }
-            }
-          }
+                      acceptedBedrijfId: bedrijfProfile.id,
+                    },
+                  ],
+                },
+              },
+            },
+          },
         },
-        orderBy: sortBy === "name"
-          ? { bedrijfsnaam: "asc" }
-          : sortBy === "recent"
-          ? { user: { createdAt: "desc" } }
-          : { bedrijfsnaam: "asc" },
+        orderBy:
+          sortBy === "name"
+            ? { bedrijfsnaam: "asc" }
+            : sortBy === "recent"
+              ? { user: { createdAt: "desc" } }
+              : { bedrijfsnaam: "asc" },
         skip,
         take: limit,
       }),
-      prisma.opdrachtgever.count({ where: searchConditions })
+      prisma.opdrachtgever.count({ where: searchConditions }),
     ]);
 
     // Calculate client statistics
@@ -167,33 +168,36 @@ export async function GET(request: NextRequest) {
             OR: [
               {
                 creatorType: "BEDRIJF",
-                creatorBedrijfId: bedrijfProfile.id
+                creatorBedrijfId: bedrijfProfile.id,
               },
               {
-                acceptedBedrijfId: bedrijfProfile.id
-              }
-            ]
+                acceptedBedrijfId: bedrijfProfile.id,
+              },
+            ],
           },
           _sum: {
             uurtarief: true,
-            aantalBeveiligers: true
+            aantalBeveiligers: true,
           },
           _count: {
-            id: true
-          }
+            id: true,
+          },
         });
 
         // Calculate estimated revenue (simplified)
         const totalOpdrachten = opdrachtStats._count.id || 0;
         const avgHourlyRate = opdrachtStats._sum.uurtarief || 0;
         const avgPersonnel = opdrachtStats._sum.aantalBeveiligers || 0;
-        const estimatedRevenue = totalOpdrachten > 0
-          ? (Number(avgHourlyRate) * avgPersonnel * 8 * totalOpdrachten) // Estimate 8 hours per assignment
-          : 0;
+        const estimatedRevenue =
+          totalOpdrachten > 0
+            ? Number(avgHourlyRate) * avgPersonnel * 8 * totalOpdrachten // Estimate 8 hours per assignment
+            : 0;
 
         // Get last interaction date
         const lastOpdracht = klant.opdrachten[0];
-        const lastInteraction = lastOpdracht ? lastOpdracht.createdAt : klant.user.createdAt;
+        const lastInteraction = lastOpdracht
+          ? lastOpdracht.createdAt
+          : klant.user.createdAt;
 
         // Determine if client is active (has opdracht in last 30 days)
         const thirtyDaysAgo = new Date();
@@ -219,13 +223,13 @@ export async function GET(request: NextRequest) {
           lastInteraction,
 
           // Recent opdrachten preview
-          recentOpdrachten: klant.opdrachten.map(opdracht => ({
+          recentOpdrachten: klant.opdrachten.map((opdracht) => ({
             id: opdracht.id,
             titel: opdracht.titel,
             status: opdracht.status,
             startDatum: opdracht.startDatum,
             uurtarief: opdracht.uurtarief,
-            aantalBeveiligers: opdracht.aantalBeveiligers
+            aantalBeveiligers: opdracht.aantalBeveiligers,
           })),
 
           // Account info
@@ -235,18 +239,18 @@ export async function GET(request: NextRequest) {
           primaryContact: {
             name: klant.contactpersoon,
             email: klant.user.email,
-            phone: klant.telefoon
-          }
+            phone: klant.telefoon,
+          },
         };
-      })
+      }),
     );
 
     // Filter by status if specified
     let filteredKlanten = klantenWithStats;
     if (status === "active") {
-      filteredKlanten = klantenWithStats.filter(k => k.isActive);
+      filteredKlanten = klantenWithStats.filter((k) => k.isActive);
     } else if (status === "inactive") {
-      filteredKlanten = klantenWithStats.filter(k => !k.isActive);
+      filteredKlanten = klantenWithStats.filter((k) => !k.isActive);
     }
 
     // Sort by revenue if specified
@@ -255,11 +259,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate overall stats
-    const totalRevenue = filteredKlanten.reduce((sum, k) => sum + k.estimatedRevenue, 0);
-    const activeKlanten = filteredKlanten.filter(k => k.isActive).length;
-    const averageOrderValue = filteredKlanten.length > 0
-      ? totalRevenue / filteredKlanten.reduce((sum, k) => sum + k.totalOpdrachten, 0)
-      : 0;
+    const totalRevenue = filteredKlanten.reduce(
+      (sum, k) => sum + k.estimatedRevenue,
+      0,
+    );
+    const activeKlanten = filteredKlanten.filter((k) => k.isActive).length;
+    const averageOrderValue =
+      filteredKlanten.length > 0
+        ? totalRevenue /
+          filteredKlanten.reduce((sum, k) => sum + k.totalOpdrachten, 0)
+        : 0;
 
     return NextResponse.json({
       success: true,
@@ -269,27 +278,28 @@ export async function GET(request: NextRequest) {
           page,
           limit,
           total,
-          totalPages: Math.ceil(total / limit)
+          totalPages: Math.ceil(total / limit),
         },
         stats: {
           totalKlanten: total,
           activeKlanten,
           totalRevenue,
-          averageOrderValue: isNaN(averageOrderValue) ? 0 : averageOrderValue
+          averageOrderValue: Number.isNaN(averageOrderValue)
+            ? 0
+            : averageOrderValue,
         },
         filters: {
           search,
           status,
-          sortBy
-        }
-      }
+          sortBy,
+        },
+      },
     });
-
   } catch (error) {
     console.error("Error fetching bedrijf klanten:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch klanten data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -298,7 +308,7 @@ export async function GET(request: NextRequest) {
 const ClientUpdateSchema = z.object({
   clientId: z.string().min(1, "Client ID is verplicht"),
   action: z.enum(["add_note", "update_contact", "mark_favorite"]),
-  data: z.record(z.any()) // Flexible data based on action
+  data: z.record(z.any()), // Flexible data based on action
 });
 
 export async function POST(request: NextRequest) {
@@ -308,7 +318,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -318,8 +328,11 @@ export async function POST(request: NextRequest) {
 
     if (!bedrijfProfile) {
       return NextResponse.json(
-        { success: false, error: "Alleen bedrijven kunnen klantgegevens beheren" },
-        { status: 403 }
+        {
+          success: false,
+          error: "Alleen bedrijven kunnen klantgegevens beheren",
+        },
+        { status: 403 },
       );
     }
 
@@ -331,9 +344,9 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "Invalid input data",
-          details: validationResult.error.issues
+          details: validationResult.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -346,33 +359,33 @@ export async function POST(request: NextRequest) {
         OR: [
           {
             creatorType: "BEDRIJF",
-            creatorBedrijfId: bedrijfProfile.id
+            creatorBedrijfId: bedrijfProfile.id,
           },
           {
-            acceptedBedrijfId: bedrijfProfile.id
-          }
-        ]
-      }
+            acceptedBedrijfId: bedrijfProfile.id,
+          },
+        ],
+      },
     });
 
     if (!hasWorkedWith) {
       return NextResponse.json(
         { success: false, error: "Geen toegang tot deze klant" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     let result;
 
     switch (action) {
-      case "add_note":
+      case "add_note": {
         // For now, we'll store notes in a simple way
         // In production, you might want a separate ClientNote model
         const noteText = data.note as string;
         if (!noteText || noteText.trim().length === 0) {
           return NextResponse.json(
             { success: false, error: "Note text is required" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -382,16 +395,17 @@ export async function POST(request: NextRequest) {
           action: "note_added",
           note: noteText,
           addedAt: new Date().toISOString(),
-          addedBy: bedrijfProfile.bedrijfsnaam
+          addedBy: bedrijfProfile.bedrijfsnaam,
         };
         break;
+      }
 
       case "mark_favorite":
         // This would typically update a relationship table
         // For now, we'll return success as this is client-side preference
         result = {
           action: "favorite_toggled",
-          isFavorite: data.isFavorite as boolean
+          isFavorite: data.isFavorite as boolean,
         };
         break;
 
@@ -400,27 +414,26 @@ export async function POST(request: NextRequest) {
         // As bedrijven shouldn't be able to directly modify opdrachtgever data
         return NextResponse.json(
           { success: false, error: "Direct contact updates not allowed" },
-          { status: 403 }
+          { status: 403 },
         );
 
       default:
         return NextResponse.json(
           { success: false, error: "Unknown action" },
-          { status: 400 }
+          { status: 400 },
         );
     }
 
     return NextResponse.json({
       success: true,
       message: "Client data updated successfully",
-      data: result
+      data: result,
     });
-
   } catch (error) {
     console.error("Error updating client data:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update client data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

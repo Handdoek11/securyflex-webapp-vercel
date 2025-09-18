@@ -1,18 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Building2,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Loader2,
+} from "lucide-react";
 import Image from "next/image";
-import { Eye, EyeOff, Loader2, AlertCircle, ArrowLeft, Building2, CheckCircle } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { bedrijfRegistrationSchema, type BedrijfRegistrationFormData } from "@/lib/validations/auth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  type BedrijfRegistrationFormData,
+  bedrijfRegistrationSchema,
+} from "@/lib/validations/auth";
 
 export default function BedrijfRegistrationPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -55,14 +66,24 @@ export default function BedrijfRegistrationPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Er is iets misgegaan tijdens de registratie");
+        // Handle specific error cases
+        if (result.details && Array.isArray(result.details)) {
+          // Validation errors - show first validation error
+          const firstError = result.details[0];
+          setError(firstError?.message || result.error || "Ongeldige invoer");
+        } else {
+          // General error
+          setError(result.error || "Er is iets misgegaan tijdens de registratie");
+        }
+        return;
       }
 
       // Successful registration - redirect to login with success message
       router.push("/auth/login?message=account-created");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Registration error:", error);
-      setError(error.message);
+      // Network or other error
+      setError("Kan geen verbinding maken met de server. Probeer het opnieuw.");
     } finally {
       setIsSubmitting(false);
     }
@@ -101,8 +122,12 @@ export default function BedrijfRegistrationPage() {
               <Building2 className="h-6 w-6 text-primary" />
             </div>
             <div className="text-left">
-              <h1 className="text-2xl font-bold text-foreground">Beveiligingsbedrijf</h1>
-              <p className="text-sm text-muted-foreground">Maak je bedrijfsaccount aan</p>
+              <h1 className="text-2xl font-bold text-foreground">
+                Beveiligingsbedrijf
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Maak je bedrijfsaccount aan
+              </p>
             </div>
           </div>
         </div>
@@ -154,7 +179,9 @@ export default function BedrijfRegistrationPage() {
                   className={errors.bedrijfsnaam ? "border-red-500" : ""}
                 />
                 {errors.bedrijfsnaam && (
-                  <p className="text-sm text-red-600">{errors.bedrijfsnaam.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.bedrijfsnaam.message}
+                  </p>
                 )}
               </div>
 
@@ -169,7 +196,9 @@ export default function BedrijfRegistrationPage() {
                     className={errors.name ? "border-red-500" : ""}
                   />
                   {errors.name && (
-                    <p className="text-sm text-red-600">{errors.name.message}</p>
+                    <p className="text-sm text-red-600">
+                      {errors.name.message}
+                    </p>
                   )}
                 </div>
 
@@ -183,7 +212,9 @@ export default function BedrijfRegistrationPage() {
                     className={errors.phone ? "border-red-500" : ""}
                   />
                   {errors.phone && (
-                    <p className="text-sm text-red-600">{errors.phone.message}</p>
+                    <p className="text-sm text-red-600">
+                      {errors.phone.message}
+                    </p>
                   )}
                 </div>
               </div>
@@ -226,11 +257,17 @@ export default function BedrijfRegistrationPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
@@ -250,17 +287,24 @@ export default function BedrijfRegistrationPage() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.confirmPassword.message}
+                  </p>
                 )}
               </div>
             </div>
 
             <div className="text-xs text-muted-foreground">
-              Wachtwoord moet bevatten: minimaal 8 karakters, 1 hoofdletter, 1 kleine letter en 1 cijfer
+              Wachtwoord moet bevatten: minimaal 8 karakters, 1 hoofdletter, 1
+              kleine letter en 1 cijfer
             </div>
           </div>
 
@@ -270,19 +314,29 @@ export default function BedrijfRegistrationPage() {
               <Checkbox
                 id="agreeToTerms"
                 checked={watchAgreeToTerms}
-                onCheckedChange={(checked) => setValue("agreeToTerms", checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setValue("agreeToTerms", checked as boolean)
+                }
                 className={errors.agreeToTerms ? "border-red-500" : ""}
               />
               <div className="space-y-1">
-                <label htmlFor="agreeToTerms" className="text-sm font-medium cursor-pointer">
+                <label
+                  htmlFor="agreeToTerms"
+                  className="text-sm font-medium cursor-pointer"
+                >
                   Ik ga akkoord met de{" "}
-                  <Link href="/voorwaarden" className="text-primary hover:underline">
+                  <Link
+                    href="/voorwaarden"
+                    className="text-primary hover:underline"
+                  >
                     Algemene Voorwaarden
                   </Link>{" "}
                   *
                 </label>
                 {errors.agreeToTerms && (
-                  <p className="text-sm text-red-600">{errors.agreeToTerms.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.agreeToTerms.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -291,19 +345,29 @@ export default function BedrijfRegistrationPage() {
               <Checkbox
                 id="agreeToPrivacy"
                 checked={watchAgreeToPrivacy}
-                onCheckedChange={(checked) => setValue("agreeToPrivacy", checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setValue("agreeToPrivacy", checked as boolean)
+                }
                 className={errors.agreeToPrivacy ? "border-red-500" : ""}
               />
               <div className="space-y-1">
-                <label htmlFor="agreeToPrivacy" className="text-sm font-medium cursor-pointer">
+                <label
+                  htmlFor="agreeToPrivacy"
+                  className="text-sm font-medium cursor-pointer"
+                >
                   Ik ga akkoord met het{" "}
-                  <Link href="/privacy" className="text-primary hover:underline">
+                  <Link
+                    href="/privacy"
+                    className="text-primary hover:underline"
+                  >
                     Privacybeleid
                   </Link>{" "}
                   *
                 </label>
                 {errors.agreeToPrivacy && (
-                  <p className="text-sm text-red-600">{errors.agreeToPrivacy.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.agreeToPrivacy.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -333,7 +397,10 @@ export default function BedrijfRegistrationPage() {
         <div className="mt-8 pt-8 border-t text-center">
           <p className="text-sm text-muted-foreground">
             Heb je al een account?{" "}
-            <Link href="/auth/login" className="font-medium text-primary hover:underline">
+            <Link
+              href="/auth/login"
+              className="font-medium text-primary hover:underline"
+            >
               Log hier in
             </Link>
           </p>
@@ -341,7 +408,9 @@ export default function BedrijfRegistrationPage() {
 
         {/* What happens next */}
         <div className="mt-6 bg-blue-50 rounded-lg p-4">
-          <h4 className="font-medium text-sm mb-2">🏢 Wat gebeurt er hierna?</h4>
+          <h4 className="font-medium text-sm mb-2">
+            🏢 Wat gebeurt er hierna?
+          </h4>
           <ol className="text-sm text-muted-foreground space-y-1">
             <li>1. Bevestig je bedrijfs email adres</li>
             <li>2. Voeg KvK nummer en BTW nummer toe</li>

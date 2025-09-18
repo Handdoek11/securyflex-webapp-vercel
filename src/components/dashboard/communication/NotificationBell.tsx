@@ -1,36 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import {
+  AlertCircle,
+  Bell,
+  BellRing,
+  Briefcase,
+  Check,
+  CheckCircle,
+  Clock,
+  Euro,
+  MessageSquare,
+  Star,
+  Trash2,
+  Users,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Bell,
-  BellRing,
-  Shield,
-  Euro,
-  MessageSquare,
-  Star,
-  Briefcase,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Users,
-  FileText,
-  Settings,
-  Trash2,
-  Check
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
 import { createSupabaseClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface Notification {
   id: string;
@@ -42,7 +39,7 @@ interface Notification {
   readAt?: Date;
   actionUrl?: string;
   actionLabel?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   createdAt: Date;
 }
 
@@ -53,7 +50,9 @@ interface NotificationBellProps {
 export function NotificationBell({ userId }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>(
+    {},
+  );
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
@@ -68,11 +67,16 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     return () => {
       supabase.removeAllChannels();
     };
-  }, [isOpen]);
+  }, [
+    isOpen,
+    fetchNotifications,
+    setupRealtimeSubscription,
+    supabase.removeAllChannels,
+  ]);
 
   useEffect(() => {
     fetchUnreadCount();
-  }, []);
+  }, [fetchUnreadCount]);
 
   const fetchNotifications = async () => {
     try {
@@ -100,7 +104,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
   const fetchUnreadCount = async () => {
     try {
-      const response = await fetch("/api/notifications?unreadOnly=true&limit=0");
+      const response = await fetch(
+        "/api/notifications?unreadOnly=true&limit=0",
+      );
       const data = await response.json();
 
       if (data.success) {
@@ -115,14 +121,14 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     supabase
       .channel(`user:${userId}:notifications`)
       .on("broadcast", { event: "new_notification" }, ({ payload }) => {
-        setNotifications(prev => [payload, ...prev]);
-        setUnreadCount(prev => prev + 1);
+        setNotifications((prev) => [payload, ...prev]);
+        setUnreadCount((prev) => prev + 1);
 
         // Show browser notification if permission granted
         if ("Notification" in window && Notification.permission === "granted") {
           new Notification(payload.title, {
             body: payload.message,
-            icon: "/logo-website-securyflex.svg"
+            icon: "/logo-website-securyflex.svg",
           });
         }
       })
@@ -136,25 +142,29 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           notificationIds,
-          markAllAsRead: !notificationIds
-        })
+          markAllAsRead: !notificationIds,
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
         if (notificationIds) {
-          setNotifications(prev =>
-            prev.map(notif =>
+          setNotifications((prev) =>
+            prev.map((notif) =>
               notificationIds.includes(notif.id)
                 ? { ...notif, isRead: true, readAt: new Date() }
-                : notif
-            )
+                : notif,
+            ),
           );
-          setUnreadCount(prev => Math.max(0, prev - notificationIds.length));
+          setUnreadCount((prev) => Math.max(0, prev - notificationIds.length));
         } else {
-          setNotifications(prev =>
-            prev.map(notif => ({ ...notif, isRead: true, readAt: new Date() }))
+          setNotifications((prev) =>
+            prev.map((notif) => ({
+              ...notif,
+              isRead: true,
+              readAt: new Date(),
+            })),
           );
           setUnreadCount(0);
         }
@@ -175,15 +185,15 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       }
 
       const response = await fetch(`/api/notifications?${params}`, {
-        method: "DELETE"
+        method: "DELETE",
       });
 
       const data = await response.json();
 
       if (data.success) {
         if (notificationIds) {
-          setNotifications(prev =>
-            prev.filter(notif => !notificationIds.includes(notif.id))
+          setNotifications((prev) =>
+            prev.filter((notif) => !notificationIds.includes(notif.id)),
           );
         } else {
           setNotifications([]);
@@ -239,7 +249,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     }
   };
 
-  const getCategoryLabel = (category: string) => {
+  const _getCategoryLabel = (category: string) => {
     switch (category) {
       case "OPDRACHT":
         return "Opdrachten";
@@ -258,9 +268,10 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     }
   };
 
-  const filteredNotifications = selectedCategory === "ALL"
-    ? notifications
-    : notifications.filter(n => n.category === selectedCategory);
+  const filteredNotifications =
+    selectedCategory === "ALL"
+      ? notifications
+      : notifications.filter((n) => n.category === selectedCategory);
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -288,11 +299,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             <h3 className="font-semibold">Notificaties</h3>
             <div className="flex items-center gap-1">
               {unreadCount > 0 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => markAsRead()}
-                >
+                <Button size="sm" variant="ghost" onClick={() => markAsRead()}>
                   <Check className="h-4 w-4 mr-1" />
                   Markeer alle als gelezen
                 </Button>
@@ -348,7 +355,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         <ScrollArea className="h-96">
           {loading ? (
             <div className="p-4 space-y-3">
-              {[1, 2, 3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
@@ -359,13 +366,13 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             </div>
           ) : (
             <div className="divide-y">
-              {filteredNotifications.map(notification => (
+              {filteredNotifications.map((notification) => (
                 <button
                   key={notification.id}
                   onClick={() => handleActionClick(notification)}
                   className={cn(
                     "w-full p-4 hover:bg-muted/50 transition-colors text-left",
-                    !notification.isRead && "bg-primary/5"
+                    !notification.isRead && "bg-primary/5",
                   )}
                 >
                   <div className="flex gap-3">
@@ -375,10 +382,12 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
-                          <p className={cn(
-                            "text-sm",
-                            !notification.isRead && "font-semibold"
-                          )}>
+                          <p
+                            className={cn(
+                              "text-sm",
+                              !notification.isRead && "font-semibold",
+                            )}
+                          >
                             {notification.title}
                           </p>
                           <p className="text-sm text-muted-foreground mt-1">
@@ -391,12 +400,15 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-xs text-muted-foreground">
-                          {new Date(notification.createdAt).toLocaleString("nl-NL", {
-                            day: "numeric",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
+                          {new Date(notification.createdAt).toLocaleString(
+                            "nl-NL",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
                         </span>
                         {notification.actionUrl && (
                           <Badge variant="outline" className="text-xs">

@@ -6,16 +6,18 @@ import prisma from "@/lib/prisma";
 export function generateSecureToken(): string {
   // Use Web Crypto API for Edge Runtime compatibility
   const array = new Uint8Array(32);
-  if (typeof window !== 'undefined' && window.crypto) {
+  if (typeof window !== "undefined" && window.crypto) {
     window.crypto.getRandomValues(array);
-  } else if (typeof globalThis.crypto !== 'undefined') {
+  } else if (typeof globalThis.crypto !== "undefined") {
     globalThis.crypto.getRandomValues(array);
   } else {
     // Fallback for Node.js environment
-    const crypto = require('crypto');
+    const crypto = require("node:crypto");
     return crypto.randomBytes(32).toString("hex");
   }
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 /**
@@ -24,7 +26,7 @@ export function generateSecureToken(): string {
 export async function generateVerificationToken(userId: string) {
   // Delete any existing tokens for this user
   await prisma.verificationToken.deleteMany({
-    where: { userId }
+    where: { userId },
   });
 
   const token = generateSecureToken();
@@ -34,8 +36,8 @@ export async function generateVerificationToken(userId: string) {
     data: {
       token,
       userId,
-      expires
-    }
+      expires,
+    },
   });
 
   return verificationToken;
@@ -47,7 +49,7 @@ export async function generateVerificationToken(userId: string) {
 export async function verifyEmailToken(token: string) {
   const verificationToken = await prisma.verificationToken.findUnique({
     where: { token },
-    include: { user: true }
+    include: { user: true },
   });
 
   if (!verificationToken) {
@@ -56,7 +58,7 @@ export async function verifyEmailToken(token: string) {
 
   if (verificationToken.expires < new Date()) {
     await prisma.verificationToken.delete({
-      where: { id: verificationToken.id }
+      where: { id: verificationToken.id },
     });
     return { success: false, error: "Token is verlopen" };
   }
@@ -66,20 +68,20 @@ export async function verifyEmailToken(token: string) {
     where: { id: verificationToken.userId },
     data: {
       emailVerified: new Date(),
-      status: "ACTIVE"
-    }
+      status: "ACTIVE",
+    },
   });
 
   // Delete the used token
   await prisma.verificationToken.delete({
-    where: { id: verificationToken.id }
+    where: { id: verificationToken.id },
   });
 
   // Log the security event
   await logSecurityEvent({
     userId: verificationToken.userId,
     email: verificationToken.user.email,
-    eventType: "EMAIL_VERIFICATION_COMPLETED"
+    eventType: "EMAIL_VERIFICATION_COMPLETED",
   });
 
   return { success: true, user: verificationToken.user };
@@ -90,7 +92,7 @@ export async function verifyEmailToken(token: string) {
  */
 export async function generatePasswordResetToken(email: string) {
   const user = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
   });
 
   if (!user) {
@@ -100,7 +102,7 @@ export async function generatePasswordResetToken(email: string) {
 
   // Delete any existing tokens for this user
   await prisma.passwordResetToken.deleteMany({
-    where: { userId: user.id }
+    where: { userId: user.id },
   });
 
   const token = generateSecureToken();
@@ -110,18 +112,23 @@ export async function generatePasswordResetToken(email: string) {
     data: {
       token,
       userId: user.id,
-      expires
-    }
+      expires,
+    },
   });
 
   // Log the security event
   await logSecurityEvent({
     userId: user.id,
     email: user.email,
-    eventType: "PASSWORD_RESET_REQUEST"
+    eventType: "PASSWORD_RESET_REQUEST",
   });
 
-  return { success: true, token: resetToken.token, email: user.email, name: user.name };
+  return {
+    success: true,
+    token: resetToken.token,
+    email: user.email,
+    name: user.name,
+  };
 }
 
 /**
@@ -130,7 +137,7 @@ export async function generatePasswordResetToken(email: string) {
 export async function verifyPasswordResetToken(token: string) {
   const resetToken = await prisma.passwordResetToken.findUnique({
     where: { token },
-    include: { user: true }
+    include: { user: true },
   });
 
   if (!resetToken || resetToken.used) {
@@ -147,23 +154,26 @@ export async function verifyPasswordResetToken(token: string) {
 /**
  * Mark password reset token as used
  */
-export async function markPasswordResetTokenUsed(tokenId: string, userId: string) {
+export async function markPasswordResetTokenUsed(
+  tokenId: string,
+  userId: string,
+) {
   await prisma.passwordResetToken.update({
     where: { id: tokenId },
-    data: { used: true }
+    data: { used: true },
   });
 
   // Log the security event
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true }
+    select: { email: true },
   });
 
   if (user) {
     await logSecurityEvent({
       userId,
       email: user.email,
-      eventType: "PASSWORD_RESET_COMPLETED"
+      eventType: "PASSWORD_RESET_COMPLETED",
     });
   }
 }
@@ -177,7 +187,7 @@ export async function logSecurityEvent({
   eventType,
   ipAddress,
   userAgent,
-  metadata
+  metadata,
 }: {
   userId?: string | null;
   email?: string | null;
@@ -194,8 +204,8 @@ export async function logSecurityEvent({
         eventType: eventType as any,
         ipAddress,
         userAgent,
-        metadata
-      }
+        metadata,
+      },
     });
   } catch (error) {
     console.error("Failed to log security event:", error);
@@ -208,7 +218,7 @@ export async function logSecurityEvent({
 export async function isAccountLocked(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { lockedUntil: true }
+    select: { lockedUntil: true },
   });
 
   if (!user?.lockedUntil) return false;
@@ -226,13 +236,13 @@ export async function lockAccount(userId: string, minutes: number = 30) {
     where: { id: userId },
     data: {
       lockedUntil,
-      failedLoginAttempts: 0 // Reset counter
-    }
+      failedLoginAttempts: 0, // Reset counter
+    },
   });
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true }
+    select: { email: true },
   });
 
   if (user) {
@@ -240,7 +250,7 @@ export async function lockAccount(userId: string, minutes: number = 30) {
       userId,
       email: user.email,
       eventType: "ACCOUNT_LOCKED",
-      metadata: { lockedUntil, lockDurationMinutes: minutes }
+      metadata: { lockedUntil, lockDurationMinutes: minutes },
     });
   }
 }
@@ -248,9 +258,13 @@ export async function lockAccount(userId: string, minutes: number = 30) {
 /**
  * Record failed login attempt
  */
-export async function recordFailedLogin(email: string, ipAddress?: string, userAgent?: string) {
+export async function recordFailedLogin(
+  email: string,
+  ipAddress?: string,
+  userAgent?: string,
+) {
   const user = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
   });
 
   if (user) {
@@ -260,8 +274,8 @@ export async function recordFailedLogin(email: string, ipAddress?: string, userA
       where: { id: user.id },
       data: {
         failedLoginAttempts: newFailedAttempts,
-        lastFailedLogin: new Date()
-      }
+        lastFailedLogin: new Date(),
+      },
     });
 
     // Lock account after 5 failed attempts
@@ -276,7 +290,7 @@ export async function recordFailedLogin(email: string, ipAddress?: string, userA
     email,
     eventType: "LOGIN_FAILED",
     ipAddress,
-    userAgent
+    userAgent,
   });
 }
 
@@ -288,7 +302,7 @@ export async function resetFailedLoginAttempts(userId: string) {
     where: { id: userId },
     data: {
       failedLoginAttempts: 0,
-      lastFailedLogin: null
-    }
+      lastFailedLogin: null,
+    },
   });
 }

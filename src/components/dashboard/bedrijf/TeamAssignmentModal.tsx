@@ -1,33 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Euro,
+  MapPin,
+  Shield,
+  Star,
+  User,
+  Users,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
-import {
-  Users,
-  MapPin,
-  Calendar,
-  Clock,
-  Euro,
-  CheckCircle,
-  AlertCircle,
-  Shield,
-  Star,
-  User
-} from "lucide-react";
 
 interface TeamMember {
   id: string;
@@ -66,7 +66,7 @@ export function TeamAssignmentModal({
   isOpen,
   onClose,
   opdracht,
-  onAssignmentComplete
+  onAssignmentComplete,
 }: TeamAssignmentModalProps) {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
@@ -79,7 +79,7 @@ export function TeamAssignmentModal({
       fetchTeamMembers();
       fetchCurrentAssignments();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchCurrentAssignments, fetchTeamMembers]);
 
   const fetchTeamMembers = async () => {
     try {
@@ -90,7 +90,7 @@ export function TeamAssignmentModal({
       if (data.success) {
         // Filter only active members who are Finqle onboarded
         const activeMembers = data.data.teamMembers.filter(
-          (member: TeamMember) => member.status === "ACTIVE"
+          (member: TeamMember) => member.status === "ACTIVE",
         );
         setTeamMembers(activeMembers);
       } else {
@@ -106,11 +106,15 @@ export function TeamAssignmentModal({
 
   const fetchCurrentAssignments = async () => {
     try {
-      const response = await fetch(`/api/bedrijf/team/assign?opdrachtId=${opdracht.id}`);
+      const response = await fetch(
+        `/api/bedrijf/team/assign?opdrachtId=${opdracht.id}`,
+      );
       const data = await response.json();
 
       if (data.success) {
-        setCurrentAssignments(data.data.stats.assigned + data.data.stats.confirmed);
+        setCurrentAssignments(
+          data.data.stats.assigned + data.data.stats.confirmed,
+        );
       }
     } catch (error) {
       console.error("Error fetching assignments:", error);
@@ -118,15 +122,17 @@ export function TeamAssignmentModal({
   };
 
   const handleMemberToggle = (memberId: string) => {
-    setSelectedMembers(prev => {
+    setSelectedMembers((prev) => {
       if (prev.includes(memberId)) {
-        return prev.filter(id => id !== memberId);
+        return prev.filter((id) => id !== memberId);
       }
 
       // Check if we're not exceeding the limit
       const remainingSpots = opdracht.aantalBeveiligers - currentAssignments;
       if (prev.length >= remainingSpots) {
-        toast.error(`Maximum ${opdracht.aantalBeveiligers} beveiligers voor deze opdracht`);
+        toast.error(
+          `Maximum ${opdracht.aantalBeveiligers} beveiligers voor deze opdracht`,
+        );
         return prev;
       }
 
@@ -148,8 +154,8 @@ export function TeamAssignmentModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           opdrachtId: opdracht.id,
-          teamMemberIds: selectedMembers
-        })
+          teamMemberIds: selectedMembers,
+        }),
       });
 
       const data = await response.json();
@@ -171,7 +177,9 @@ export function TeamAssignmentModal({
 
   const remainingSpots = opdracht.aantalBeveiligers - currentAssignments;
   const estimatedHours = Math.floor(
-    (new Date(opdracht.eindDatum).getTime() - new Date(opdracht.startDatum).getTime()) / (1000 * 60 * 60)
+    (new Date(opdracht.eindDatum).getTime() -
+      new Date(opdracht.startDatum).getTime()) /
+      (1000 * 60 * 60),
   );
 
   return (
@@ -208,7 +216,8 @@ export function TeamAssignmentModal({
             </div>
             {remainingSpots > 0 ? (
               <Badge variant="secondary" className="w-fit">
-                Nog {remainingSpots} {remainingSpots === 1 ? "plek" : "plekken"} beschikbaar
+                Nog {remainingSpots} {remainingSpots === 1 ? "plek" : "plekken"}{" "}
+                beschikbaar
               </Badge>
             ) : (
               <Badge variant="destructive" className="w-fit">
@@ -222,7 +231,7 @@ export function TeamAssignmentModal({
         <ScrollArea className="h-[350px] pr-4">
           {loading ? (
             <div className="space-y-3">
-              {[1, 2, 3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-24 w-full" />
               ))}
             </div>
@@ -230,7 +239,9 @@ export function TeamAssignmentModal({
             <div className="text-center py-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>Geen actieve teamleden gevonden</p>
-              <p className="text-sm mt-1">Nodig eerst ZZP'ers uit voor je team</p>
+              <p className="text-sm mt-1">
+                Nodig eerst ZZP'ers uit voor je team
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -249,7 +260,8 @@ export function TeamAssignmentModal({
                       checked={selectedMembers.includes(member.id)}
                       onCheckedChange={() => handleMemberToggle(member.id)}
                       disabled={
-                        !selectedMembers.includes(member.id) && remainingSpots === 0
+                        !selectedMembers.includes(member.id) &&
+                        remainingSpots === 0
                       }
                     />
 
@@ -267,13 +279,19 @@ export function TeamAssignmentModal({
                         </div>
                         <div className="flex items-center gap-2">
                           <Euro className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">€{member.uurtarief}/uur</span>
+                          <span className="text-sm font-medium">
+                            €{member.uurtarief}/uur
+                          </span>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap gap-1">
                         {member.certificaten.slice(0, 3).map((cert) => (
-                          <Badge key={cert} variant="outline" className="text-xs">
+                          <Badge
+                            key={cert}
+                            variant="outline"
+                            className="text-xs"
+                          >
                             <Shield className="h-3 w-3 mr-1" />
                             {cert}
                           </Badge>
@@ -286,7 +304,9 @@ export function TeamAssignmentModal({
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{member.activeAssignments} actieve opdrachten</span>
+                        <span>
+                          {member.activeAssignments} actieve opdrachten
+                        </span>
                         {member.finqleOnboarded ? (
                           <span className="flex items-center gap-1 text-green-600">
                             <CheckCircle className="h-3 w-3" />

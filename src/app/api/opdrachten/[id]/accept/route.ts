@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
@@ -9,14 +9,14 @@ interface RouteParams {
 }
 
 // POST /api/opdrachten/[id]/accept - Accept opdracht as bedrijf
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth();
 
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -27,15 +27,18 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       where: { userId: session.user.id },
       include: {
         teamLeden: {
-          where: { status: "ACTIVE" }
-        }
-      }
+          where: { status: "ACTIVE" },
+        },
+      },
     });
 
     if (!bedrijfProfile) {
       return NextResponse.json(
-        { success: false, error: "Alleen bedrijven kunnen opdrachten accepteren" },
-        { status: 403 }
+        {
+          success: false,
+          error: "Alleen bedrijven kunnen opdrachten accepteren",
+        },
+        { status: 403 },
       );
     }
 
@@ -46,14 +49,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         opdrachtgever: true,
         bedrijf: true,
         beveiligers: true,
-        assignments: true
-      }
+        assignments: true,
+      },
     });
 
     if (!opdracht) {
       return NextResponse.json(
         { success: false, error: "Opdracht niet gevonden" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -61,15 +64,18 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (opdracht.status !== "OPEN") {
       return NextResponse.json(
         { success: false, error: "Deze opdracht is niet meer beschikbaar" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Check if already assigned to another bedrijf
     if (opdracht.bedrijfId && opdracht.bedrijfId !== bedrijfProfile.id) {
       return NextResponse.json(
-        { success: false, error: "Deze opdracht is al toegewezen aan een ander bedrijf" },
-        { status: 400 }
+        {
+          success: false,
+          error: "Deze opdracht is al toegewezen aan een ander bedrijf",
+        },
+        { status: 400 },
       );
     }
 
@@ -78,17 +84,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(
         {
           success: false,
-          error: `Je hebt minimaal ${opdracht.aantalBeveiligers} actieve teamleden nodig voor deze opdracht`
+          error: `Je hebt minimaal ${opdracht.aantalBeveiligers} actieve teamleden nodig voor deze opdracht`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Check if opdrachtgever has Finqle credit limit
     let hasFinqleCredit = false;
-    if (opdracht.opdrachtgever.finqleDebtorId && opdracht.opdrachtgever.finqleCreditLimit) {
-      const estimatedAmount = Number(opdracht.uurtarief) * opdracht.aantalBeveiligers * 8; // Estimate 8 hours
-      hasFinqleCredit = Number(opdracht.opdrachtgever.finqleCreditLimit) >= estimatedAmount;
+    if (
+      opdracht.opdrachtgever.finqleDebtorId &&
+      opdracht.opdrachtgever.finqleCreditLimit
+    ) {
+      const estimatedAmount =
+        Number(opdracht.uurtarief) * opdracht.aantalBeveiligers * 8; // Estimate 8 hours
+      hasFinqleCredit =
+        Number(opdracht.opdrachtgever.finqleCreditLimit) >= estimatedAmount;
     }
 
     // Accept opdracht
@@ -96,8 +107,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       where: { id: opdrachtId },
       data: {
         bedrijfId: bedrijfProfile.id,
-        status: "TOEGEWEZEN"
-      }
+        status: "TOEGEWEZEN",
+      },
     });
 
     // TODO: Send notification to opdrachtgever
@@ -110,15 +121,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         status: updatedOpdracht.status,
         hasFinqleCredit,
         requiredTeamMembers: opdracht.aantalBeveiligers,
-        availableTeamMembers: bedrijfProfile.teamLeden.length
-      }
+        availableTeamMembers: bedrijfProfile.teamLeden.length,
+      },
     });
-
   } catch (error) {
     console.error("Error accepting opdracht:", error);
     return NextResponse.json(
       { success: false, error: "Failed to accept opdracht" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

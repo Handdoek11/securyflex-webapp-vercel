@@ -1,13 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient, UserRole } from "@prisma/client";
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { hashPassword } from "@/lib/auth";
-import {
-  zzpRegistrationSchema,
-  bedrijfRegistrationSchema,
-  opdrachtgeverRegistrationSchema,
-} from "@/lib/validations/auth";
 import { generateVerificationToken, logSecurityEvent } from "@/lib/auth/tokens";
 import { sendVerificationEmail } from "@/lib/email/service";
+import {
+  bedrijfRegistrationSchema,
+  opdrachtgeverRegistrationSchema,
+  zzpRegistrationSchema,
+} from "@/lib/validations/auth";
 
 const prisma = new PrismaClient();
 
@@ -17,7 +18,10 @@ export async function POST(request: NextRequest) {
     const { role } = body;
 
     // Validate input based on role
-    let validatedData;
+    let validatedData:
+      | z.infer<typeof zzpRegistrationSchema>
+      | z.infer<typeof bedrijfRegistrationSchema>
+      | z.infer<typeof opdrachtgeverRegistrationSchema>;
     switch (role) {
       case UserRole.ZZP_BEVEILIGER:
         validatedData = zzpRegistrationSchema.parse(body);
@@ -31,7 +35,7 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json(
           { error: "Ongeldige rol geselecteerd" },
-          { status: 400 }
+          { status: 400 },
         );
     }
 
@@ -43,7 +47,7 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { error: "Er bestaat al een account met dit email adres" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -83,7 +87,7 @@ export async function POST(request: NextRequest) {
           });
           break;
 
-        case UserRole.BEDRIJF:
+        case UserRole.BEDRIJF: {
           const bedrijfData = validatedData as typeof validatedData & {
             bedrijfsnaam: string;
           };
@@ -99,8 +103,9 @@ export async function POST(request: NextRequest) {
             },
           });
           break;
+        }
 
-        case UserRole.OPDRACHTGEVER:
+        case UserRole.OPDRACHTGEVER: {
           const opdrachtgeverData = validatedData as typeof validatedData & {
             type?: string;
             bedrijfsnaam?: string;
@@ -115,6 +120,7 @@ export async function POST(request: NextRequest) {
             },
           });
           break;
+        }
       }
 
       return user;
@@ -127,7 +133,7 @@ export async function POST(request: NextRequest) {
     await sendVerificationEmail(
       result.email,
       result.name,
-      verificationToken.token
+      verificationToken.token,
     );
 
     // Log the registration event
@@ -135,14 +141,15 @@ export async function POST(request: NextRequest) {
       userId: result.id,
       email: result.email,
       eventType: "EMAIL_VERIFICATION_REQUEST",
-      metadata: { role: result.role }
+      metadata: { role: result.role },
     });
 
     // Return success (without sensitive data)
     return NextResponse.json(
       {
         success: true,
-        message: "Account succesvol aangemaakt. Check je email voor verificatie.",
+        message:
+          "Account succesvol aangemaakt. Check je email voor verificatie.",
         user: {
           id: result.id,
           email: result.email,
@@ -150,38 +157,47 @@ export async function POST(request: NextRequest) {
           role: result.role,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Registration error:", error);
 
     // Handle validation errors
-    if (error.name === "ZodError") {
+    if (error instanceof Error && error.name === "ZodError") {
+      const zodError = error as z.ZodError;
       return NextResponse.json(
         {
           error: "Ongeldige invoer",
-          details: error.errors.map((err: any) => ({
+          details: zodError.errors.map((err) => ({
             field: err.path.join("."),
             message: err.message,
           })),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Handle database errors
-    if (error.code === "P2002") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
       // Unique constraint violation
       return NextResponse.json(
         { error: "Er bestaat al een account met dit email adres" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
     // Generic error
     return NextResponse.json(
-      { error: "Er is iets misgegaan tijdens de registratie. Probeer het opnieuw." },
-      { status: 500 }
+      {
+        error:
+          "Er is iets misgegaan tijdens de registratie. Probeer het opnieuw.",
+      },
+      { status: 500 },
     );
   } finally {
     await prisma.$disconnect();

@@ -179,8 +179,20 @@ export interface FinqleSaaSFees {
   breakdown: {
     activeMerchants: number;
     weekVolume: number;
-    merchantTier: "0-25" | "26-250" | "251-1000" | "1001-2500" | "2501-5000" | "5001+";
-    volumeTier: "0-25k" | "25k-250k" | "250k-500k" | "500k-1m" | "1m-2.5m" | "5m+";
+    merchantTier:
+      | "0-25"
+      | "26-250"
+      | "251-1000"
+      | "1001-2500"
+      | "2501-5000"
+      | "5001+";
+    volumeTier:
+      | "0-25k"
+      | "25k-250k"
+      | "250k-500k"
+      | "500k-1m"
+      | "1m-2.5m"
+      | "5m+";
   };
 }
 

@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
+import { AlertCircle, CheckCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
-import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { getSession, signIn } from "next-auth/react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
+import { type LoginFormData, loginSchema } from "@/lib/validations/auth";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -43,9 +43,13 @@ export default function LoginPage() {
       if (result?.error) {
         // Check for specific error types based on the error message
         if (result.error.toLowerCase().includes("locked")) {
-          setError("Je account is tijdelijk vergrendeld vanwege te veel mislukte inlogpogingen. Probeer het later opnieuw of reset je wachtwoord.");
+          setError(
+            "Je account is tijdelijk vergrendeld vanwege te veel mislukte inlogpogingen. Probeer het later opnieuw of reset je wachtwoord.",
+          );
         } else if (result.error.toLowerCase().includes("verified")) {
-          setError("Je email adres is nog niet geverifieerd. Check je inbox voor de verificatie email.");
+          setError(
+            "Je email adres is nog niet geverifieerd. Check je inbox voor de verificatie email.",
+          );
         } else {
           setError("Email of wachtwoord is onjuist");
         }
@@ -57,19 +61,19 @@ export default function LoginPage() {
 
       // Determine redirect URL based on user role
       let redirectUrl = callbackUrl;
-      if (session?.user?.role === 'ADMIN') {
-        redirectUrl = '/admin/auth-monitor';
-      } else if (callbackUrl === '/dashboard') {
+      if (session?.user?.role === "ADMIN") {
+        redirectUrl = "/admin/auth-monitor";
+      } else if (callbackUrl === "/dashboard") {
         // Only use default dashboard for non-admin users
         switch (session?.user?.role) {
-          case 'BEDRIJF':
-            redirectUrl = '/dashboard/bedrijf';
+          case "BEDRIJF":
+            redirectUrl = "/dashboard/bedrijf";
             break;
-          case 'OPDRACHTGEVER':
-            redirectUrl = '/dashboard/opdrachtgever';
+          case "OPDRACHTGEVER":
+            redirectUrl = "/dashboard/opdrachtgever";
             break;
           default:
-            redirectUrl = '/dashboard';
+            redirectUrl = "/dashboard";
         }
       }
 
@@ -107,8 +111,12 @@ export default function LoginPage() {
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm text-green-700 font-medium">Account succesvol aangemaakt!</p>
-              <p className="text-sm text-green-600 mt-1">Check je email voor de verificatie link.</p>
+              <p className="text-sm text-green-700 font-medium">
+                Account succesvol aangemaakt!
+              </p>
+              <p className="text-sm text-green-600 mt-1">
+                Check je email voor de verificatie link.
+              </p>
             </div>
           </div>
         )}
@@ -117,8 +125,12 @@ export default function LoginPage() {
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm text-green-700 font-medium">Email succesvol geverifieerd!</p>
-              <p className="text-sm text-green-600 mt-1">Je kunt nu inloggen met je email en wachtwoord.</p>
+              <p className="text-sm text-green-700 font-medium">
+                Email succesvol geverifieerd!
+              </p>
+              <p className="text-sm text-green-600 mt-1">
+                Je kunt nu inloggen met je email en wachtwoord.
+              </p>
             </div>
           </div>
         )}

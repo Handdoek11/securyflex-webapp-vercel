@@ -1,7 +1,7 @@
 "use client";
 
+import { AlertCircle, CheckCircle, RefreshCw, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { CheckCircle, AlertCircle, XCircle, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -36,7 +36,7 @@ export function FinqleStatusIndicator() {
       connect: true,
       debtorPortal: true,
       merchantApp: true,
-    }
+    },
   });
   const [isChecking, setIsChecking] = useState(false);
 
@@ -45,10 +45,13 @@ export function FinqleStatusIndicator() {
     try {
       // In production, this would check the actual Finqle status endpoint
       // For now, we'll simulate with the known status
-      const response = await fetch("https://status.finqle.com/api/v2/summary.json", {
-        method: "GET",
-        mode: "no-cors" // Status pages often don't support CORS
-      });
+      const _response = await fetch(
+        "https://status.finqle.com/api/v2/summary.json",
+        {
+          method: "GET",
+          mode: "no-cors", // Status pages often don't support CORS
+        },
+      );
 
       // Since we can't actually fetch due to CORS, we'll use mock data
       // In production, this would be handled by a backend API
@@ -63,7 +66,7 @@ export function FinqleStatusIndicator() {
           connect: true,
           debtorPortal: true,
           merchantApp: true,
-        }
+        },
       });
     } catch (error) {
       console.error("Failed to check Finqle status:", error);
@@ -77,7 +80,7 @@ export function FinqleStatusIndicator() {
     // Check status every 5 minutes
     const interval = setInterval(checkStatus, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [checkStatus]);
 
   const getStatusIcon = () => {
     switch (status.apiStatus) {
@@ -159,7 +162,8 @@ export function FinqleStatusIndicator() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground pt-2">
-              Laatst gecontroleerd: {status.lastChecked.toLocaleTimeString("nl-NL")}
+              Laatst gecontroleerd:{" "}
+              {status.lastChecked.toLocaleTimeString("nl-NL")}
             </p>
             <a
               href="https://status.finqle.com"

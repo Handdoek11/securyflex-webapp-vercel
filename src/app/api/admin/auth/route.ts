@@ -1,9 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { getAdminEmails, isAdminEmail } from "@/lib/admin/auth";
 import prisma from "@/lib/prisma";
-
-// Admin whitelist
-const ADMIN_EMAILS = ['stef@securyflex.com', 'robert@securyflex.com'];
 
 // POST /api/admin/auth - Verify admin credentials
 export async function POST(request: NextRequest) {
@@ -13,32 +11,35 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.email) {
       return NextResponse.json(
         { success: false, error: "Not authenticated" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const email = session.user.email.toLowerCase();
 
     // Check if email is in admin whitelist
-    if (!ADMIN_EMAILS.includes(email)) {
+    if (!isAdminEmail(email)) {
       // Log unauthorized admin access attempt
       await prisma.securityLog.create({
         data: {
           userId: session.user.id,
           email: email,
           eventType: "SUSPICIOUS_ACTIVITY",
-          ipAddress: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown",
+          ipAddress:
+            request.headers.get("x-forwarded-for") ||
+            request.headers.get("x-real-ip") ||
+            "unknown",
           userAgent: request.headers.get("user-agent") || "unknown",
           metadata: {
             reason: "Unauthorized admin access attempt",
-            attemptedPath: "/admin/auth-monitor"
-          }
-        }
+            attemptedPath: "/admin/auth-monitor",
+          },
+        },
       });
 
       return NextResponse.json(
         { success: false, error: "Admin access denied" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -48,13 +49,16 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         email: email,
         eventType: "LOGIN_SUCCESS",
-        ipAddress: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown",
+        ipAddress:
+          request.headers.get("x-forwarded-for") ||
+          request.headers.get("x-real-ip") ||
+          "unknown",
         userAgent: request.headers.get("user-agent") || "unknown",
         metadata: {
           isAdmin: true,
-          loginType: "admin_portal"
-        }
-      }
+          loginType: "admin_portal",
+        },
+      },
     });
 
     return NextResponse.json({
@@ -62,20 +66,20 @@ export async function POST(request: NextRequest) {
       data: {
         isAdmin: true,
         email: email,
-        sessionId: session.user.id
-      }
+        sessionId: session.user.id,
+      },
     });
   } catch (error) {
     console.error("Admin auth error:", error);
     return NextResponse.json(
       { success: false, error: "Authentication failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // GET /api/admin/auth - Check admin status
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth();
 
@@ -83,25 +87,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: false,
         isAdmin: false,
-        authenticated: false
+        authenticated: false,
       });
     }
 
     const email = session.user.email.toLowerCase();
-    const isAdmin = ADMIN_EMAILS.includes(email);
+    const isAdmin = isAdminEmail(email);
 
     return NextResponse.json({
       success: true,
       isAdmin,
       authenticated: true,
-      email: isAdmin ? email : null
+      email: isAdmin ? email : null,
     });
   } catch (error) {
     console.error("Admin auth check error:", error);
     return NextResponse.json({
       success: false,
       isAdmin: false,
-      authenticated: false
+      authenticated: false,
     });
   }
 }

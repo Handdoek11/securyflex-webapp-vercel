@@ -4,7 +4,7 @@ import { env } from "./env";
 // Browser client for client-side operations
 export const supabase = createClient(
   env.NEXT_PUBLIC_SUPABASE_URL,
-  env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
 
 // Server client with service role for admin operations
@@ -16,7 +16,7 @@ export const supabaseAdmin = createClient(
       autoRefreshToken: false,
       persistSession: false,
     },
-  }
+  },
 );
 
 // ============================================
@@ -31,7 +31,7 @@ type RealtimeCallback = (payload: any) => void;
 export const createRealtimeSubscription = (
   table: string,
   callback: RealtimeCallback,
-  filter?: string
+  filter?: string,
 ) => {
   return supabase
     .channel(`realtime-${table}`)
@@ -43,7 +43,7 @@ export const createRealtimeSubscription = (
         table,
         filter,
       },
-      callback
+      callback,
     )
     .subscribe();
 };
@@ -53,12 +53,12 @@ export const createRealtimeSubscription = (
  */
 export const subscribeToWerkuurUpdates = (
   opdrachtId: string,
-  callback: RealtimeCallback
+  callback: RealtimeCallback,
 ) => {
   return createRealtimeSubscription(
     "Werkuur",
     callback,
-    `opdrachtId=eq.${opdrachtId}`
+    `opdrachtId=eq.${opdrachtId}`,
   );
 };
 
@@ -71,7 +71,7 @@ export const subscribeToOpdrachtUpdates = (
     bedrijfId?: string;
     status?: string;
   },
-  callback: RealtimeCallback
+  callback: RealtimeCallback,
 ) => {
   let filterString = "";
   if (filter.opdrachtgeverId) {
@@ -90,12 +90,12 @@ export const subscribeToOpdrachtUpdates = (
  */
 export const subscribeToBetalingUpdates = (
   opdrachtgeverId: string,
-  callback: RealtimeCallback
+  callback: RealtimeCallback,
 ) => {
   return createRealtimeSubscription(
     "Betaling",
     callback,
-    `opdrachtgeverId=eq.${opdrachtgeverId}`
+    `opdrachtgeverId=eq.${opdrachtgeverId}`,
   );
 };
 
@@ -104,12 +104,12 @@ export const subscribeToBetalingUpdates = (
  */
 export const subscribeToReviewUpdates = (
   beveiligerId: string,
-  callback: RealtimeCallback
+  callback: RealtimeCallback,
 ) => {
   return createRealtimeSubscription(
     "Review",
     callback,
-    `beveiligerId=eq.${beveiligerId}`
+    `beveiligerId=eq.${beveiligerId}`,
   );
 };
 
@@ -118,13 +118,9 @@ export const subscribeToReviewUpdates = (
  */
 export const subscribeToUserStatusUpdates = (
   userId: string,
-  callback: RealtimeCallback
+  callback: RealtimeCallback,
 ) => {
-  return createRealtimeSubscription(
-    "User",
-    callback,
-    `id=eq.${userId}`
-  );
+  return createRealtimeSubscription("User", callback, `id=eq.${userId}`);
 };
 
 // ============================================
@@ -177,11 +173,7 @@ export const getOnlineUsers = (channelName: string = "presence") => {
 /**
  * Send a broadcast message (e.g., notifications)
  */
-export const sendBroadcast = (
-  channel: string,
-  event: string,
-  payload: any
-) => {
+export const sendBroadcast = (channel: string, event: string, payload: any) => {
   return supabase.channel(channel).send({
     type: "broadcast",
     event,
@@ -195,7 +187,7 @@ export const sendBroadcast = (
 export const listenToBroadcast = (
   channel: string,
   event: string,
-  callback: (payload: any) => void
+  callback: (payload: any) => void,
 ) => {
   return supabase
     .channel(channel)

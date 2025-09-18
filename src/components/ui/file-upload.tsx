@@ -1,18 +1,30 @@
 "use client";
 
+import {
+  AlertCircle,
+  CheckCircle,
+  Eye,
+  File,
+  Image,
+  Loader2,
+  Upload,
+  X,
+} from "lucide-react";
 import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, File, Image, CheckCircle, AlertCircle, Loader2, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
+import { cn } from "@/lib/utils";
 
 // File type configurations
 const fileTypeConfig = {
   CERTIFICATE: {
-    accept: { "application/pdf": [".pdf"], "image/*": [".jpg", ".jpeg", ".png"] },
+    accept: {
+      "application/pdf": [".pdf"],
+      "image/*": [".jpg", ".jpeg", ".png"],
+    },
     maxSize: 10 * 1024 * 1024, // 10MB
     label: "Certificaat",
     description: "PDF of afbeelding (max 10MB)",
@@ -59,7 +71,9 @@ interface FileUploadProps {
   type: FileType;
   multiple?: boolean;
   maxFiles?: number;
-  onUpload?: (files: File[]) => Promise<{ success: boolean; urls?: string[]; error?: string }>;
+  onUpload?: (
+    files: File[],
+  ) => Promise<{ success: boolean; urls?: string[]; error?: string }>;
   onRemove?: (fileId: string) => void;
   existingFiles?: { id: string; name: string; url: string; size?: number }[];
   disabled?: boolean;
@@ -88,9 +102,12 @@ export function FileUpload({
       if (disabled) return;
 
       // Validate file count
-      const totalFiles = uploadedFiles.length + existingFiles.length + acceptedFiles.length;
+      const totalFiles =
+        uploadedFiles.length + existingFiles.length + acceptedFiles.length;
       if (totalFiles > maxFiles) {
-        toast.error(`Maximum ${maxFiles} bestand${maxFiles > 1 ? "en" : ""} toegestaan`);
+        toast.error(
+          `Maximum ${maxFiles} bestand${maxFiles > 1 ? "en" : ""} toegestaan`,
+        );
         return;
       }
 
@@ -98,7 +115,9 @@ export function FileUpload({
       const newFiles: UploadedFile[] = acceptedFiles.map((file) => ({
         id: Math.random().toString(36).substring(7),
         file,
-        preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+        preview: file.type.startsWith("image/")
+          ? URL.createObjectURL(file)
+          : undefined,
         status: "uploading",
         progress: 0,
       }));
@@ -113,8 +132,8 @@ export function FileUpload({
           for (const uploadFile of newFiles) {
             setUploadedFiles((prev) =>
               prev.map((f) =>
-                f.id === uploadFile.id ? { ...f, progress: 50 } : f
-              )
+                f.id === uploadFile.id ? { ...f, progress: 50 } : f,
+              ),
             );
           }
 
@@ -122,7 +141,7 @@ export function FileUpload({
 
           if (result.success) {
             setUploadedFiles((prev) =>
-              prev.map((f, index) => {
+              prev.map((f, _index) => {
                 const fileIndex = newFiles.findIndex((nf) => nf.id === f.id);
                 if (fileIndex !== -1) {
                   return {
@@ -133,26 +152,30 @@ export function FileUpload({
                   };
                 }
                 return f;
-              })
+              }),
             );
             toast.success("Bestand(en) succesvol geüpload");
           } else {
             setUploadedFiles((prev) =>
               prev.map((f) =>
                 newFiles.some((nf) => nf.id === f.id)
-                  ? { ...f, status: "error", error: result.error || "Upload mislukt" }
-                  : f
-              )
+                  ? {
+                      ...f,
+                      status: "error",
+                      error: result.error || "Upload mislukt",
+                    }
+                  : f,
+              ),
             );
             toast.error(result.error || "Upload mislukt");
           }
-        } catch (error) {
+        } catch (_error) {
           setUploadedFiles((prev) =>
             prev.map((f) =>
               newFiles.some((nf) => nf.id === f.id)
                 ? { ...f, status: "error", error: "Upload mislukt" }
-                : f
-            )
+                : f,
+            ),
           );
           toast.error("Upload mislukt");
         } finally {
@@ -160,23 +183,26 @@ export function FileUpload({
         }
       }
     },
-    [uploadedFiles, existingFiles, maxFiles, disabled, onUpload]
+    [uploadedFiles, existingFiles, maxFiles, disabled, onUpload],
   );
 
-  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
-    onDrop,
-    accept: config.accept,
-    maxSize: config.maxSize,
-    multiple,
-    disabled: disabled || isUploading,
-  });
+  const { getRootProps, getInputProps, isDragActive, fileRejections } =
+    useDropzone({
+      onDrop,
+      accept: config.accept,
+      maxSize: config.maxSize,
+      multiple,
+      disabled: disabled || isUploading,
+    });
 
   // Handle file rejections
   React.useEffect(() => {
     fileRejections.forEach((rejection) => {
       rejection.errors.forEach((error) => {
         if (error.code === "file-too-large") {
-          toast.error(`Bestand is te groot. Maximum: ${formatFileSize(config.maxSize)}`);
+          toast.error(
+            `Bestand is te groot. Maximum: ${formatFileSize(config.maxSize)}`,
+          );
         } else if (error.code === "file-invalid-type") {
           toast.error("Ongeldig bestandstype");
         } else {
@@ -213,14 +239,16 @@ export function FileUpload({
           className={cn(
             "relative w-20 h-20 rounded-full border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer overflow-hidden",
             isDragActive && "border-primary bg-primary/5",
-            disabled && "opacity-50 cursor-not-allowed"
+            disabled && "opacity-50 cursor-not-allowed",
           )}
         >
           <input {...getInputProps()} />
 
           {hasFiles && currentFile ? (
             <div className="relative w-full h-full">
-              {currentFile.url || (uploadedFiles[0]?.preview && uploadedFiles[0]?.status === "success") ? (
+              {currentFile.url ||
+              (uploadedFiles[0]?.preview &&
+                uploadedFiles[0]?.status === "success") ? (
                 <img
                   src={currentFile.url || uploadedFiles[0]?.preview}
                   alt="Profile"
@@ -279,7 +307,7 @@ export function FileUpload({
           className={cn(
             "border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center hover:border-muted-foreground/50 transition-colors cursor-pointer",
             isDragActive && "border-primary bg-primary/5",
-            disabled && "opacity-50 cursor-not-allowed"
+            disabled && "opacity-50 cursor-not-allowed",
           )}
         >
           <input {...getInputProps()} />
@@ -313,7 +341,11 @@ export function FileUpload({
                 error={file.error}
                 preview={file.preview}
                 onRemove={() => removeFile(file.id)}
-                onPreview={file.preview ? () => window.open(file.preview!, "_blank") : undefined}
+                onPreview={
+                  file.preview
+                    ? () => window.open(file.preview!, "_blank")
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -330,7 +362,7 @@ export function FileUpload({
         className={cn(
           "border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-muted-foreground/50 transition-colors cursor-pointer",
           isDragActive && "border-primary bg-primary/5",
-          disabled && "opacity-50 cursor-not-allowed"
+          disabled && "opacity-50 cursor-not-allowed",
         )}
       >
         <input {...getInputProps()} />
@@ -346,7 +378,9 @@ export function FileUpload({
                 ? "Drop bestanden hier..."
                 : `Sleep ${config.label.toLowerCase()} hierheen of klik om te uploaden`}
             </p>
-            <p className="text-xs text-muted-foreground">{config.description}</p>
+            <p className="text-xs text-muted-foreground">
+              {config.description}
+            </p>
           </div>
 
           <Button type="button" variant="outline" size="sm" disabled={disabled}>
@@ -381,7 +415,11 @@ export function FileUpload({
                 error={file.error}
                 preview={file.preview}
                 onRemove={() => removeFile(file.id)}
-                onPreview={file.preview ? () => window.open(file.preview!, "_blank") : undefined}
+                onPreview={
+                  file.preview
+                    ? () => window.open(file.preview!, "_blank")
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -421,7 +459,11 @@ function FileItem({
         {isImage ? (
           <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
             {preview ? (
-              <img src={preview} alt="" className="w-full h-full object-cover rounded" />
+              <img
+                src={preview}
+                alt=""
+                className="w-full h-full object-cover rounded"
+              />
             ) : (
               <Image className="h-5 w-5 text-muted-foreground" />
             )}
@@ -436,7 +478,11 @@ function FileItem({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{name}</p>
         <div className="flex items-center gap-2 mt-1">
-          {size && <span className="text-xs text-muted-foreground">{formatFileSize(size)}</span>}
+          {size && (
+            <span className="text-xs text-muted-foreground">
+              {formatFileSize(size)}
+            </span>
+          )}
           <StatusBadge status={status} />
         </div>
 
@@ -464,7 +510,11 @@ function FileItem({
 }
 
 // Status badge component
-function StatusBadge({ status }: { status: "uploading" | "success" | "error" }) {
+function StatusBadge({
+  status,
+}: {
+  status: "uploading" | "success" | "error";
+}) {
   switch (status) {
     case "uploading":
       return (
@@ -475,7 +525,10 @@ function StatusBadge({ status }: { status: "uploading" | "success" | "error" }) 
       );
     case "success":
       return (
-        <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-xs">
+        <Badge
+          variant="default"
+          className="bg-green-500 hover:bg-green-600 text-xs"
+        >
           <CheckCircle className="h-3 w-3 mr-1" />
           Succesvol
         </Badge>
@@ -496,5 +549,5 @@ function formatFileSize(bytes: number): string {
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  return `${parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
 }

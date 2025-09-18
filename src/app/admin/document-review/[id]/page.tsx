@@ -1,33 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import {
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  ExternalLink,
+  Eye,
+  FileText,
+  History,
+  Save,
+  Shield,
+  XCircle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
+import { useSession } from "next-auth/react";
+import { useCallback, useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  FileText,
-  User,
-  Calendar,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  ArrowLeft,
-  Save,
-  Eye,
-  ExternalLink,
-  Shield,
-  Download,
-  History
-} from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface DocumentDetails {
   id: string;
@@ -64,7 +66,11 @@ interface DocumentDetails {
   }>;
 }
 
-export default function DocumentReviewDetailPage({ params }: { params: { id: string } }) {
+export default function DocumentReviewDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [document, setDocument] = useState<DocumentDetails | null>(null);
@@ -82,30 +88,19 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
   const [saving, setSaving] = useState(false);
 
   // Check if user is admin
-  const adminEmails = ['stef@securyflex.com', 'robert@securyflex.com'];
-  const isAdmin = session?.user?.email && adminEmails.includes(session.user.email);
+  const adminEmails = ["stef@securyflex.com", "robert@securyflex.com"];
+  const isAdmin =
+    session?.user?.email && adminEmails.includes(session.user.email);
 
-  useEffect(() => {
-    if (status === 'loading') return;
-
-    if (status === 'unauthenticated' || !isAdmin) {
-      setAccessDenied(true);
-      setLoading(false);
-      return;
-    }
-
-    fetchDocument();
-  }, [status, isAdmin, params.id]);
-
-  const fetchDocument = async () => {
+  const fetchDocument = useCallback(async () => {
     try {
       setError(null);
       const response = await fetch(`/api/documents/${params.id}`, {
-        method: 'GET',
-        credentials: 'include',
+        method: "GET",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
-        }
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
@@ -130,14 +125,25 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
       setExternalVerified(result.externalVerified);
       setExternalSource(result.externalSource || "");
       setExternalRef(result.externalRef || "");
-
     } catch (error) {
       console.error("Error fetching document:", error);
       setError("Failed to load document. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (status === "unauthenticated" || !isAdmin) {
+      setAccessDenied(true);
+      setLoading(false);
+      return;
+    }
+
+    fetchDocument();
+  }, [status, isAdmin, fetchDocument]);
 
   const saveReview = async () => {
     if (!document) return;
@@ -152,16 +158,16 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
         rejectionReason: rejectionReason || null,
         externalVerified,
         externalSource: externalSource || null,
-        externalRef: externalRef || null
+        externalRef: externalRef || null,
       };
 
       const response = await fetch(`/api/documents/${params.id}`, {
-        method: 'PATCH',
-        credentials: 'include',
+        method: "PATCH",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(updateData)
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
@@ -173,7 +179,6 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
 
       // Show success message or redirect
       router.refresh();
-
     } catch (error) {
       console.error("Error saving review:", error);
       setError("Failed to save review. Please try again.");
@@ -183,7 +188,13 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
+    const statusConfig: Record<
+      string,
+      {
+        variant: "default" | "secondary" | "destructive" | "outline";
+        label: string;
+      }
+    > = {
       PENDING: { variant: "outline", label: "Wachtend" },
       IN_REVIEW: { variant: "default", label: "In Review" },
       APPROVED: { variant: "default", label: "Goedgekeurd" },
@@ -191,10 +202,13 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
       ADDITIONAL_INFO: { variant: "secondary", label: "Info Nodig" },
       EXPIRED: { variant: "destructive", label: "Verlopen" },
       NEEDS_RENEWAL: { variant: "secondary", label: "Hernieuwing" },
-      SUSPENDED: { variant: "destructive", label: "Opgeschort" }
+      SUSPENDED: { variant: "destructive", label: "Opgeschort" },
     };
 
-    const config = statusConfig[status] || { variant: "outline" as const, label: status };
+    const config = statusConfig[status] || {
+      variant: "outline" as const,
+      label: status,
+    };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
@@ -216,88 +230,106 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
       HORECA_PORTIER: "Horeca Portier",
       VERZEKERINGSBEWIJS: "Verzekeringsbewijs",
       CONTRACT: "Contract",
-      OVERIGE: "Overige"
+      OVERIGE: "Overige",
     };
     return typeLabels[type] || type;
   };
 
   const getVerificationGuidelines = (type: string) => {
-    const guidelines: Record<string, { steps: string[], checks: string[], externalUrls?: { name: string, url: string }[] }> = {
+    const guidelines: Record<
+      string,
+      {
+        steps: string[];
+        checks: string[];
+        externalUrls?: { name: string; url: string }[];
+      }
+    > = {
       ND_NUMMER: {
         steps: [
           "Controleer ND-nummer format (8 cijfers)",
           "Verificeer via Justis WPBR register",
           "Controleer geldigheid (5 jaar)",
-          "Verifieer bedrijfsnaam matching met KvK"
+          "Verifieer bedrijfsnaam matching met KvK",
         ],
         checks: [
           "ND-nummer is 8 cijfers",
           "Status is 'ACTIEF' in register",
           "Geen schorsing of intrekking",
-          "Geldig tot datum niet verstreken"
+          "Geldig tot datum niet verstreken",
         ],
         externalUrls: [
-          { name: "Justis WPBR Register", url: "https://www.justis.nl/registers/wpbr-register" }
-        ]
+          {
+            name: "Justis WPBR Register",
+            url: "https://www.justis.nl/registers/wpbr-register",
+          },
+        ],
       },
       KVK_UITTREKSEL: {
         steps: [
           "Controleer datum uittreksel (max 6 maanden oud)",
           "Verificeer via KvK online register",
           "Controleer bedrijfsstatus (actief)",
-          "Verifieer NAW gegevens"
+          "Verifieer NAW gegevens",
         ],
         checks: [
           "Uittreksel is origineel of gecertificeerd",
           "Datum niet ouder dan 6 maanden",
           "Status is 'Actief'",
-          "KvK nummer is geldig"
+          "KvK nummer is geldig",
         ],
         externalUrls: [
-          { name: "KvK Register", url: "https://www.kvk.nl/zoeken/" }
-        ]
+          { name: "KvK Register", url: "https://www.kvk.nl/zoeken/" },
+        ],
       },
       SVPB_DIPLOMA_BEVEILIGER: {
         steps: [
           "Controleer diploma nummer",
           "Verificeer via V:base database",
           "Controleer geldigheid en echtheid",
-          "Verifieer naam en geboortedatum"
+          "Verifieer naam en geboortedatum",
         ],
         checks: [
           "Diploma nummer is correct format",
           "Gevonden in V:base register",
           "Naam komt overeen",
-          "Geen vervalsing zichtbaar"
+          "Geen vervalsing zichtbaar",
         ],
         externalUrls: [
-          { name: "SVPB V:base", url: "https://www.svpb.nl/vbase" }
-        ]
+          { name: "SVPB V:base", url: "https://www.svpb.nl/vbase" },
+        ],
       },
       IDENTITEITSBEWIJS: {
         steps: [
           "Controleer beveiligingskenmerken",
           "Verificeer model 2024 kenmerken indien van toepassing",
           "Controleer geldigheid",
-          "Bij twijfel: contact Marechaussee ID-desk"
+          "Bij twijfel: contact Marechaussee ID-desk",
         ],
         checks: [
           "Schaduwwatermerk zichtbaar",
           "Tactiele reliëf voelbaar",
           "Geen kleurverschillen beschermfolie",
           "Geen luchtbellen of beschadigingen",
-          "Geldigheid niet verstreken"
-        ]
-      }
+          "Geldigheid niet verstreken",
+        ],
+      },
     };
 
-    return guidelines[type] || {
-      steps: ["Controleer echtheid en geldigheid", "Verificeer met externe bronnen indien mogelijk"],
-      checks: ["Document lijkt authentiek", "Informatie is leesbaar en correct"]
-    };
+    return (
+      guidelines[type] || {
+        steps: [
+          "Controleer echtheid en geldigheid",
+          "Verificeer met externe bronnen indien mogelijk",
+        ],
+        checks: [
+          "Document lijkt authentiek",
+          "Informatie is leesbaar en correct",
+        ],
+      }
+    );
   };
 
-  if (status === 'loading' || loading) {
+  if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -355,7 +387,8 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
         <div>
           <h1 className="text-3xl font-bold">Document Review</h1>
           <p className="text-muted-foreground">
-            {getDocumentTypeLabel(document.documentType)} - {document.originalFileName}
+            {getDocumentTypeLabel(document.documentType)} -{" "}
+            {document.originalFileName}
           </p>
         </div>
       </div>
@@ -368,7 +401,9 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
               <h2 className="text-lg font-semibold">Document</h2>
               <Button
                 variant="outline"
-                onClick={() => window.open(`/api/documents/${document.id}`, '_blank')}
+                onClick={() =>
+                  window.open(`/api/documents/${document.id}`, "_blank")
+                }
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Openen in nieuw venster
@@ -376,7 +411,7 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
             </div>
 
             <div className="border rounded-lg p-4 bg-gray-50 min-h-96 flex items-center justify-center">
-              {document.mimeType.startsWith('image/') ? (
+              {document.mimeType.startsWith("image/") ? (
                 <img
                   src={`/api/documents/${document.id}`}
                   alt={document.originalFileName}
@@ -389,7 +424,9 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
                     PDF preview niet beschikbaar
                   </p>
                   <Button
-                    onClick={() => window.open(`/api/documents/${document.id}`, '_blank')}
+                    onClick={() =>
+                      window.open(`/api/documents/${document.id}`, "_blank")
+                    }
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     Bekijk PDF
@@ -401,7 +438,9 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
 
           {/* Verification Guidelines */}
           <Card className="p-4 mt-6">
-            <h3 className="text-lg font-semibold mb-4">Verificatie Richtlijnen</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Verificatie Richtlijnen
+            </h3>
 
             <Tabs defaultValue="steps" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
@@ -435,7 +474,7 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
                   <div key={index}>
                     <Button
                       variant="outline"
-                      onClick={() => window.open(link.url, '_blank')}
+                      onClick={() => window.open(link.url, "_blank")}
                       className="w-full justify-start"
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
@@ -461,14 +500,14 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
             <div className="space-y-3">
               <div>
                 <Label className="text-sm font-medium">Status</Label>
-                <div className="mt-1">
-                  {getStatusBadge(document.status)}
-                </div>
+                <div className="mt-1">{getStatusBadge(document.status)}</div>
               </div>
 
               <div>
                 <Label className="text-sm font-medium">Type</Label>
-                <p className="text-sm mt-1">{getDocumentTypeLabel(document.documentType)}</p>
+                <p className="text-sm mt-1">
+                  {getDocumentTypeLabel(document.documentType)}
+                </p>
               </div>
 
               {document.documentNummer && (
@@ -485,7 +524,9 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
 
               <div>
                 <Label className="text-sm font-medium">Bestandsgrootte</Label>
-                <p className="text-sm mt-1">{(document.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+                <p className="text-sm mt-1">
+                  {(document.fileSize / 1024 / 1024).toFixed(2)} MB
+                </p>
               </div>
 
               <div>
@@ -621,11 +662,7 @@ export default function DocumentReviewDetailPage({ params }: { params: { id: str
                 )}
               </div>
 
-              <Button
-                onClick={saveReview}
-                disabled={saving}
-                className="w-full"
-              >
+              <Button onClick={saveReview} disabled={saving} className="w-full">
                 {saving ? (
                   <>
                     <Clock className="h-4 w-4 mr-2 animate-spin" />

@@ -1,39 +1,28 @@
 "use client";
 
-import { useState } from "react";
 import {
   Building2,
-  Phone,
-  Mail,
-  MapPin,
   Calendar,
-  Euro,
-  FileText,
-  TrendingUp,
-  Clock,
-  Shield,
-  Search,
-  Filter,
-  Plus,
-  MoreVertical,
-  Star,
-  AlertCircle,
   CheckCircle,
+  ChevronRight,
+  Clock,
+  Euro,
   ExternalLink,
-  ChevronRight
+  FileText,
+  Mail,
+  MoreVertical,
+  Phone,
+  Plus,
+  Search,
+  Shield,
+  Star,
+  TrendingUp,
 } from "lucide-react";
+import { useState } from "react";
+import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,7 +30,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Client {
   id: string;
@@ -92,8 +88,8 @@ export default function BedrijfKlantenPage() {
       upcomingAssignments: [
         { date: "2025-01-20", location: "Hal 5", guards: 12 },
         { date: "2025-01-25", location: "Europa Complex", guards: 8 },
-        { date: "2025-02-01", location: "Hal 1-3", guards: 20 }
-      ]
+        { date: "2025-02-01", location: "Hal 1-3", guards: 20 },
+      ],
     },
     {
       id: "2",
@@ -113,8 +109,8 @@ export default function BedrijfKlantenPage() {
       lastAssignment: "2025-01-15",
       upcomingAssignments: [
         { date: "2025-01-18", location: "Stadskantoor", guards: 4 },
-        { date: "2025-01-22", location: "Haven", guards: 6 }
-      ]
+        { date: "2025-01-22", location: "Haven", guards: 6 },
+      ],
     },
     {
       id: "3",
@@ -134,8 +130,8 @@ export default function BedrijfKlantenPage() {
       lastAssignment: "2025-01-13",
       upcomingAssignments: [
         { date: "2025-01-17", location: "Utrecht Centrum", guards: 2 },
-        { date: "2025-01-19", location: "Amsterdam Noord", guards: 2 }
-      ]
+        { date: "2025-01-19", location: "Amsterdam Noord", guards: 2 },
+      ],
     },
     {
       id: "4",
@@ -152,38 +148,48 @@ export default function BedrijfKlantenPage() {
       rating: 0,
       paymentTerms: 30,
       finqleEnabled: false,
-      upcomingAssignments: []
-    }
+      upcomingAssignments: [],
+    },
   ];
 
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          client.contactPerson.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || client.status === statusFilter;
+  const filteredClients = clients.filter((client) => {
+    const matchesSearch =
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.contactPerson.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || client.status === statusFilter;
     const matchesType = typeFilter === "all" || client.type === typeFilter;
 
     return matchesSearch && matchesStatus && matchesType;
   });
 
   const totalContractValue = clients
-    .filter(c => c.status === "active")
+    .filter((c) => c.status === "active")
     .reduce((sum, c) => sum + c.contractValue, 0);
 
   const getTypeIcon = (type: Client["type"]) => {
     switch (type) {
-      case "corporate": return "🏢";
-      case "event": return "🎪";
-      case "retail": return "🏪";
-      case "government": return "🏛️";
+      case "corporate":
+        return "🏢";
+      case "event":
+        return "🎪";
+      case "retail":
+        return "🏪";
+      case "government":
+        return "🏛️";
     }
   };
 
   const getTypeName = (type: Client["type"]) => {
     switch (type) {
-      case "corporate": return "Zakelijk";
-      case "event": return "Evenement";
-      case "retail": return "Retail";
-      case "government": return "Overheid";
+      case "corporate":
+        return "Zakelijk";
+      case "event":
+        return "Evenement";
+      case "retail":
+        return "Retail";
+      case "government":
+        return "Overheid";
     }
   };
 
@@ -221,7 +227,7 @@ export default function BedrijfKlantenPage() {
             <div>
               <p className="text-sm text-muted-foreground">Actieve Klanten</p>
               <p className="text-2xl font-semibold">
-                {clients.filter(c => c.status === "active").length}
+                {clients.filter((c) => c.status === "active").length}
               </p>
             </div>
             <CheckCircle className="h-8 w-8 text-green-600" />
@@ -307,12 +313,20 @@ export default function BedrijfKlantenPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-lg">{client.name}</h3>
-                    <Badge variant={
-                      client.status === "active" ? "success" :
-                      client.status === "prospect" ? "warning" : "secondary"
-                    }>
-                      {client.status === "active" ? "Actief" :
-                       client.status === "prospect" ? "Prospect" : "Inactief"}
+                    <Badge
+                      variant={
+                        client.status === "active"
+                          ? "success"
+                          : client.status === "prospect"
+                            ? "warning"
+                            : "secondary"
+                      }
+                    >
+                      {client.status === "active"
+                        ? "Actief"
+                        : client.status === "prospect"
+                          ? "Prospect"
+                          : "Inactief"}
                     </Badge>
                     {client.finqleEnabled && (
                       <Badge variant="outline" className="gap-1">
@@ -361,9 +375,7 @@ export default function BedrijfKlantenPage() {
                     Open in Finqle
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    Contract Bewerken
-                  </DropdownMenuItem>
+                  <DropdownMenuItem>Contract Bewerken</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -376,10 +388,14 @@ export default function BedrijfKlantenPage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Contract Waarde</p>
-                <p className="font-medium">€{client.contractValue.toLocaleString("nl-NL")}</p>
+                <p className="font-medium">
+                  €{client.contractValue.toLocaleString("nl-NL")}
+                </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Actieve Opdrachten</p>
+                <p className="text-xs text-muted-foreground">
+                  Actieve Opdrachten
+                </p>
                 <p className="font-medium">{client.activeAssignments}</p>
               </div>
               <div>
@@ -406,19 +422,28 @@ export default function BedrijfKlantenPage() {
               <div className="border-t pt-4">
                 <p className="text-sm font-medium mb-2">Komende Opdrachten</p>
                 <div className="space-y-2">
-                  {client.upcomingAssignments.slice(0, 2).map((assignment, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{new Date(assignment.date).toLocaleDateString("nl-NL")}</span>
-                        <span className="text-muted-foreground">•</span>
-                        <span>{assignment.location}</span>
+                  {client.upcomingAssignments
+                    .slice(0, 2)
+                    .map((assignment, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>
+                            {new Date(assignment.date).toLocaleDateString(
+                              "nl-NL",
+                            )}
+                          </span>
+                          <span className="text-muted-foreground">•</span>
+                          <span>{assignment.location}</span>
+                        </div>
+                        <Badge variant="outline">
+                          {assignment.guards} beveiligers
+                        </Badge>
                       </div>
-                      <Badge variant="outline">
-                        {assignment.guards} beveiligers
-                      </Badge>
-                    </div>
-                  ))}
+                    ))}
                   {client.upcomingAssignments.length > 2 && (
                     <Button variant="link" size="sm" className="p-0 h-auto">
                       +{client.upcomingAssignments.length - 2} meer opdrachten

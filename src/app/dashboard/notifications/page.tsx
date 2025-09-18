@@ -1,35 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import {
-  Bell,
-  BellRing,
-  Shield,
-  Euro,
-  MessageSquare,
-  Star,
-  Briefcase,
   AlertCircle,
+  Bell,
+  Briefcase,
+  Check,
   CheckCircle,
   Clock,
-  Users,
-  Settings,
-  Trash2,
-  Check,
-  Filter,
+  Euro,
+  MessageSquare,
   Search,
-  X
+  Star,
+  Trash2,
+  Users,
+  X,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -37,8 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
+import { cn } from "@/lib/utils";
 
 interface Notification {
   id: string;
@@ -50,26 +44,30 @@ interface Notification {
   readAt?: Date;
   actionUrl?: string;
   actionLabel?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   createdAt: Date;
 }
 
 export default function NotificationsPage() {
   const { data: session } = useSession();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
+  const [filteredNotifications, setFilteredNotifications] = useState<
+    Notification[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRead, setFilterRead] = useState("ALL");
   const [unreadCount, setUnreadCount] = useState(0);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>(
+    {},
+  );
 
   useEffect(() => {
     if (session?.user?.id) {
       fetchNotifications();
     }
-  }, [session]);
+  }, [session, fetchNotifications]);
 
   useEffect(() => {
     // Apply filters
@@ -77,21 +75,22 @@ export default function NotificationsPage() {
 
     // Category filter
     if (selectedCategory !== "ALL") {
-      filtered = filtered.filter(n => n.category === selectedCategory);
+      filtered = filtered.filter((n) => n.category === selectedCategory);
     }
 
     // Read status filter
     if (filterRead === "UNREAD") {
-      filtered = filtered.filter(n => !n.isRead);
+      filtered = filtered.filter((n) => !n.isRead);
     } else if (filterRead === "READ") {
-      filtered = filtered.filter(n => n.isRead);
+      filtered = filtered.filter((n) => n.isRead);
     }
 
     // Search filter
     if (searchQuery) {
-      filtered = filtered.filter(n =>
-        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.message.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(
+        (n) =>
+          n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          n.message.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -105,11 +104,18 @@ export default function NotificationsPage() {
       const data = await response.json();
 
       if (data.success) {
-        const notifs = data.data.notifications.map((n: any) => ({
-          ...n,
-          createdAt: new Date(n.createdAt),
-          readAt: n.readAt ? new Date(n.readAt) : undefined
-        }));
+        const notifs = data.data.notifications.map(
+          (
+            n: Omit<Notification, "createdAt" | "readAt"> & {
+              createdAt: string;
+              readAt?: string;
+            },
+          ) => ({
+            ...n,
+            createdAt: new Date(n.createdAt),
+            readAt: n.readAt ? new Date(n.readAt) : undefined,
+          }),
+        );
 
         setNotifications(notifs);
         setUnreadCount(data.data.unreadCount);
@@ -130,23 +136,27 @@ export default function NotificationsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           notificationIds,
-          markAllAsRead: !notificationIds
-        })
+          markAllAsRead: !notificationIds,
+        }),
       });
 
       if (response.ok) {
         if (notificationIds) {
-          setNotifications(prev =>
-            prev.map(notif =>
+          setNotifications((prev) =>
+            prev.map((notif) =>
               notificationIds.includes(notif.id)
                 ? { ...notif, isRead: true, readAt: new Date() }
-                : notif
-            )
+                : notif,
+            ),
           );
-          setUnreadCount(prev => Math.max(0, prev - notificationIds.length));
+          setUnreadCount((prev) => Math.max(0, prev - notificationIds.length));
         } else {
-          setNotifications(prev =>
-            prev.map(notif => ({ ...notif, isRead: true, readAt: new Date() }))
+          setNotifications((prev) =>
+            prev.map((notif) => ({
+              ...notif,
+              isRead: true,
+              readAt: new Date(),
+            })),
           );
           setUnreadCount(0);
         }
@@ -168,13 +178,13 @@ export default function NotificationsPage() {
       }
 
       const response = await fetch(`/api/notifications?${params}`, {
-        method: "DELETE"
+        method: "DELETE",
       });
 
       if (response.ok) {
         if (notificationIds) {
-          setNotifications(prev =>
-            prev.filter(notif => !notificationIds.includes(notif.id))
+          setNotifications((prev) =>
+            prev.filter((notif) => !notificationIds.includes(notif.id)),
           );
         } else {
           setNotifications([]);
@@ -230,13 +240,20 @@ export default function NotificationsPage() {
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
-      case "OPDRACHT": return "Opdrachten";
-      case "TEAM": return "Team";
-      case "PAYMENT": return "Betalingen";
-      case "MESSAGE": return "Berichten";
-      case "REVIEW": return "Beoordelingen";
-      case "SYSTEM": return "Systeem";
-      default: return "Alle";
+      case "OPDRACHT":
+        return "Opdrachten";
+      case "TEAM":
+        return "Team";
+      case "PAYMENT":
+        return "Betalingen";
+      case "MESSAGE":
+        return "Berichten";
+      case "REVIEW":
+        return "Beoordelingen";
+      case "SYSTEM":
+        return "Systeem";
+      default:
+        return "Alle";
     }
   };
 
@@ -247,11 +264,7 @@ export default function NotificationsPage() {
       headerActions={
         <div className="flex gap-2">
           {unreadCount > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => markAsRead()}
-            >
+            <Button size="sm" variant="outline" onClick={() => markAsRead()}>
               <Check className="h-4 w-4 mr-2" />
               Markeer alle als gelezen
             </Button>
@@ -293,7 +306,10 @@ export default function NotificationsPage() {
             </div>
 
             {/* Category Filter */}
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Categorie" />
               </SelectTrigger>
@@ -337,7 +353,7 @@ export default function NotificationsPage() {
         <Card>
           {loading ? (
             <div className="p-6 space-y-4">
-              {[1, 2, 3, 4, 5].map(i => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex gap-4">
                   <Skeleton className="h-10 w-10 rounded-full" />
                   <div className="flex-1 space-y-2">
@@ -355,18 +371,18 @@ export default function NotificationsPage() {
                 {searchQuery
                   ? "Geen notificaties gevonden voor deze zoekopdracht"
                   : selectedCategory !== "ALL"
-                  ? "Geen notificaties in deze categorie"
-                  : "Je hebt nog geen notificaties ontvangen"}
+                    ? "Geen notificaties in deze categorie"
+                    : "Je hebt nog geen notificaties ontvangen"}
               </p>
             </div>
           ) : (
             <div className="divide-y">
-              {filteredNotifications.map((notification, index) => (
+              {filteredNotifications.map((notification, _index) => (
                 <div
                   key={notification.id}
                   className={cn(
                     "p-4 hover:bg-muted/50 transition-colors cursor-pointer",
-                    !notification.isRead && "bg-primary/5"
+                    !notification.isRead && "bg-primary/5",
                   )}
                   onClick={() => handleActionClick(notification)}
                 >
@@ -378,10 +394,12 @@ export default function NotificationsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <h4 className={cn(
-                            "text-sm font-medium leading-5",
-                            !notification.isRead && "font-semibold"
-                          )}>
+                          <h4
+                            className={cn(
+                              "text-sm font-medium leading-5",
+                              !notification.isRead && "font-semibold",
+                            )}
+                          >
                             {notification.title}
                           </h4>
                           <p className="text-sm text-muted-foreground mt-1 leading-5">
@@ -408,7 +426,7 @@ export default function NotificationsPage() {
                             month: "short",
                             year: "numeric",
                             hour: "2-digit",
-                            minute: "2-digit"
+                            minute: "2-digit",
                           })}
                         </span>
 
@@ -439,13 +457,14 @@ export default function NotificationsPage() {
         </Card>
 
         {/* Load More Button */}
-        {filteredNotifications.length > 0 && filteredNotifications.length >= 50 && (
-          <div className="text-center">
-            <Button variant="outline" onClick={fetchNotifications}>
-              Laad meer notificaties
-            </Button>
-          </div>
-        )}
+        {filteredNotifications.length > 0 &&
+          filteredNotifications.length >= 50 && (
+            <div className="text-center">
+              <Button variant="outline" onClick={fetchNotifications}>
+                Laad meer notificaties
+              </Button>
+            </div>
+          )}
       </div>
     </DashboardLayout>
   );

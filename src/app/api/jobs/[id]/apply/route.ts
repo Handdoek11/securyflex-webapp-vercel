@@ -1,8 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
 import { checkDirectPaymentEligibility } from "@/lib/finqle/client";
-import { broadcastSollicitatieEvent, broadcastOpdrachtEvent, BroadcastEvent } from "@/lib/supabase/broadcast";
+import prisma from "@/lib/prisma";
+import {
+  BroadcastEvent,
+  broadcastSollicitatieEvent,
+} from "@/lib/supabase/broadcast";
 
 interface RouteParams {
   params: Promise<{
@@ -18,7 +21,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Je moet ingelogd zijn om te solliciteren" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -33,32 +36,41 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         bedrijfProfile: {
           include: {
             teamLeden: {
-              where: { status: "ACTIVE" }
-            }
-          }
-        }
-      }
+              where: { status: "ACTIVE" },
+            },
+          },
+        },
+      },
     });
 
     if (!user?.zzpProfile && !user?.bedrijfProfile) {
       return NextResponse.json(
-        { success: false, error: "Alleen ZZP'ers en beveiligingsbedrijven kunnen solliciteren" },
-        { status: 403 }
+        {
+          success: false,
+          error: "Alleen ZZP'ers en beveiligingsbedrijven kunnen solliciteren",
+        },
+        { status: 403 },
       );
     }
 
     // Check if profile is complete
-    if (user.zzpProfile && (!user.zzpProfile.kvkNummer || !user.zzpProfile.btwNummer)) {
+    if (
+      user.zzpProfile &&
+      (!user.zzpProfile.kvkNummer || !user.zzpProfile.btwNummer)
+    ) {
       return NextResponse.json(
         { success: false, error: "Vul eerst je profiel volledig in" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    if (user.bedrijfProfile && (!user.bedrijfProfile.kvkNummer || !user.bedrijfProfile.btwNummer)) {
+    if (
+      user.bedrijfProfile &&
+      (!user.bedrijfProfile.kvkNummer || !user.bedrijfProfile.btwNummer)
+    ) {
       return NextResponse.json(
         { success: false, error: "Vul eerst je bedrijfsprofiel volledig in" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,20 +82,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           where: {
             OR: [
               ...(user.zzpProfile ? [{ zzpId: user.zzpProfile.id }] : []),
-              ...(user.bedrijfProfile ? [{ bedrijfId: user.bedrijfProfile.id }] : [])
-            ]
-          }
+              ...(user.bedrijfProfile
+                ? [{ bedrijfId: user.bedrijfProfile.id }]
+                : []),
+            ],
+          },
         },
         opdrachtgever: true,
         creatorBedrijf: true,
-        acceptedBedrijf: true
-      }
+        acceptedBedrijf: true,
+      },
     });
 
     if (!job) {
       return NextResponse.json(
         { success: false, error: "Opdracht niet gevonden" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -91,7 +105,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (job.status !== "OPEN" && job.status !== "URGENT") {
       return NextResponse.json(
         { success: false, error: "Deze opdracht is niet meer beschikbaar" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -99,27 +113,44 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (user.zzpProfile) {
       if (job.targetAudience === "ALLEEN_BEDRIJVEN") {
         return NextResponse.json(
-          { success: false, error: "Deze opdracht is alleen voor beveiligingsbedrijven" },
-          { status: 403 }
+          {
+            success: false,
+            error: "Deze opdracht is alleen voor beveiligingsbedrijven",
+          },
+          { status: 403 },
         );
       }
       if (!job.directZZPAllowed && job.targetAudience !== "ALLEEN_ZZP") {
         return NextResponse.json(
-          { success: false, error: "Directe ZZP sollicitaties zijn niet toegestaan voor deze opdracht" },
-          { status: 403 }
+          {
+            success: false,
+            error:
+              "Directe ZZP sollicitaties zijn niet toegestaan voor deze opdracht",
+          },
+          { status: 403 },
         );
       }
     } else if (user.bedrijfProfile) {
       if (job.targetAudience === "ALLEEN_ZZP") {
         return NextResponse.json(
-          { success: false, error: "Deze opdracht is alleen voor individuele ZZP'ers" },
-          { status: 403 }
+          {
+            success: false,
+            error: "Deze opdracht is alleen voor individuele ZZP'ers",
+          },
+          { status: 403 },
         );
       }
-      if (job.targetAudience === "EIGEN_TEAM" && job.creatorBedrijfId !== user.bedrijfProfile.id) {
+      if (
+        job.targetAudience === "EIGEN_TEAM" &&
+        job.creatorBedrijfId !== user.bedrijfProfile.id
+      ) {
         return NextResponse.json(
-          { success: false, error: "Deze opdracht is alleen voor het eigen team van het bedrijf" },
-          { status: 403 }
+          {
+            success: false,
+            error:
+              "Deze opdracht is alleen voor het eigen team van het bedrijf",
+          },
+          { status: 403 },
         );
       }
     }
@@ -128,7 +159,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (job.sollicitaties.length > 0) {
       return NextResponse.json(
         { success: false, error: "Je hebt al gesolliciteerd op deze opdracht" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -136,14 +167,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const acceptedCount = await prisma.opdrachtSollicitatie.count({
       where: {
         opdrachtId: jobId,
-        status: "ACCEPTED"
-      }
+        status: "ACCEPTED",
+      },
     });
 
     if (acceptedCount >= job.aantalBeveiligers) {
       return NextResponse.json(
         { success: false, error: "Alle plekken zijn al bezet" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -152,7 +183,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (user.zzpProfile && data.requestDirectPayment) {
       const debtorId = job.opdrachtgeverId || job.creatorBedrijfId || "";
       const estimatedAmount = Number(job.uurtarief) * 8; // Estimate 8 hours
-      finqleEligible = await checkDirectPaymentEligibility(debtorId, estimatedAmount);
+      finqleEligible = await checkDirectPaymentEligibility(
+        debtorId,
+        estimatedAmount,
+      );
     }
 
     // Determine sollicitant type
@@ -166,32 +200,35 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         ...(user.zzpProfile && { zzpId: user.zzpProfile.id }),
         ...(user.bedrijfProfile && {
           bedrijfId: user.bedrijfProfile.id,
-          teamGrootte: data.teamGrootte || user.bedrijfProfile.teamLeden.length
+          teamGrootte: data.teamGrootte || user.bedrijfProfile.teamLeden.length,
         }),
         status: data.quickApply ? "PENDING" : "REVIEWING",
         motivatie: data.motivatie,
-        voorgesteldTarief: data.voorgesteldTarief
+        voorgesteldTarief: data.voorgesteldTarief,
       },
       include: {
         opdracht: true,
-        zzp: user.zzpProfile ? {
-          include: {
-            user: true
-          }
-        } : undefined,
-        bedrijf: user.bedrijfProfile ? true : undefined
-      }
+        zzp: user.zzpProfile
+          ? {
+              include: {
+                user: true,
+              },
+            }
+          : undefined,
+        bedrijf: user.bedrijfProfile ? true : undefined,
+      },
     });
 
     // Broadcast sollicitatie event
     await broadcastSollicitatieEvent(
       BroadcastEvent.SOLLICITATIE_CREATED,
       application,
-      job
+      job,
     );
 
     // Send notification to job owner
-    const ownerName = job.opdrachtgever?.bedrijfsnaam || job.creatorBedrijf?.bedrijfsnaam;
+    const _ownerName =
+      job.opdrachtgever?.bedrijfsnaam || job.creatorBedrijf?.bedrijfsnaam;
     const sollicitantName = user.zzpProfile
       ? user.name
       : user.bedrijfProfile?.bedrijfsnaam;
@@ -203,15 +240,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         category: "OPDRACHT",
         title: "Nieuwe sollicitatie ontvangen",
         message: `${sollicitantName} heeft gesolliciteerd op "${job.titel}"`,
-        actionUrl: `/dashboard/opdrachten/${jobId}/sollicitaties`
-      }
+        actionUrl: `/dashboard/opdrachten/${jobId}/sollicitaties`,
+      },
     });
 
     // If quick apply and auto-accept is enabled, accept immediately
     if (data.quickApply && job.status === "URGENT" && job.autoAccept) {
       await prisma.opdrachtSollicitatie.update({
         where: { id: application.id },
-        data: { status: "ACCEPTED" }
+        data: { status: "ACCEPTED" },
       });
 
       // Create shift entry for ZZP
@@ -226,8 +263,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             urenGewerkt: 0,
             startLocatie: {},
             platformFee: 2.99,
-            status: "PENDING"
-          }
+            status: "PENDING",
+          },
         });
       }
 
@@ -235,7 +272,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       await broadcastSollicitatieEvent(
         BroadcastEvent.SOLLICITATIE_ACCEPTED,
         application,
-        job
+        job,
       );
 
       return NextResponse.json({
@@ -244,8 +281,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         data: {
           applicationId: application.id,
           status: "ACCEPTED",
-          finqleEligible
-        }
+          finqleEligible,
+        },
       });
     }
 
@@ -255,28 +292,27 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       data: {
         applicationId: application.id,
         status: application.status,
-        finqleEligible
-      }
+        finqleEligible,
+      },
     });
-
   } catch (error) {
     console.error("Error applying for job:", error);
     return NextResponse.json(
       { success: false, error: "Er ging iets mis bij het solliciteren" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // DELETE /api/jobs/[id]/apply - Withdraw application
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth();
 
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -287,14 +323,14 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       where: { id: session.user.id },
       include: {
         zzpProfile: true,
-        bedrijfProfile: true
-      }
+        bedrijfProfile: true,
+      },
     });
 
     if (!user?.zzpProfile && !user?.bedrijfProfile) {
       return NextResponse.json(
         { success: false, error: "User profile not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -304,41 +340,45 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         opdrachtId: jobId,
         OR: [
           ...(user.zzpProfile ? [{ zzpId: user.zzpProfile.id }] : []),
-          ...(user.bedrijfProfile ? [{ bedrijfId: user.bedrijfProfile.id }] : [])
-        ]
-      }
+          ...(user.bedrijfProfile
+            ? [{ bedrijfId: user.bedrijfProfile.id }]
+            : []),
+        ],
+      },
     });
 
     if (!application) {
       return NextResponse.json(
         { success: false, error: "Sollicitatie niet gevonden" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Check if can withdraw
     if (application.status === "ACCEPTED") {
       return NextResponse.json(
-        { success: false, error: "Geaccepteerde sollicitatie kan niet worden ingetrokken" },
-        { status: 400 }
+        {
+          success: false,
+          error: "Geaccepteerde sollicitatie kan niet worden ingetrokken",
+        },
+        { status: 400 },
       );
     }
 
     // Delete application
     await prisma.opdrachtSollicitatie.delete({
-      where: { id: application.id }
+      where: { id: application.id },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Sollicitatie ingetrokken"
+      message: "Sollicitatie ingetrokken",
     });
-
   } catch (error) {
     console.error("Error withdrawing application:", error);
     return NextResponse.json(
       { success: false, error: "Failed to withdraw application" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -16,7 +16,9 @@ interface DocumentNotificationData {
   adminName?: string;
 }
 
-export async function sendDocumentUploadNotification(data: DocumentNotificationData) {
+export async function sendDocumentUploadNotification(
+  data: DocumentNotificationData,
+) {
   const { user, document } = data;
 
   const subject = "Document geüpload - SecuryFlex";
@@ -69,7 +71,7 @@ export async function sendDocumentUploadNotification(data: DocumentNotificationD
     await sendEmail({
       to: user.email,
       subject,
-      html: htmlContent
+      html: htmlContent,
     });
     console.log(`Document upload notification sent to ${user.email}`);
   } catch (error) {
@@ -77,7 +79,9 @@ export async function sendDocumentUploadNotification(data: DocumentNotificationD
   }
 }
 
-export async function sendDocumentApprovedNotification(data: DocumentNotificationData) {
+export async function sendDocumentApprovedNotification(
+  data: DocumentNotificationData,
+) {
   const { user, document, adminName } = data;
 
   const subject = "Document Goedgekeurd - SecuryFlex";
@@ -109,22 +113,30 @@ export async function sendDocumentApprovedNotification(data: DocumentNotificatio
               </span>
             </td>
           </tr>
-          ${adminName ? `
+          ${
+            adminName
+              ? `
           <tr>
             <td style="padding: 8px 0; color: #666; font-weight: bold;">Beoordeeld door:</td>
             <td style="padding: 8px 0; color: #333;">${adminName}</td>
           </tr>
-          ` : ''}
+          `
+              : ""
+          }
         </table>
 
-        ${document.adminNotes ? `
+        ${
+          document.adminNotes
+            ? `
         <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px;">
           <p style="margin: 0; color: #333; font-size: 14px;">
             <strong>Notities van beheerder:</strong><br>
             ${document.adminNotes}
           </p>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
 
         <div style="margin-top: 20px; padding: 15px; background-color: #d4edda; border-radius: 4px;">
           <p style="margin: 0; color: #155724; font-size: 14px;">
@@ -145,7 +157,7 @@ export async function sendDocumentApprovedNotification(data: DocumentNotificatio
     await sendEmail({
       to: user.email,
       subject,
-      html: htmlContent
+      html: htmlContent,
     });
     console.log(`Document approved notification sent to ${user.email}`);
   } catch (error) {
@@ -153,7 +165,9 @@ export async function sendDocumentApprovedNotification(data: DocumentNotificatio
   }
 }
 
-export async function sendDocumentRejectedNotification(data: DocumentNotificationData) {
+export async function sendDocumentRejectedNotification(
+  data: DocumentNotificationData,
+) {
   const { user, document, adminName } = data;
 
   const subject = "Document Afgewezen - SecuryFlex";
@@ -185,31 +199,43 @@ export async function sendDocumentRejectedNotification(data: DocumentNotificatio
               </span>
             </td>
           </tr>
-          ${adminName ? `
+          ${
+            adminName
+              ? `
           <tr>
             <td style="padding: 8px 0; color: #666; font-weight: bold;">Beoordeeld door:</td>
             <td style="padding: 8px 0; color: #333;">${adminName}</td>
           </tr>
-          ` : ''}
+          `
+              : ""
+          }
         </table>
 
-        ${document.rejectionReason ? `
+        ${
+          document.rejectionReason
+            ? `
         <div style="margin-top: 20px; padding: 15px; background-color: #f8d7da; border-radius: 4px;">
           <p style="margin: 0; color: #721c24; font-size: 14px;">
             <strong>Reden voor afwijzing:</strong><br>
             ${document.rejectionReason}
           </p>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
 
-        ${document.adminNotes ? `
+        ${
+          document.adminNotes
+            ? `
         <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px;">
           <p style="margin: 0; color: #333; font-size: 14px;">
             <strong>Aanvullende notities:</strong><br>
             ${document.adminNotes}
           </p>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
 
         <div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-radius: 4px;">
           <p style="margin: 0; color: #856404; font-size: 14px;">
@@ -231,7 +257,7 @@ export async function sendDocumentRejectedNotification(data: DocumentNotificatio
     await sendEmail({
       to: user.email,
       subject,
-      html: htmlContent
+      html: htmlContent,
     });
     console.log(`Document rejected notification sent to ${user.email}`);
   } catch (error) {
@@ -239,9 +265,11 @@ export async function sendDocumentRejectedNotification(data: DocumentNotificatio
   }
 }
 
-export async function sendAdminNewDocumentNotification(data: DocumentNotificationData) {
+export async function sendAdminNewDocumentNotification(
+  data: DocumentNotificationData,
+) {
   const { user, document } = data;
-  const adminEmails = ['stef@securyflex.com', 'robert@securyflex.com'];
+  const adminEmails = ["stef@securyflex.com", "robert@securyflex.com"];
 
   const subject = `Nieuw document voor review - ${getDocumentTypeLabel(document.documentType)}`;
 
@@ -270,7 +298,7 @@ export async function sendAdminNewDocumentNotification(data: DocumentNotificatio
           </tr>
           <tr>
             <td style="padding: 8px 0; color: #666; font-weight: bold;">Upload tijd:</td>
-            <td style="padding: 8px 0; color: #333;">${new Date().toLocaleString('nl-NL')}</td>
+            <td style="padding: 8px 0; color: #333;">${new Date().toLocaleString("nl-NL")}</td>
           </tr>
         </table>
 
@@ -295,16 +323,23 @@ export async function sendAdminNewDocumentNotification(data: DocumentNotificatio
       await sendEmail({
         to: adminEmail,
         subject,
-        html: htmlContent
+        html: htmlContent,
       });
-      console.log(`Admin notification sent to ${adminEmail} for document ${document.id}`);
+      console.log(
+        `Admin notification sent to ${adminEmail} for document ${document.id}`,
+      );
     } catch (error) {
-      console.error(`Failed to send admin notification to ${adminEmail}:`, error);
+      console.error(
+        `Failed to send admin notification to ${adminEmail}:`,
+        error,
+      );
     }
   }
 }
 
-export async function sendDocumentExpiryWarning(data: DocumentNotificationData & { daysUntilExpiry: number }) {
+export async function sendDocumentExpiryWarning(
+  data: DocumentNotificationData & { daysUntilExpiry: number },
+) {
   const { user, document, daysUntilExpiry } = data;
 
   const subject = `Document verloopt binnenkort - ${getDocumentTypeLabel(document.documentType)}`;
@@ -361,7 +396,7 @@ export async function sendDocumentExpiryWarning(data: DocumentNotificationData &
     await sendEmail({
       to: user.email,
       subject,
-      html: htmlContent
+      html: htmlContent,
     });
     console.log(`Document expiry warning sent to ${user.email}`);
   } catch (error) {
@@ -399,7 +434,7 @@ function getDocumentTypeLabel(type: string): string {
     FREELANCER_OVEREENKOMST: "Freelancer Overeenkomst",
     DIPLOMA_OVERIG: "Diploma (Overig)",
     CERTIFICAAT_OVERIG: "Certificaat (Overig)",
-    OVERIGE: "Overige"
+    OVERIGE: "Overige",
   };
   return typeLabels[type] || type;
 }

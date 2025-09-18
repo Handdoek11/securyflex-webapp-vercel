@@ -1,9 +1,9 @@
 // This file configures the initialization of Sentry on the browser/client side.
 // The config you add here will be used whenever a page is visited.
 
-import * as Sentry from '@sentry/nextjs'
+import * as Sentry from "@sentry/nextjs";
 
-const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN;
 
 Sentry.init({
   dsn: SENTRY_DSN,
@@ -19,7 +19,7 @@ Sentry.init({
   ],
 
   // Performance Monitoring
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
 
   // Session Replay
   replaysSessionSampleRate: 0.1, // 10% of sessions will be recorded
@@ -34,60 +34,60 @@ Sentry.init({
   beforeSend(event, hint) {
     // Filter out sensitive information
     if (event.request?.data) {
-      const data = event.request.data as any
-      if (typeof data === 'object') {
+      const data = event.request.data as Record<string, unknown>;
+      if (typeof data === "object") {
         // Remove sensitive fields
         const sensitiveFields = [
-          'password',
-          'confirmPassword',
-          'token',
-          'accessToken',
-          'refreshToken',
-          'apiKey',
-          'secret',
-          'kvkNummer',
-          'btwNummer',
-          'bankAccount',
-          'iban'
-        ]
+          "password",
+          "confirmPassword",
+          "token",
+          "accessToken",
+          "refreshToken",
+          "apiKey",
+          "secret",
+          "kvkNummer",
+          "btwNummer",
+          "bankAccount",
+          "iban",
+        ];
 
-        sensitiveFields.forEach(field => {
+        sensitiveFields.forEach((field) => {
           if (data[field]) {
-            data[field] = '[Filtered]'
+            data[field] = "[Filtered]";
           }
-        })
+        });
       }
     }
 
     // Filter out known non-critical errors
     if (event.exception) {
-      const error = hint.originalException
+      const error = hint.originalException;
       if (error instanceof Error) {
         // Skip ChunkLoadErrors (common with code splitting)
-        if (error.name === 'ChunkLoadError') {
-          return null
+        if (error.name === "ChunkLoadError") {
+          return null;
         }
 
         // Skip navigation cancelled errors
-        if (error.message?.includes('Navigation cancelled')) {
-          return null
+        if (error.message?.includes("Navigation cancelled")) {
+          return null;
         }
 
         // Skip network errors from ad blockers
-        if (error.message?.includes('blocked:mixed-content')) {
-          return null
+        if (error.message?.includes("blocked:mixed-content")) {
+          return null;
         }
       }
     }
 
-    return event
+    return event;
   },
 
   // Custom tags for SecuryFlex context
   initialScope: {
     tags: {
-      application: 'securyflex-client',
-      platform: 'web'
-    }
-  }
-})
+      application: "securyflex-client",
+      platform: "web",
+    },
+  },
+});

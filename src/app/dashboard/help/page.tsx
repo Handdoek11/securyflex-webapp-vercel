@@ -1,53 +1,59 @@
 "use client";
 
-import React, { useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Search,
-  HelpCircle,
-  MessageCircle,
-  Phone,
-  Mail,
-  Clock,
   AlertTriangle,
+  CheckCircle,
   ChevronDown,
   ChevronRight,
-  ExternalLink,
-  Send,
-  FileText,
-  Video,
-  Headphones,
-  Shield,
-  MapPin,
+  Clock,
   CreditCard,
-  User,
-  Settings,
+  ExternalLink,
+  FileText,
+  Headphones,
+  HelpCircle,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Search,
+  Send,
+  Shield,
   Smartphone,
-  CheckCircle,
   Star,
-  ThumbsUp,
   ThumbsDown,
+  ThumbsUp,
+  User,
+  Video,
 } from "lucide-react";
+import { useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  FormSection,
   FormGrid,
+  FormSection,
   InputField,
   SelectField,
   TextareaField,
 } from "@/components/forms/FormField";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
-import { helpTicketSchema, type HelpTicketData } from "@/lib/validation/schemas";
 import { cn } from "@/lib/utils";
+import {
+  type HelpTicketData,
+  helpTicketSchema,
+} from "@/lib/validation/schemas";
 
 // FAQ Categories and data
 const faqCategories = [
@@ -64,7 +70,8 @@ const faqData = [
     id: "1",
     category: "account",
     question: "Hoe kan ik mijn profiel aanpassen?",
-    answer: "Ga naar Instellingen > Account om je persoonlijke gegevens, profielfoto en specialisaties aan te passen. Zorg ervoor dat je profiel volledig en up-to-date is voor betere opdracht matches.",
+    answer:
+      "Ga naar Instellingen > Account om je persoonlijke gegevens, profielfoto en specialisaties aan te passen. Zorg ervoor dat je profiel volledig en up-to-date is voor betere opdracht matches.",
     helpful: 24,
     notHelpful: 2,
   },
@@ -72,7 +79,8 @@ const faqData = [
     id: "2",
     category: "account",
     question: "Waarom wordt mijn account niet geverifieerd?",
-    answer: "Account verificatie kan 1-3 werkdagen duren. Zorg ervoor dat je alle vereiste documenten hebt geüpload: geldig ID, KvK uittreksel en WPBR certificaat. Bij vragen neem contact op met support.",
+    answer:
+      "Account verificatie kan 1-3 werkdagen duren. Zorg ervoor dat je alle vereiste documenten hebt geüpload: geldig ID, KvK uittreksel en WPBR certificaat. Bij vragen neem contact op met support.",
     helpful: 18,
     notHelpful: 1,
   },
@@ -80,7 +88,8 @@ const faqData = [
     id: "3",
     category: "jobs",
     question: "Hoe solliciteer ik op een opdracht?",
-    answer: "Open de opdracht details en klik op 'Solliciteren'. Je kunt kiezen voor snelle sollicitatie of uitgebreide sollicitatie met motivatie. Bij urgente opdrachten kun je direct geaccepteerd worden.",
+    answer:
+      "Open de opdracht details en klik op 'Solliciteren'. Je kunt kiezen voor snelle sollicitatie of uitgebreide sollicitatie met motivatie. Bij urgente opdrachten kun je direct geaccepteerd worden.",
     helpful: 42,
     notHelpful: 0,
   },
@@ -88,7 +97,8 @@ const faqData = [
     id: "4",
     category: "jobs",
     question: "Kan ik een sollicitatie intrekken?",
-    answer: "Ja, zolang je sollicitatie nog niet geaccepteerd is kun je deze intrekken via je sollicitaties overzicht. Let op: te vaak intrekken kan je reputatie beïnvloeden.",
+    answer:
+      "Ja, zolang je sollicitatie nog niet geaccepteerd is kun je deze intrekken via je sollicitaties overzicht. Let op: te vaak intrekken kan je reputatie beïnvloeden.",
     helpful: 15,
     notHelpful: 3,
   },
@@ -96,7 +106,8 @@ const faqData = [
     id: "5",
     category: "gps",
     question: "Waarom werkt GPS niet op mijn telefoon?",
-    answer: "Controleer of je locatieservices hebt ingeschakeld voor SecuryFlex. Ga naar je telefoon instellingen > Privacy > Locatieservices en zorg dat SecuryFlex 'Altijd' toegang heeft.",
+    answer:
+      "Controleer of je locatieservices hebt ingeschakeld voor SecuryFlex. Ga naar je telefoon instellingen > Privacy > Locatieservices en zorg dat SecuryFlex 'Altijd' toegang heeft.",
     helpful: 31,
     notHelpful: 4,
   },
@@ -104,7 +115,8 @@ const faqData = [
     id: "6",
     category: "gps",
     question: "Hoe nauwkeurig moet mijn GPS zijn?",
-    answer: "Voor clock-in/out is een nauwkeurigheid van maximaal 100 meter vereist. Bij slechte GPS ontvangst probeer buiten te gaan staan of wacht even tot het signaal verbetert.",
+    answer:
+      "Voor clock-in/out is een nauwkeurigheid van maximaal 100 meter vereist. Bij slechte GPS ontvangst probeer buiten te gaan staan of wacht even tot het signaal verbetert.",
     helpful: 28,
     notHelpful: 2,
   },
@@ -112,7 +124,8 @@ const faqData = [
     id: "7",
     category: "payments",
     question: "Wanneer krijg ik mijn betaling?",
-    answer: "Standaard betalingen worden binnen 7 dagen verwerkt na goedkeuring van je werkuren. Met Finqle Direct Payment ontvang je betaling binnen 24 uur (kleine toeslag van toepassing).",
+    answer:
+      "Standaard betalingen worden binnen 7 dagen verwerkt na goedkeuring van je werkuren. Met Finqle Direct Payment ontvang je betaling binnen 24 uur (kleine toeslag van toepassing).",
     helpful: 56,
     notHelpful: 1,
   },
@@ -120,7 +133,8 @@ const faqData = [
     id: "8",
     category: "payments",
     question: "Hoe werkt Finqle Direct Payment?",
-    answer: "Finqle Direct Payment is onze snelle betalingsservice. Voor €2,99 per opdracht ontvang je je salaris binnen 24 uur na goedkeuring werkuren. Perfect voor urgente betalingen.",
+    answer:
+      "Finqle Direct Payment is onze snelle betalingsservice. Voor €2,99 per opdracht ontvang je je salaris binnen 24 uur na goedkeuring werkuren. Perfect voor urgente betalingen.",
     helpful: 22,
     notHelpful: 5,
   },
@@ -128,7 +142,8 @@ const faqData = [
     id: "9",
     category: "app",
     question: "De app crasht steeds, wat nu?",
-    answer: "Probeer eerst de app opnieuw op te starten. Werkt dit niet? Update naar de laatste versie via de App Store. Blijft het probleem? Neem contact op met support met je telefoonmodel en iOS/Android versie.",
+    answer:
+      "Probeer eerst de app opnieuw op te starten. Werkt dit niet? Update naar de laatste versie via de App Store. Blijft het probleem? Neem contact op met support met je telefoonmodel en iOS/Android versie.",
     helpful: 19,
     notHelpful: 2,
   },
@@ -136,7 +151,8 @@ const faqData = [
     id: "10",
     category: "security",
     question: "Is mijn persoonlijke informatie veilig?",
-    answer: "Ja, we nemen privacy en veiligheid zeer serieus. Al je gegevens worden versleuteld opgeslagen en we volgen GDPR richtlijnen. Je kunt je privacy instellingen aanpassen in Instellingen > Privacy.",
+    answer:
+      "Ja, we nemen privacy en veiligheid zeer serieus. Al je gegevens worden versleuteld opgeslagen en we volgen GDPR richtlijnen. Je kunt je privacy instellingen aanpassen in Instellingen > Privacy.",
     helpful: 33,
     notHelpful: 0,
   },
@@ -225,34 +241,38 @@ export default function HelpPage() {
 
   // Filter FAQs based on search and category
   const filteredFaqs = faqData.filter((faq) => {
-    const matchesSearch = faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || faq.category === selectedCategory;
+    const matchesSearch =
+      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" || faq.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   const toggleFaqItem = (id: string) => {
-    setOpenFaqItems(prev =>
-      prev.includes(id)
-        ? prev.filter(item => item !== id)
-        : [...prev, id]
+    setOpenFaqItems((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
-  const handleFeedback = (faqId: string, helpful: boolean) => {
-    toast.success(helpful ? "Bedankt voor je feedback!" : "We zullen dit verbeteren");
+  const handleFeedback = (_faqId: string, helpful: boolean) => {
+    toast.success(
+      helpful ? "Bedankt voor je feedback!" : "We zullen dit verbeteren",
+    );
   };
 
   const onSubmitTicket = async (data: HelpTicketData) => {
     setIsSubmitting(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       console.log("Support ticket:", data);
-      toast.success("Support ticket aangemaakt! We nemen binnen 4 uur contact op.");
+      toast.success(
+        "Support ticket aangemaakt! We nemen binnen 4 uur contact op.",
+      );
       reset();
-    } catch (error) {
+    } catch (_error) {
       toast.error("Fout bij aanmaken ticket. Probeer opnieuw.");
     } finally {
       setIsSubmitting(false);
@@ -313,7 +333,11 @@ export default function HelpPage() {
                     return (
                       <Button
                         key={category.id}
-                        variant={selectedCategory === category.id ? "default" : "outline"}
+                        variant={
+                          selectedCategory === category.id
+                            ? "default"
+                            : "outline"
+                        }
                         size="sm"
                         onClick={() => setSelectedCategory(category.id)}
                         className="flex items-center gap-2"
@@ -332,29 +356,41 @@ export default function HelpPage() {
               {filteredFaqs.length === 0 ? (
                 <Card className="p-8 text-center">
                   <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Geen resultaten gevonden</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    Geen resultaten gevonden
+                  </h3>
                   <p className="text-muted-foreground mb-4">
                     Probeer een andere zoekterm of categorie.
                   </p>
-                  <Button variant="outline" onClick={() => setActiveTab("contact")}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab("contact")}
+                  >
                     Neem contact op
                   </Button>
                 </Card>
               ) : (
                 filteredFaqs.map((faq) => {
                   const isOpen = openFaqItems.includes(faq.id);
-                  const categoryData = faqCategories.find(c => c.id === faq.category);
+                  const categoryData = faqCategories.find(
+                    (c) => c.id === faq.category,
+                  );
                   const CategoryIcon = categoryData?.icon || HelpCircle;
 
                   return (
                     <Card key={faq.id} className="overflow-hidden">
-                      <Collapsible open={isOpen} onOpenChange={() => toggleFaqItem(faq.id)}>
+                      <Collapsible
+                        open={isOpen}
+                        onOpenChange={() => toggleFaqItem(faq.id)}
+                      >
                         <CollapsibleTrigger asChild>
                           <div className="p-4 cursor-pointer hover:bg-muted/50 transition-colors">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3 flex-1">
                                 <CategoryIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                <h3 className="font-medium text-left">{faq.question}</h3>
+                                <h3 className="font-medium text-left">
+                                  {faq.question}
+                                </h3>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Badge variant="secondary" className="text-xs">
@@ -394,7 +430,9 @@ export default function HelpPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleFeedback(faq.id, false)}
+                                    onClick={() =>
+                                      handleFeedback(faq.id, false)
+                                    }
                                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                   >
                                     <ThumbsDown className="h-3 w-3 mr-1" />
@@ -419,28 +457,39 @@ export default function HelpPage() {
               {supportOptions.map((option, index) => {
                 const Icon = option.icon;
                 return (
-                  <Card key={index} className={cn(
-                    "p-6 hover:shadow-md transition-shadow",
-                    option.urgent && "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20"
-                  )}>
+                  <Card
+                    key={index}
+                    className={cn(
+                      "p-6 hover:shadow-md transition-shadow",
+                      option.urgent &&
+                        "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20",
+                    )}
+                  >
                     <div className="flex items-start gap-4">
-                      <div className={cn(
-                        "p-3 rounded-full",
-                        option.urgent
-                          ? "bg-red-100 dark:bg-red-900/40"
-                          : "bg-primary/10"
-                      )}>
-                        <Icon className={cn(
-                          "h-6 w-6",
-                          option.urgent ? "text-red-600" : "text-primary"
-                        )} />
+                      <div
+                        className={cn(
+                          "p-3 rounded-full",
+                          option.urgent
+                            ? "bg-red-100 dark:bg-red-900/40"
+                            : "bg-primary/10",
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            "h-6 w-6",
+                            option.urgent ? "text-red-600" : "text-primary",
+                          )}
+                        />
                       </div>
 
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="font-semibold">{option.title}</h3>
                           {option.available && (
-                            <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-xs">
+                            <Badge
+                              variant="default"
+                              className="bg-green-500 hover:bg-green-600 text-xs"
+                            >
                               <div className="w-2 h-2 bg-white rounded-full mr-1 animate-pulse" />
                               Online
                             </Badge>
@@ -479,7 +528,8 @@ export default function HelpPage() {
                     Noodsituatie tijdens je shift?
                   </h3>
                   <p className="text-sm text-orange-700 dark:text-orange-300 mb-3">
-                    Bij acute noodsituaties bel altijd eerst 112. Meld vervolgens het incident via onze noodlijn.
+                    Bij acute noodsituaties bel altijd eerst 112. Meld
+                    vervolgens het incident via onze noodlijn.
                   </p>
                   <div className="flex gap-2">
                     <Button size="sm" variant="destructive">
@@ -500,14 +550,20 @@ export default function HelpPage() {
           <TabsContent value="ticket" className="space-y-6">
             <Card className="p-6">
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Support Ticket Aanmaken</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Support Ticket Aanmaken
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Beschrijf je probleem zo gedetailleerd mogelijk. We nemen binnen 4 uur contact op.
+                  Beschrijf je probleem zo gedetailleerd mogelijk. We nemen
+                  binnen 4 uur contact op.
                 </p>
               </div>
 
               <FormProvider {...methods}>
-                <form onSubmit={handleSubmit(onSubmitTicket)} className="space-y-6">
+                <form
+                  onSubmit={handleSubmit(onSubmitTicket)}
+                  className="space-y-6"
+                >
                   <FormSection title="Ticket Details">
                     <FormGrid columns={2}>
                       <SelectField
@@ -528,7 +584,10 @@ export default function HelpPage() {
                         required
                         options={[
                           { value: "LAAG", label: "Laag - Algemene vraag" },
-                          { value: "NORMAAL", label: "Normaal - Standaard probleem" },
+                          {
+                            value: "NORMAAL",
+                            label: "Normaal - Standaard probleem",
+                          },
                           { value: "HOOG", label: "Hoog - Urgent probleem" },
                           { value: "URGENT", label: "Urgent - Blokkeert werk" },
                         ]}
@@ -589,7 +648,10 @@ export default function HelpPage() {
               {helpResources.map((resource, index) => {
                 const Icon = resource.icon;
                 return (
-                  <Card key={index} className="p-6 hover:shadow-md transition-shadow cursor-pointer">
+                  <Card
+                    key={index}
+                    className="p-6 hover:shadow-md transition-shadow cursor-pointer"
+                  >
                     <div className="text-center space-y-4">
                       <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                         <Icon className="h-8 w-8 text-primary" />

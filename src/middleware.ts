@@ -1,9 +1,9 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { withAuth } from "next-auth/middleware";
 
 // Admin email whitelist
-const ADMIN_EMAILS = ['stef@securyflex.com', 'robert@securyflex.com'];
+const ADMIN_EMAILS = ["stef@securyflex.com", "robert@securyflex.com"];
 
 // Public routes that don't require authentication
 const publicRoutes = [
@@ -18,14 +18,11 @@ const publicRoutes = [
   "/about",
   "/contact",
   "/api/auth",
-  "/api/register"
+  "/api/register",
 ];
 
 // Admin-only routes
-const adminRoutes = [
-  "/admin",
-  "/api/admin"
-];
+const adminRoutes = ["/admin", "/api/admin"];
 
 export default withAuth(
   function middleware(request: NextRequest) {
@@ -33,7 +30,9 @@ export default withAuth(
     const token = (request as any).nextauth?.token;
 
     // Check if this is an admin route
-    const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
+    const isAdminRoute = adminRoutes.some((route) =>
+      pathname.startsWith(route),
+    );
 
     if (isAdminRoute) {
       // Check if user is authenticated
@@ -46,13 +45,15 @@ export default withAuth(
       const userEmail = token.email?.toLowerCase();
       if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
         // Log unauthorized admin access attempt
-        console.warn(`Unauthorized admin access attempt: ${userEmail} tried to access ${pathname}`);
+        console.warn(
+          `Unauthorized admin access attempt: ${userEmail} tried to access ${pathname}`,
+        );
 
         // Return 403 for API routes, redirect for pages
         if (pathname.startsWith("/api/admin")) {
           return NextResponse.json(
             { success: false, error: "Admin access required" },
-            { status: 403 }
+            { status: 403 },
           );
         } else {
           return NextResponse.redirect(new URL("/admin/login", request.url));
@@ -69,15 +70,15 @@ export default withAuth(
         const pathname = req.nextUrl.pathname;
 
         // Allow public routes
-        if (publicRoutes.some(route => pathname.startsWith(route))) {
+        if (publicRoutes.some((route) => pathname.startsWith(route))) {
           return true;
         }
 
         // Require authentication for all other routes
         return !!token;
-      }
-    }
-  }
+      },
+    },
+  },
 );
 
 export const config = {
@@ -90,6 +91,6 @@ export const config = {
      * - public folder
      * - public files with extensions
      */
-    "/((?!_next/static|_next/image|favicon.ico|public|.*\\..*$).*)"
-  ]
+    "/((?!_next/static|_next/image|favicon.ico|public|.*\\..*$).*)",
+  ],
 };

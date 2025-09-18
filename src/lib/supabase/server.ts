@@ -10,6 +10,6 @@ export function createSupabaseServerClient() {
         autoRefreshToken: false,
         persistSession: false,
       },
-    }
+    },
   );
 }

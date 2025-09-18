@@ -1,36 +1,32 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  MessageCircle,
-  Send,
-  Search,
-  Plus,
-  Users,
-  User,
   Briefcase,
-  Shield,
-  Paperclip,
-  MapPin,
-  MoreVertical,
   Check,
-  CheckCheck,
-  Clock,
   Edit2,
+  MessageCircle,
+  MoreVertical,
+  Paperclip,
+  Plus,
+  Search,
+  Send,
+  Shield,
   Trash2,
-  X
+  User,
+  Users,
+  X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { createSupabaseClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface Conversation {
   id: string;
@@ -92,7 +88,8 @@ interface MessagingCenterProps {
 
 export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [selectedConversation, setSelectedConversation] =
+    useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,7 +108,11 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
       // Cleanup subscriptions
       supabase.removeAllChannels();
     };
-  }, []);
+  }, [
+    fetchConversations,
+    setupRealtimeSubscriptions, // Cleanup subscriptions
+    supabase.removeAllChannels,
+  ]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -119,14 +120,19 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
       markAsRead(selectedConversation.id);
       subscribeToConversation(selectedConversation.id);
     }
-  }, [selectedConversation]);
+  }, [
+    selectedConversation,
+    fetchMessages,
+    markAsRead,
+    subscribeToConversation,
+  ]);
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, []);
 
   const fetchConversations = async () => {
     try {
@@ -161,10 +167,10 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
 
   const markAsRead = async (conversationId: string) => {
     // Mark conversation as read locally
-    setConversations(prev =>
-      prev.map(conv =>
-        conv.id === conversationId ? { ...conv, unreadCount: 0 } : conv
-      )
+    setConversations((prev) =>
+      prev.map((conv) =>
+        conv.id === conversationId ? { ...conv, unreadCount: 0 } : conv,
+      ),
     );
   };
 
@@ -173,41 +179,44 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
     supabase
       .channel(`user:${userId}:conversations`)
       .on("broadcast", { event: "new_conversation" }, ({ payload }) => {
-        setConversations(prev => [payload, ...prev]);
+        setConversations((prev) => [payload, ...prev]);
       })
       .subscribe();
   };
 
-  const subscribeToConversation = (conversationId: string) => {
-    // Subscribe to conversation updates
-    supabase
-      .channel(`conversation:${conversationId}`)
-      .on("broadcast", { event: "new_message" }, ({ payload }) => {
-        if (payload.conversationId === selectedConversation?.id) {
-          setMessages(prev => [...prev, payload]);
-        } else {
-          // Update unread count for other conversations
-          setConversations(prev =>
-            prev.map(conv =>
-              conv.id === payload.conversationId
-                ? { ...conv, unreadCount: conv.unreadCount + 1 }
-                : conv
-            )
+  const subscribeToConversation = useCallback(
+    (conversationId: string) => {
+      // Subscribe to conversation updates
+      supabase
+        .channel(`conversation:${conversationId}`)
+        .on("broadcast", { event: "new_message" }, ({ payload }) => {
+          if (payload.conversationId === selectedConversation?.id) {
+            setMessages((prev) => [...prev, payload]);
+          } else {
+            // Update unread count for other conversations
+            setConversations((prev) =>
+              prev.map((conv) =>
+                conv.id === payload.conversationId
+                  ? { ...conv, unreadCount: conv.unreadCount + 1 }
+                  : conv,
+              ),
+            );
+          }
+        })
+        .on("broadcast", { event: "message_edited" }, ({ payload }) => {
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === payload.id ? payload : msg)),
           );
-        }
-      })
-      .on("broadcast", { event: "message_edited" }, ({ payload }) => {
-        setMessages(prev =>
-          prev.map(msg => (msg.id === payload.id ? payload : msg))
-        );
-      })
-      .on("broadcast", { event: "message_deleted" }, ({ payload }) => {
-        setMessages(prev =>
-          prev.map(msg => (msg.id === payload.id ? payload : msg))
-        );
-      })
-      .subscribe();
-  };
+        })
+        .on("broadcast", { event: "message_deleted" }, ({ payload }) => {
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === payload.id ? payload : msg)),
+          );
+        })
+        .subscribe();
+    },
+    [selectedConversation?.id, supabase],
+  );
 
   const sendMessage = async () => {
     if (!messageInput.trim() || !selectedConversation) return;
@@ -220,8 +229,8 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: messageInput.trim(),
-          type: "TEXT"
-        })
+          type: "TEXT",
+        }),
       });
 
       const data = await response.json();
@@ -250,8 +259,8 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
         body: JSON.stringify({
           messageId,
           action: "edit",
-          content: editContent
-        })
+          content: editContent,
+        }),
       });
 
       const data = await response.json();
@@ -277,8 +286,8 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messageId,
-          action: "delete"
-        })
+          action: "delete",
+        }),
       });
 
       const data = await response.json();
@@ -294,12 +303,13 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
 
   const getConversationTitle = (conversation: Conversation) => {
     if (conversation.title) return conversation.title;
-    if (conversation.opdracht) return `Opdracht: ${conversation.opdracht.titel}`;
+    if (conversation.opdracht)
+      return `Opdracht: ${conversation.opdracht.titel}`;
 
     const otherParticipants = conversation.participants.filter(
-      p => p.user.id !== userId
+      (p) => p.user.id !== userId,
     );
-    return otherParticipants.map(p => p.user.name).join(", ");
+    return otherParticipants.map((p) => p.user.name).join(", ");
   };
 
   const getRoleIcon = (role: string) => {
@@ -315,8 +325,10 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
     }
   };
 
-  const filteredConversations = conversations.filter(conv =>
-    getConversationTitle(conv).toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredConversations = conversations.filter((conv) =>
+    getConversationTitle(conv)
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -344,7 +356,7 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
         <ScrollArea className="h-[calc(100%-120px)]">
           {loading ? (
             <div className="p-4 space-y-3">
-              {[1, 2, 3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
@@ -355,19 +367,23 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
             </div>
           ) : (
             <div className="divide-y">
-              {filteredConversations.map(conversation => (
+              {filteredConversations.map((conversation) => (
                 <button
                   key={conversation.id}
                   onClick={() => setSelectedConversation(conversation)}
                   className={cn(
                     "w-full p-4 hover:bg-muted/50 transition-colors text-left",
-                    selectedConversation?.id === conversation.id && "bg-muted"
+                    selectedConversation?.id === conversation.id && "bg-muted",
                   )}
                 >
                   <div className="flex items-start gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage
-                        src={conversation.participants.find(p => p.user.id !== userId)?.user.image}
+                        src={
+                          conversation.participants.find(
+                            (p) => p.user.id !== userId,
+                          )?.user.image
+                        }
                       />
                       <AvatarFallback>
                         {conversation.type === "GROUP" ? (
@@ -392,7 +408,8 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
 
                       {conversation.lastMessage && (
                         <p className="text-sm text-muted-foreground truncate">
-                          {conversation.lastMessage.sender.name}: {conversation.lastMessage.content}
+                          {conversation.lastMessage.sender.name}:{" "}
+                          {conversation.lastMessage.content}
                         </p>
                       )}
 
@@ -404,9 +421,11 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
                         )}
                         {conversation.lastMessageAt && (
                           <span className="text-xs text-muted-foreground">
-                            {new Date(conversation.lastMessageAt).toLocaleString("nl-NL", {
+                            {new Date(
+                              conversation.lastMessageAt,
+                            ).toLocaleString("nl-NL", {
                               hour: "2-digit",
-                              minute: "2-digit"
+                              minute: "2-digit",
                             })}
                           </span>
                         )}
@@ -429,19 +448,26 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
                   <AvatarImage
-                    src={selectedConversation.participants.find(p => p.user.id !== userId)?.user.image}
+                    src={
+                      selectedConversation.participants.find(
+                        (p) => p.user.id !== userId,
+                      )?.user.image
+                    }
                   />
                   <AvatarFallback>
                     {getConversationTitle(selectedConversation).charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium">{getConversationTitle(selectedConversation)}</p>
-                  {selectedConversation.type === "OPDRACHT" && selectedConversation.opdracht && (
-                    <p className="text-xs text-muted-foreground">
-                      Status: {selectedConversation.opdracht.status}
-                    </p>
-                  )}
+                  <p className="font-medium">
+                    {getConversationTitle(selectedConversation)}
+                  </p>
+                  {selectedConversation.type === "OPDRACHT" &&
+                    selectedConversation.opdracht && (
+                      <p className="text-xs text-muted-foreground">
+                        Status: {selectedConversation.opdracht.status}
+                      </p>
+                    )}
                 </div>
               </div>
               <Button size="sm" variant="ghost">
@@ -461,7 +487,7 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
                         key={message.id}
                         className={cn(
                           "flex",
-                          isOwn ? "justify-end" : "justify-start"
+                          isOwn ? "justify-end" : "justify-start",
                         )}
                       >
                         <div className="italic text-muted-foreground text-sm">
@@ -476,25 +502,29 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
                       key={message.id}
                       className={cn(
                         "flex gap-2",
-                        isOwn ? "justify-end" : "justify-start"
+                        isOwn ? "justify-end" : "justify-start",
                       )}
                     >
                       {!isOwn && (
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={message.sender.image} />
-                          <AvatarFallback>{message.sender.name.charAt(0)}</AvatarFallback>
+                          <AvatarFallback>
+                            {message.sender.name.charAt(0)}
+                          </AvatarFallback>
                         </Avatar>
                       )}
 
                       <div
                         className={cn(
                           "max-w-[70%]",
-                          isOwn ? "items-end" : "items-start"
+                          isOwn ? "items-end" : "items-start",
                         )}
                       >
                         {!isOwn && (
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium">{message.sender.name}</span>
+                            <span className="text-sm font-medium">
+                              {message.sender.name}
+                            </span>
                             {getRoleIcon(message.sender.role)}
                           </div>
                         )}
@@ -504,7 +534,7 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
                             "rounded-lg px-3 py-2",
                             isOwn
                               ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                              : "bg-muted",
                           )}
                         >
                           {editingMessage === message.id ? (
@@ -536,7 +566,9 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
                             <>
                               <p className="text-sm">{message.content}</p>
                               {message.isEdited && (
-                                <p className="text-xs opacity-70 mt-1">bewerkt</p>
+                                <p className="text-xs opacity-70 mt-1">
+                                  bewerkt
+                                </p>
                               )}
                             </>
                           )}
@@ -544,10 +576,13 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
 
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs text-muted-foreground">
-                            {new Date(message.createdAt).toLocaleTimeString("nl-NL", {
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
+                            {new Date(message.createdAt).toLocaleTimeString(
+                              "nl-NL",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
                           </span>
                           {isOwn && (
                             <div className="flex items-center gap-1">
@@ -598,7 +633,10 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
                   }}
                   disabled={sendingMessage}
                 />
-                <Button onClick={sendMessage} disabled={sendingMessage || !messageInput.trim()}>
+                <Button
+                  onClick={sendMessage}
+                  disabled={sendingMessage || !messageInput.trim()}
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>

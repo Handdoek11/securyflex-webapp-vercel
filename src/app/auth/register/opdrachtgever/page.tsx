@@ -1,19 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Factory,
+  Loader2,
+} from "lucide-react";
 import Image from "next/image";
-import { Eye, EyeOff, Loader2, AlertCircle, ArrowLeft, Factory, CheckCircle } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { opdrachtgeverRegistrationSchema, type OpdrachtgeverRegistrationFormData } from "@/lib/validations/auth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  type OpdrachtgeverRegistrationFormData,
+  opdrachtgeverRegistrationSchema,
+} from "@/lib/validations/auth";
 
 export default function OpdrachtgeverRegistrationPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -58,14 +75,24 @@ export default function OpdrachtgeverRegistrationPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Er is iets misgegaan tijdens de registratie");
+        // Handle specific error cases
+        if (result.details && Array.isArray(result.details)) {
+          // Validation errors - show first validation error
+          const firstError = result.details[0];
+          setError(firstError?.message || result.error || "Ongeldige invoer");
+        } else {
+          // General error
+          setError(result.error || "Er is iets misgegaan tijdens de registratie");
+        }
+        return;
       }
 
       // Successful registration - redirect to login with success message
       router.push("/auth/login?message=account-created");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Registration error:", error);
-      setError(error.message);
+      // Network or other error
+      setError("Kan geen verbinding maken met de server. Probeer het opnieuw.");
     } finally {
       setIsSubmitting(false);
     }
@@ -104,8 +131,12 @@ export default function OpdrachtgeverRegistrationPage() {
               <Factory className="h-6 w-6 text-primary" />
             </div>
             <div className="text-left">
-              <h1 className="text-2xl font-bold text-foreground">Opdrachtgever</h1>
-              <p className="text-sm text-muted-foreground">Maak je account aan</p>
+              <h1 className="text-2xl font-bold text-foreground">
+                Opdrachtgever
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Maak je account aan
+              </p>
             </div>
           </div>
         </div>
@@ -150,7 +181,9 @@ export default function OpdrachtgeverRegistrationPage() {
               <Label htmlFor="type">Ik ben een *</Label>
               <Select
                 value={watchType}
-                onValueChange={(value: "BEDRIJF" | "PARTICULIER") => setValue("type", value)}
+                onValueChange={(value: "BEDRIJF" | "PARTICULIER") =>
+                  setValue("type", value)
+                }
               >
                 <SelectTrigger className={errors.type ? "border-red-500" : ""}>
                   <SelectValue placeholder="Selecteer je type" />
@@ -169,7 +202,9 @@ export default function OpdrachtgeverRegistrationPage() {
           {/* Business/Personal Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">
-              {watchType === "BEDRIJF" ? "Bedrijfsgegevens" : "Persoonlijke gegevens"}
+              {watchType === "BEDRIJF"
+                ? "Bedrijfsgegevens"
+                : "Persoonlijke gegevens"}
             </h3>
 
             {watchType === "BEDRIJF" && (
@@ -182,7 +217,9 @@ export default function OpdrachtgeverRegistrationPage() {
                   className={errors.bedrijfsnaam ? "border-red-500" : ""}
                 />
                 {errors.bedrijfsnaam && (
-                  <p className="text-sm text-red-600">{errors.bedrijfsnaam.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.bedrijfsnaam.message}
+                  </p>
                 )}
               </div>
             )}
@@ -191,7 +228,9 @@ export default function OpdrachtgeverRegistrationPage() {
               {/* Contact Person / Full Name */}
               <div className="space-y-2">
                 <Label htmlFor="name">
-                  {watchType === "BEDRIJF" ? "Contactpersoon *" : "Volledige naam *"}
+                  {watchType === "BEDRIJF"
+                    ? "Contactpersoon *"
+                    : "Volledige naam *"}
                 </Label>
                 <Input
                   id="name"
@@ -222,13 +261,17 @@ export default function OpdrachtgeverRegistrationPage() {
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">
-                {watchType === "BEDRIJF" ? "Bedrijfs email adres *" : "Email adres *"}
+                {watchType === "BEDRIJF"
+                  ? "Bedrijfs email adres *"
+                  : "Email adres *"}
               </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder={
-                  watchType === "BEDRIJF" ? "info@jouwbedrijf.nl" : "jouw@email.nl"
+                  watchType === "BEDRIJF"
+                    ? "info@jouwbedrijf.nl"
+                    : "jouw@email.nl"
                 }
                 {...register("email")}
                 className={errors.email ? "border-red-500" : ""}
@@ -260,11 +303,17 @@ export default function OpdrachtgeverRegistrationPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
@@ -284,17 +333,24 @@ export default function OpdrachtgeverRegistrationPage() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.confirmPassword.message}
+                  </p>
                 )}
               </div>
             </div>
 
             <div className="text-xs text-muted-foreground">
-              Wachtwoord moet bevatten: minimaal 8 karakters, 1 hoofdletter, 1 kleine letter en 1 cijfer
+              Wachtwoord moet bevatten: minimaal 8 karakters, 1 hoofdletter, 1
+              kleine letter en 1 cijfer
             </div>
           </div>
 
@@ -304,19 +360,29 @@ export default function OpdrachtgeverRegistrationPage() {
               <Checkbox
                 id="agreeToTerms"
                 checked={watchAgreeToTerms}
-                onCheckedChange={(checked) => setValue("agreeToTerms", checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setValue("agreeToTerms", checked as boolean)
+                }
                 className={errors.agreeToTerms ? "border-red-500" : ""}
               />
               <div className="space-y-1">
-                <label htmlFor="agreeToTerms" className="text-sm font-medium cursor-pointer">
+                <label
+                  htmlFor="agreeToTerms"
+                  className="text-sm font-medium cursor-pointer"
+                >
                   Ik ga akkoord met de{" "}
-                  <Link href="/voorwaarden" className="text-primary hover:underline">
+                  <Link
+                    href="/voorwaarden"
+                    className="text-primary hover:underline"
+                  >
                     Algemene Voorwaarden
                   </Link>{" "}
                   *
                 </label>
                 {errors.agreeToTerms && (
-                  <p className="text-sm text-red-600">{errors.agreeToTerms.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.agreeToTerms.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -325,19 +391,29 @@ export default function OpdrachtgeverRegistrationPage() {
               <Checkbox
                 id="agreeToPrivacy"
                 checked={watchAgreeToPrivacy}
-                onCheckedChange={(checked) => setValue("agreeToPrivacy", checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setValue("agreeToPrivacy", checked as boolean)
+                }
                 className={errors.agreeToPrivacy ? "border-red-500" : ""}
               />
               <div className="space-y-1">
-                <label htmlFor="agreeToPrivacy" className="text-sm font-medium cursor-pointer">
+                <label
+                  htmlFor="agreeToPrivacy"
+                  className="text-sm font-medium cursor-pointer"
+                >
                   Ik ga akkoord met het{" "}
-                  <Link href="/privacy" className="text-primary hover:underline">
+                  <Link
+                    href="/privacy"
+                    className="text-primary hover:underline"
+                  >
                     Privacybeleid
                   </Link>{" "}
                   *
                 </label>
                 {errors.agreeToPrivacy && (
-                  <p className="text-sm text-red-600">{errors.agreeToPrivacy.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.agreeToPrivacy.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -367,7 +443,10 @@ export default function OpdrachtgeverRegistrationPage() {
         <div className="mt-8 pt-8 border-t text-center">
           <p className="text-sm text-muted-foreground">
             Heb je al een account?{" "}
-            <Link href="/auth/login" className="font-medium text-primary hover:underline">
+            <Link
+              href="/auth/login"
+              className="font-medium text-primary hover:underline"
+            >
               Log hier in
             </Link>
           </p>
@@ -375,10 +454,17 @@ export default function OpdrachtgeverRegistrationPage() {
 
         {/* What happens next */}
         <div className="mt-6 bg-blue-50 rounded-lg p-4">
-          <h4 className="font-medium text-sm mb-2">📋 Wat gebeurt er hierna?</h4>
+          <h4 className="font-medium text-sm mb-2">
+            📋 Wat gebeurt er hierna?
+          </h4>
           <ol className="text-sm text-muted-foreground space-y-1">
             <li>1. Bevestig je email adres</li>
-            <li>2. {watchType === "BEDRIJF" ? "Voeg KvK nummer toe (optioneel)" : "Vul je profiel aan"}</li>
+            <li>
+              2.{" "}
+              {watchType === "BEDRIJF"
+                ? "Voeg KvK nummer toe (optioneel)"
+                : "Vul je profiel aan"}
+            </li>
             <li>3. Beschrijf je beveiligingswensen</li>
             <li>4. Stel je voorkeuren en budget in</li>
             <li>5. Plaats direct je eerste beveiligingsopdracht!</li>

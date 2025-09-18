@@ -1,47 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
-  Calendar,
-  Clock,
-  MapPin,
-  Users,
-  Euro,
-  Shield,
-  Plus,
-  Trash2,
-  AlertCircle,
-  CheckCircle,
-  FileText,
-  Save,
-  Send,
   Building2,
-  UserPlus,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Filter,
+  MapPin,
+  Plus,
+  Save,
   Search,
-  Filter
+  Send,
+  Shield,
+  UserPlus,
+  Users,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
 
 interface TeamOpdracht {
@@ -82,10 +66,34 @@ export default function BedrijfTeamOpdrachtenPage() {
 
   // Mock team members
   const teamMembers = [
-    { id: "1", name: "Jan de Vries", available: true, rating: 4.8, skills: ["Evenement", "Objectbeveiliging"] },
-    { id: "2", name: "Piet Bakker", available: true, rating: 4.6, skills: ["Horeca", "Crowd Control"] },
-    { id: "3", name: "Klaas Jansen", available: false, rating: 4.9, skills: ["VIP", "Persoonsbeveiliging"] },
-    { id: "4", name: "Emma Smit", available: true, rating: 4.7, skills: ["Receptie", "Objectbeveiliging"] }
+    {
+      id: "1",
+      name: "Jan de Vries",
+      available: true,
+      rating: 4.8,
+      skills: ["Evenement", "Objectbeveiliging"],
+    },
+    {
+      id: "2",
+      name: "Piet Bakker",
+      available: true,
+      rating: 4.6,
+      skills: ["Horeca", "Crowd Control"],
+    },
+    {
+      id: "3",
+      name: "Klaas Jansen",
+      available: false,
+      rating: 4.9,
+      skills: ["VIP", "Persoonsbeveiliging"],
+    },
+    {
+      id: "4",
+      name: "Emma Smit",
+      available: true,
+      rating: 4.7,
+      skills: ["Receptie", "Objectbeveiliging"],
+    },
   ];
 
   // Mock team opdrachten
@@ -102,7 +110,7 @@ export default function BedrijfTeamOpdrachtenPage() {
       openSpots: 1,
       status: "open",
       uurtarief: 32,
-      totalValue: 1024
+      totalValue: 1024,
     },
     {
       id: "2",
@@ -116,8 +124,8 @@ export default function BedrijfTeamOpdrachtenPage() {
       openSpots: 0,
       status: "assigned",
       uurtarief: 35,
-      totalValue: 2240
-    }
+      totalValue: 2240,
+    },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,20 +147,23 @@ export default function BedrijfTeamOpdrachtenPage() {
         locatie,
         startDatum: `${startDatum}T${startTijd}`,
         eindDatum: `${eindDatum}T${eindTijd}`,
-        aantalBeveiligers: parseInt(aantalBeveiligers),
+        aantalBeveiligers: parseInt(aantalBeveiligers, 10),
         uurtarief: parseFloat(uurtarief),
-        vereisten: vereisten.split(",").map(v => v.trim()).filter(v => v),
+        vereisten: vereisten
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v),
         creatorType: "BEDRIJF",
         targetAudience: openVoorZZP ? "BEIDEN" : "EIGEN_TEAM",
         directZZPAllowed: openVoorZZP,
         autoAccept: autoAssign,
-        assignedTeamMembers: selectedTeamMembers
+        assignedTeamMembers: selectedTeamMembers,
       };
 
       console.log("Creating team opdracht:", opdrachtData);
 
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast.success("Team opdracht aangemaakt!");
       router.push("/dashboard/bedrijf/planning");
@@ -165,10 +176,10 @@ export default function BedrijfTeamOpdrachtenPage() {
   };
 
   const toggleTeamMember = (memberId: string) => {
-    setSelectedTeamMembers(prev =>
+    setSelectedTeamMembers((prev) =>
       prev.includes(memberId)
-        ? prev.filter(id => id !== memberId)
-        : [...prev, memberId]
+        ? prev.filter((id) => id !== memberId)
+        : [...prev, memberId],
     );
   };
 
@@ -185,7 +196,11 @@ export default function BedrijfTeamOpdrachtenPage() {
         </div>
       }
     >
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="nieuwe">
             <Plus className="h-4 w-4 mr-2" />
@@ -193,7 +208,8 @@ export default function BedrijfTeamOpdrachtenPage() {
           </TabsTrigger>
           <TabsTrigger value="actief">
             <Clock className="h-4 w-4 mr-2" />
-            Actieve Opdrachten ({teamOpdrachten.filter(o => o.status !== "completed").length})
+            Actieve Opdrachten (
+            {teamOpdrachten.filter((o) => o.status !== "completed").length})
           </TabsTrigger>
           <TabsTrigger value="inhuur">
             <UserPlus className="h-4 w-4 mr-2" />
@@ -307,7 +323,9 @@ export default function BedrijfTeamOpdrachtenPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="aantalBeveiligers">Aantal Beveiligers Nodig *</Label>
+                    <Label htmlFor="aantalBeveiligers">
+                      Aantal Beveiligers Nodig *
+                    </Label>
                     <Input
                       id="aantalBeveiligers"
                       type="number"
@@ -332,19 +350,24 @@ export default function BedrijfTeamOpdrachtenPage() {
                 </div>
 
                 <div>
-                  <Label>Selecteer Team Leden ({selectedTeamMembers.length} geselecteerd)</Label>
+                  <Label>
+                    Selecteer Team Leden ({selectedTeamMembers.length}{" "}
+                    geselecteerd)
+                  </Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                    {teamMembers.map(member => (
+                    {teamMembers.map((member) => (
                       <Card
                         key={member.id}
                         className={`p-3 cursor-pointer transition-colors ${
                           selectedTeamMembers.includes(member.id)
                             ? "border-primary bg-primary/5"
                             : member.available
-                            ? "hover:bg-muted"
-                            : "opacity-50 cursor-not-allowed"
+                              ? "hover:bg-muted"
+                              : "opacity-50 cursor-not-allowed"
                         }`}
-                        onClick={() => member.available && toggleTeamMember(member.id)}
+                        onClick={() =>
+                          member.available && toggleTeamMember(member.id)
+                        }
                       >
                         <div className="flex items-center justify-between">
                           <div>
@@ -393,7 +416,8 @@ export default function BedrijfTeamOpdrachtenPage() {
                           Auto-accepteer sollicitaties
                         </Label>
                         <p className="text-sm text-muted-foreground">
-                          Accepteer automatisch de eerste {aantalBeveiligers} gekwalificeerde ZZP'ers
+                          Accepteer automatisch de eerste {aantalBeveiligers}{" "}
+                          gekwalificeerde ZZP'ers
                         </p>
                       </div>
                       <Switch
@@ -413,7 +437,9 @@ export default function BedrijfTeamOpdrachtenPage() {
                   Vereisten
                 </h3>
                 <div>
-                  <Label htmlFor="vereisten">Benodigde Certificaten/Skills</Label>
+                  <Label htmlFor="vereisten">
+                    Benodigde Certificaten/Skills
+                  </Label>
                   <Textarea
                     id="vereisten"
                     value={vereisten}
@@ -435,12 +461,18 @@ export default function BedrijfTeamOpdrachtenPage() {
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <span className="text-muted-foreground">Team leden:</span>
-                    <span className="ml-2 font-medium">{selectedTeamMembers.length} / {aantalBeveiligers}</span>
+                    <span className="ml-2 font-medium">
+                      {selectedTeamMembers.length} / {aantalBeveiligers}
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Open plekken:</span>
                     <span className="ml-2 font-medium">
-                      {Math.max(0, parseInt(aantalBeveiligers) - selectedTeamMembers.length)}
+                      {Math.max(
+                        0,
+                        parseInt(aantalBeveiligers, 10) -
+                          selectedTeamMembers.length,
+                      )}
                     </span>
                   </div>
                   <div>
@@ -448,9 +480,16 @@ export default function BedrijfTeamOpdrachtenPage() {
                     <span className="ml-2 font-medium">€{uurtarief}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Geschatte waarde:</span>
+                    <span className="text-muted-foreground">
+                      Geschatte waarde:
+                    </span>
                     <span className="ml-2 font-medium">
-                      €{(parseFloat(uurtarief) * parseInt(aantalBeveiligers) * 8).toFixed(2)}
+                      €
+                      {(
+                        parseFloat(uurtarief) *
+                        parseInt(aantalBeveiligers, 10) *
+                        8
+                      ).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -474,10 +513,7 @@ export default function BedrijfTeamOpdrachtenPage() {
                     <Save className="h-4 w-4 mr-2" />
                     Opslaan als concept
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                  >
+                  <Button type="submit" disabled={isSubmitting}>
                     <Send className="h-4 w-4 mr-2" />
                     {isSubmitting ? "Bezig..." : "Opdracht Aanmaken"}
                   </Button>
@@ -505,14 +541,25 @@ export default function BedrijfTeamOpdrachtenPage() {
             </div>
 
             <div className="space-y-3">
-              {teamOpdrachten.map(opdracht => (
-                <Card key={opdracht.id} className="p-4 hover:bg-muted/50 transition-colors cursor-pointer">
+              {teamOpdrachten.map((opdracht) => (
+                <Card
+                  key={opdracht.id}
+                  className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                >
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <h4 className="font-semibold">{opdracht.titel}</h4>
-                        <Badge variant={opdracht.status === "assigned" ? "default" : "outline"}>
-                          {opdracht.status === "assigned" ? "Volledig bezet" : "Open plekken"}
+                        <Badge
+                          variant={
+                            opdracht.status === "assigned"
+                              ? "default"
+                              : "outline"
+                          }
+                        >
+                          {opdracht.status === "assigned"
+                            ? "Volledig bezet"
+                            : "Open plekken"}
                         </Badge>
                       </div>
 
@@ -535,20 +582,26 @@ export default function BedrijfTeamOpdrachtenPage() {
                         <div className="flex items-center gap-1">
                           <Users className="h-4 w-4 text-primary" />
                           <span className="text-sm">
-                            {opdracht.assignedTeam}/{opdracht.aantalBeveiligers} toegewezen
+                            {opdracht.assignedTeam}/{opdracht.aantalBeveiligers}{" "}
+                            toegewezen
                           </span>
                         </div>
                         {opdracht.openSpots > 0 && (
                           <Badge variant="secondary" className="text-xs">
-                            {opdracht.openSpots} {opdracht.openSpots === 1 ? "plek" : "plekken"} open
+                            {opdracht.openSpots}{" "}
+                            {opdracht.openSpots === 1 ? "plek" : "plekken"} open
                           </Badge>
                         )}
                       </div>
                     </div>
 
                     <div className="text-right space-y-1">
-                      <p className="text-lg font-semibold">€{opdracht.totalValue}</p>
-                      <p className="text-sm text-muted-foreground">€{opdracht.uurtarief}/uur</p>
+                      <p className="text-lg font-semibold">
+                        €{opdracht.totalValue}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        €{opdracht.uurtarief}/uur
+                      </p>
                     </div>
                   </div>
                 </Card>
@@ -561,7 +614,9 @@ export default function BedrijfTeamOpdrachtenPage() {
           <Card className="p-6">
             <div className="text-center py-8">
               <UserPlus className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <h3 className="text-lg font-semibold mb-2">ZZP Inhuur Marktplaats</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                ZZP Inhuur Marktplaats
+              </h3>
               <p className="text-muted-foreground mb-4">
                 Vind gekwalificeerde ZZP beveiligers voor je team opdrachten
               </p>

@@ -1,7 +1,7 @@
 "use client";
 
+import { Globe, Lock, Shield, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Lock, Globe, Users } from "lucide-react";
 
 interface SecurityBadgeProps {
   type: "iso" | "gdpr" | "encryption" | "2fa";
@@ -37,21 +37,32 @@ const badgeConfig = {
   },
 };
 
-export function SecurityBadge({ type, title, subtitle, description }: SecurityBadgeProps) {
+export function SecurityBadge({
+  type,
+  title,
+  subtitle,
+  description,
+}: SecurityBadgeProps) {
   const config = badgeConfig[type];
   const Icon = config.icon;
 
   return (
-    <Card className={`${config.bgColor} ${config.borderColor} border-2 transition-all hover:shadow-md`}>
+    <Card
+      className={`${config.bgColor} ${config.borderColor} border-2 transition-all hover:shadow-md`}
+    >
       <CardContent className="p-4 text-center">
         <div className="flex flex-col items-center space-y-3">
-          <div className={`p-3 rounded-full ${config.bgColor} ${config.borderColor} border`}>
+          <div
+            className={`p-3 rounded-full ${config.bgColor} ${config.borderColor} border`}
+          >
             <Icon className={`h-6 w-6 ${config.color}`} />
           </div>
 
           <div>
             <h3 className="font-bold text-foreground">{title}</h3>
-            <p className="text-sm font-medium text-muted-foreground">{subtitle}</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              {subtitle}
+            </p>
           </div>
 
           <p className="text-xs text-muted-foreground text-center leading-relaxed">

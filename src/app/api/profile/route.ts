@@ -1,17 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { zzpProfileSchema, opdrachtgeverDbProfileSchema } from "@/lib/validation/schemas";
+import {
+  opdrachtgeverDbProfileSchema,
+  zzpProfileSchema,
+} from "@/lib/validation/schemas";
 
 // GET /api/profile - Get current user's profile
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth();
 
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -22,21 +25,21 @@ export async function GET(request: NextRequest) {
         zzpProfile: {
           include: {
             certificaten: {
-              orderBy: { createdAt: 'desc' }
+              orderBy: { createdAt: "desc" },
             },
             documenten: {
-              orderBy: { uploadedAt: 'desc' }
+              orderBy: { uploadedAt: "desc" },
             },
             reviews: {
               include: {
                 reviewer: {
                   select: {
                     name: true,
-                    image: true
-                  }
-                }
+                    image: true,
+                  },
+                },
               },
-              orderBy: { createdAt: 'desc' }
+              orderBy: { createdAt: "desc" },
             },
             opdrachten: {
               include: {
@@ -45,30 +48,30 @@ export async function GET(request: NextRequest) {
                     titel: true,
                     startDatum: true,
                     eindDatum: true,
-                    status: true
-                  }
-                }
+                    status: true,
+                  },
+                },
               },
-              orderBy: { opdracht: { startDatum: 'desc' } }
+              orderBy: { opdracht: { startDatum: "desc" } },
             },
             werkuren: {
               where: {
-                status: "COMPLETED"
+                status: "COMPLETED",
               },
-              orderBy: { datum: 'desc' },
-              take: 10
-            }
-          }
+              orderBy: { datum: "desc" },
+              take: 10,
+            },
+          },
         },
         bedrijfProfile: true,
-        opdrachtgever: true
-      }
+        opdrachtgever: true,
+      },
     });
 
     if (!user) {
       return NextResponse.json(
         { success: false, error: "User not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -88,19 +91,18 @@ export async function GET(request: NextRequest) {
           image: user.image,
           role: user.role,
           emailVerified: user.emailVerified,
-          createdAt: user.createdAt
+          createdAt: user.createdAt,
         },
         profile: user.zzpProfile || user.bedrijfProfile || user.opdrachtgever,
         profileCompletion,
-        stats
-      }
+        stats,
+      },
     });
-
   } catch (error) {
     console.error("Profile fetch error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch profile" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -113,7 +115,7 @@ export async function PATCH(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -125,14 +127,14 @@ export async function PATCH(request: NextRequest) {
       include: {
         zzpProfile: true,
         bedrijfProfile: true,
-        opdrachtgever: true
-      }
+        opdrachtgever: true,
+      },
     });
 
     if (!user) {
       return NextResponse.json(
         { success: false, error: "User not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -142,19 +144,22 @@ export async function PATCH(request: NextRequest) {
     } else if (user.role === "BEDRIJF" && user.bedrijfProfile) {
       return await updateBedrijfProfile(user.bedrijfProfile.id, body, user);
     } else if (user.role === "OPDRACHTGEVER" && user.opdrachtgever) {
-      return await updateOpdrachtgeverProfile(user.opdrachtgever.id, body, user);
+      return await updateOpdrachtgeverProfile(
+        user.opdrachtgever.id,
+        body,
+        user,
+      );
     } else {
       return NextResponse.json(
         { success: false, error: "Profile not found or incomplete setup" },
-        { status: 404 }
+        { status: 404 },
       );
     }
-
   } catch (error) {
     console.error("Profile update error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update profile" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -169,27 +174,30 @@ async function updateZZPProfile(profileId: string, data: any, user: any) {
       {
         success: false,
         error: "Invalid profile data",
-        details: validation.error.errors
+        details: validation.error.errors,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   const validatedData = validation.data;
 
   // Check for KvK number uniqueness if being updated
-  if (validatedData.kvkNummer && validatedData.kvkNummer !== user.zzpProfile.kvkNummer) {
+  if (
+    validatedData.kvkNummer &&
+    validatedData.kvkNummer !== user.zzpProfile.kvkNummer
+  ) {
     const existingProfile = await prisma.zZPProfile.findFirst({
       where: {
         kvkNummer: validatedData.kvkNummer,
-        id: { not: profileId }
-      }
+        id: { not: profileId },
+      },
     });
 
     if (existingProfile) {
       return NextResponse.json(
         { success: false, error: "KvK nummer is already in use" },
-        { status: 400 }
+        { status: 400 },
       );
     }
   }
@@ -207,7 +215,7 @@ async function updateZZPProfile(profileId: string, data: any, user: any) {
   if (Object.keys(userUpdates).length > 0) {
     await prisma.user.update({
       where: { id: user.id },
-      data: userUpdates
+      data: userUpdates,
     });
   }
 
@@ -221,8 +229,8 @@ async function updateZZPProfile(profileId: string, data: any, user: any) {
     where: { id: profileId },
     data: {
       ...profileUpdates,
-      updatedAt: new Date()
-    }
+      updatedAt: new Date(),
+    },
   });
 
   // Calculate new profile completion
@@ -230,7 +238,7 @@ async function updateZZPProfile(profileId: string, data: any, user: any) {
     ...user,
     zzpProfile: updatedProfile,
     name: userUpdates.name || user.name,
-    email: userUpdates.email || user.email
+    email: userUpdates.email || user.email,
   });
 
   return NextResponse.json({
@@ -239,22 +247,33 @@ async function updateZZPProfile(profileId: string, data: any, user: any) {
     data: {
       profile: updatedProfile,
       profileCompletion,
-      emailVerificationRequired: !!userUpdates.email
-    }
+      emailVerificationRequired: !!userUpdates.email,
+    },
   });
 }
 
 // Update Bedrijf Profile (placeholder)
-async function updateBedrijfProfile(profileId: string, data: any, user: any) {
+async function updateBedrijfProfile(
+  _profileId: string,
+  _data: any,
+  _user: any,
+) {
   // Similar implementation for bedrijf profiles
-  return NextResponse.json({
-    success: false,
-    error: "Bedrijf profile updates not yet implemented"
-  }, { status: 501 });
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Bedrijf profile updates not yet implemented",
+    },
+    { status: 501 },
+  );
 }
 
 // Update Opdrachtgever Profile
-async function updateOpdrachtgeverProfile(profileId: string, data: any, user: any) {
+async function updateOpdrachtgeverProfile(
+  profileId: string,
+  data: any,
+  user: any,
+) {
   // Validate opdrachtgever profile data
   const validation = opdrachtgeverDbProfileSchema.partial().safeParse(data);
 
@@ -263,27 +282,30 @@ async function updateOpdrachtgeverProfile(profileId: string, data: any, user: an
       {
         success: false,
         error: "Invalid profile data",
-        details: validation.error.errors
+        details: validation.error.errors,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   const validatedData = validation.data;
 
   // Check for KvK number uniqueness if being updated
-  if (validatedData.kvkNummer && validatedData.kvkNummer !== user.opdrachtgever.kvkNummer) {
+  if (
+    validatedData.kvkNummer &&
+    validatedData.kvkNummer !== user.opdrachtgever.kvkNummer
+  ) {
     const existingProfile = await prisma.opdrachtgever.findFirst({
       where: {
         kvkNummer: validatedData.kvkNummer,
-        id: { not: profileId }
-      }
+        id: { not: profileId },
+      },
     });
 
     if (existingProfile) {
       return NextResponse.json(
         { success: false, error: "KvK nummer is already in use" },
-        { status: 400 }
+        { status: 400 },
       );
     }
   }
@@ -304,23 +326,26 @@ async function updateOpdrachtgeverProfile(profileId: string, data: any, user: an
   if (Object.keys(userUpdates).length > 0) {
     await prisma.user.update({
       where: { id: user.id },
-      data: userUpdates
+      data: userUpdates,
     });
   }
 
   // Prepare profile updates
   const profileUpdates: any = {};
-  if (validatedData.bedrijfsnaam) profileUpdates.bedrijfsnaam = validatedData.bedrijfsnaam;
-  if (validatedData.kvkNummer !== undefined) profileUpdates.kvkNummer = validatedData.kvkNummer;
-  if (validatedData.contactpersoon) profileUpdates.contactpersoon = validatedData.contactpersoon;
+  if (validatedData.bedrijfsnaam)
+    profileUpdates.bedrijfsnaam = validatedData.bedrijfsnaam;
+  if (validatedData.kvkNummer !== undefined)
+    profileUpdates.kvkNummer = validatedData.kvkNummer;
+  if (validatedData.contactpersoon)
+    profileUpdates.contactpersoon = validatedData.contactpersoon;
 
   // Update profile
   const updatedProfile = await prisma.opdrachtgever.update({
     where: { id: profileId },
     data: {
       ...profileUpdates,
-      updatedAt: new Date()
-    }
+      updatedAt: new Date(),
+    },
   });
 
   // Calculate new profile completion
@@ -329,7 +354,7 @@ async function updateOpdrachtgeverProfile(profileId: string, data: any, user: an
     opdrachtgever: updatedProfile,
     name: userUpdates.name || user.name,
     email: userUpdates.email || user.email,
-    phone: userUpdates.phone || user.phone
+    phone: userUpdates.phone || user.phone,
   });
 
   return NextResponse.json({
@@ -338,8 +363,8 @@ async function updateOpdrachtgeverProfile(profileId: string, data: any, user: an
     data: {
       profile: updatedProfile,
       profileCompletion,
-      emailVerificationRequired: !!userUpdates.email
-    }
+      emailVerificationRequired: !!userUpdates.email,
+    },
   });
 }
 
@@ -380,7 +405,11 @@ function calculateZZPProfileCompletion(user: any): number {
   if (profile.specialisaties && profile.specialisaties.length > 0) completed++;
   if (profile.werkgebied && profile.werkgebied.length > 0) completed++;
   if (profile.ervaring !== null) completed++;
-  if (profile.beschikbaarheid && Object.keys(profile.beschikbaarheid).length > 0) completed++;
+  if (
+    profile.beschikbaarheid &&
+    Object.keys(profile.beschikbaarheid).length > 0
+  )
+    completed++;
 
   return Math.round((completed / total) * 100);
 }
@@ -414,55 +443,55 @@ async function calculateUserStats(user: any) {
       totalHours,
       totalEarnings,
       avgRating,
-      activeApplications
+      activeApplications,
     ] = await Promise.all([
       // Total completed shifts
       prisma.werkuur.count({
         where: {
           beveiligerId: profileId,
-          status: "COMPLETED"
-        }
+          status: "COMPLETED",
+        },
       }),
 
       // Total hours worked
       prisma.werkuur.aggregate({
         where: {
           beveiligerId: profileId,
-          status: "COMPLETED"
+          status: "COMPLETED",
         },
         _sum: {
-          totaleUren: true
-        }
+          totaleUren: true,
+        },
       }),
 
       // Total earnings
       prisma.werkuur.aggregate({
         where: {
           beveiligerId: profileId,
-          status: "COMPLETED"
+          status: "COMPLETED",
         },
         _sum: {
-          nettoBedrag: true
-        }
+          nettoBedrag: true,
+        },
       }),
 
       // Average rating
       prisma.review.aggregate({
         where: {
-          beveiligerId: profileId
+          beveiligerId: profileId,
         },
         _avg: {
-          rating: true
-        }
+          rating: true,
+        },
       }),
 
       // Active applications
       prisma.opdrachtSollicitatie.count({
         where: {
           zzpId: profileId,
-          status: { in: ["PENDING", "REVIEWING"] }
-        }
-      })
+          status: { in: ["PENDING", "REVIEWING"] },
+        },
+      }),
     ]);
 
     return {

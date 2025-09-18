@@ -1,15 +1,14 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest'
 import { NextRequest } from 'next/server'
-import { testWithAuth, createMockUser, createMockRequest } from '../helpers/auth-helpers'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { POST as registerUser } from '@/app/api/auth/register/route'
 
 // Mock the API route handlers
-import { GET as getJobs, POST as createJob } from '@/app/api/jobs/route'
-import { GET as getOpdrachten, POST as createOpdracht } from '@/app/api/opdrachten/route'
-import { POST as registerUser } from '@/app/api/auth/register/route'
-import { GET as getProfile, PUT as updateProfile } from '@/app/api/profile/route'
+import { POST as createJob, GET as getJobs } from '@/app/api/jobs/route'
+import { POST as createOpdracht, GET as getOpdrachten } from '@/app/api/opdrachten/route'
+import { createMockRequest, createMockUser, } from '../helpers/auth-helpers'
 
 // Integration test setup
-const TEST_BASE_URL = 'http://localhost:3000'
+const _TEST_BASE_URL = 'http://localhost:3000'
 
 // Mock functions will be initialized in beforeAll
 

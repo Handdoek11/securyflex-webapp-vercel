@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading",
+  );
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -23,14 +25,14 @@ export default function VerifyEmailPage() {
     }
 
     verifyEmail(token);
-  }, [token]);
+  }, [token, verifyEmail]);
 
   const verifyEmail = async (token: string) => {
     try {
       const response = await fetch("/api/auth/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token })
+        body: JSON.stringify({ token }),
       });
 
       const data = await response.json();
@@ -47,7 +49,7 @@ export default function VerifyEmailPage() {
         setStatus("error");
         setMessage(data.error || "Verificatie mislukt");
       }
-    } catch (error) {
+    } catch (_error) {
       setStatus("error");
       setMessage("Er is een fout opgetreden bij de verificatie");
     }
@@ -70,17 +72,15 @@ export default function VerifyEmailPage() {
           {status === "success" && (
             <>
               <CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500" />
-              <h1 className="text-2xl font-bold mb-2">Verificatie Succesvol!</h1>
-              <p className="text-muted-foreground mb-6">
-                {message}
-              </p>
+              <h1 className="text-2xl font-bold mb-2">
+                Verificatie Succesvol!
+              </h1>
+              <p className="text-muted-foreground mb-6">{message}</p>
               <p className="text-sm text-muted-foreground mb-6">
                 Je wordt doorgestuurd naar de login pagina...
               </p>
               <Link href="/auth/login">
-                <Button className="w-full">
-                  Ga naar Login
-                </Button>
+                <Button className="w-full">Ga naar Login</Button>
               </Link>
             </>
           )}
@@ -89,9 +89,7 @@ export default function VerifyEmailPage() {
             <>
               <XCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
               <h1 className="text-2xl font-bold mb-2">Verificatie Mislukt</h1>
-              <p className="text-muted-foreground mb-6">
-                {message}
-              </p>
+              <p className="text-muted-foreground mb-6">{message}</p>
               <div className="space-y-3">
                 <Link href="/auth/register" className="block">
                   <Button variant="outline" className="w-full">
@@ -99,9 +97,7 @@ export default function VerifyEmailPage() {
                   </Button>
                 </Link>
                 <Link href="/auth/login" className="block">
-                  <Button className="w-full">
-                    Ga naar Login
-                  </Button>
+                  <Button className="w-full">Ga naar Login</Button>
                 </Link>
               </div>
             </>

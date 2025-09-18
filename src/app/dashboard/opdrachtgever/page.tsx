@@ -1,31 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
+  Activity,
   AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  Calendar,
+  CheckCircle,
   Clock,
   MapPin,
   Users,
-  CheckCircle,
-  Calendar,
-  BarChart3,
-  Plus,
-  ArrowRight,
-  Activity,
-  TrendingUp,
-  Loader2
 } from "lucide-react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
-import { useOpdrachtgeverStats, useOpdrachtgeverShifts, useOpdrachtgeverNotifications } from "@/hooks/useApiData";
-import { useOpdrachtgeverDashboardBroadcast, useOpdrachtgeverNotificationsBroadcast } from "@/hooks/useRealtimeBroadcast";
-import { useSession } from "next-auth/react";
-import Link from "next/link";
+import {
+  useOpdrachtgeverNotifications,
+  useOpdrachtgeverShifts,
+  useOpdrachtgeverStats,
+} from "@/hooks/useApiData";
+import { useOpdrachtgeverDashboardBroadcast } from "@/hooks/useRealtimeBroadcast";
 
-const mockActiveShifts = [
+const _mockActiveShifts = [
   {
     id: "1",
     title: "Terminal 3 - Objectbeveiliging",
@@ -46,7 +46,7 @@ const mockActiveShifts = [
     checkedIn: 0,
     total: 2,
     startsIn: 45,
-  }
+  },
 ];
 
 const mockWeekData = [
@@ -57,7 +57,7 @@ const mockWeekData = [
   { day: "Vr 20/09", shifts: 12, filled: 10, percentage: 83 },
 ];
 
-const mockRecentActivity = [
+const _mockRecentActivity = [
   {
     id: "1",
     type: "INCIDENT",
@@ -73,10 +73,10 @@ const mockRecentActivity = [
     title: "Shift gevuld",
     description: "Zaterdagavond shift is volledig bemand (4/4 beveiligers)",
     icon: "✅",
-  }
+  },
 ];
 
-function getStatusBadge(status: string, checkedIn: number, total: number) {
+function getStatusBadge(status: string, _checkedIn: number, _total: number) {
   switch (status) {
     case "ACTIVE":
     case "ACTIEF":
@@ -91,7 +91,9 @@ function getStatusBadge(status: string, checkedIn: number, total: number) {
       return (
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-          <Badge className="bg-amber-500 hover:bg-amber-600">Start binnenkort</Badge>
+          <Badge className="bg-amber-500 hover:bg-amber-600">
+            Start binnenkort
+          </Badge>
         </div>
       );
     case "OPEN":
@@ -104,7 +106,7 @@ function getStatusBadge(status: string, checkedIn: number, total: number) {
 
 function RecentNotifications() {
   const { data: notificationsData, loading } = useOpdrachtgeverNotifications({
-    limit: 5
+    limit: 5,
   });
 
   const notifications = notificationsData?.notifications || [];
@@ -147,8 +149,12 @@ function RecentNotifications() {
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{notification.message}</p>
-            <p className="text-xs text-muted-foreground mt-1">{notification.timeAgo}</p>
+            <p className="text-sm text-muted-foreground">
+              {notification.message}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {notification.timeAgo}
+            </p>
           </div>
         </div>
       ))}
@@ -160,15 +166,25 @@ export default function OpdrachtgeverDashboardPage() {
   const { data: session } = useSession();
 
   // Fetch real data using hooks
-  const { data: statsData, loading: statsLoading, error: statsError, refetch: refetchStats } = useOpdrachtgeverStats();
-  const { data: activeShiftsData, loading: shiftsLoading, refetch: refetchActiveShifts } = useOpdrachtgeverShifts({
+  const {
+    data: statsData,
+    loading: statsLoading,
+    error: statsError,
+    refetch: refetchStats,
+  } = useOpdrachtgeverStats();
+  const {
+    data: activeShiftsData,
+    loading: shiftsLoading,
+    refetch: refetchActiveShifts,
+  } = useOpdrachtgeverShifts({
     status: "active",
-    limit: 5
+    limit: 5,
   });
-  const { data: openShiftsData, refetch: refetchOpenShifts } = useOpdrachtgeverShifts({
-    status: "open",
-    limit: 10
-  });
+  const { data: openShiftsData, refetch: refetchOpenShifts } =
+    useOpdrachtgeverShifts({
+      status: "open",
+      limit: 10,
+    });
 
   const profile = statsData?.profile;
   const stats = statsData?.stats;
@@ -176,17 +192,16 @@ export default function OpdrachtgeverDashboardPage() {
   const openShifts = openShiftsData?.shifts || [];
 
   // Real-time updates for dashboard stats
-  useOpdrachtgeverDashboardBroadcast(
-    profile?.id || "",
-    () => {
-      // Refetch stats when any relevant changes occur
-      refetchStats();
-      refetchActiveShifts();
-      refetchOpenShifts();
-    }
-  );
+  useOpdrachtgeverDashboardBroadcast(profile?.id || "", () => {
+    // Refetch stats when any relevant changes occur
+    refetchStats();
+    refetchActiveShifts();
+    refetchOpenShifts();
+  });
 
-  const urgentShifts = openShifts.filter(shift => shift.isUrgent || shift.needsAttention);
+  const urgentShifts = openShifts.filter(
+    (shift) => shift.isUrgent || shift.needsAttention,
+  );
 
   if (statsLoading) {
     return (
@@ -241,11 +256,17 @@ export default function OpdrachtgeverDashboardPage() {
               <div className="flex-1">
                 <p className="font-medium text-amber-800">ACTIE VEREIST</p>
                 <p className="text-sm text-amber-700">
-                  {urgentShifts.length} {urgentShifts.length === 1 ? 'shift' : 'shifts'} hebben urgent aandacht nodig
+                  {urgentShifts.length}{" "}
+                  {urgentShifts.length === 1 ? "shift" : "shifts"} hebben urgent
+                  aandacht nodig
                 </p>
                 <Link href="/dashboard/opdrachtgever/shifts?tab=open">
-                  <Button variant="link" className="p-0 h-auto text-amber-700 hover:text-amber-800">
-                    Bekijk openstaande shifts <ArrowRight className="h-3 w-3 ml-1" />
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto text-amber-700 hover:text-amber-800"
+                  >
+                    Bekijk openstaande shifts{" "}
+                    <ArrowRight className="h-3 w-3 ml-1" />
                   </Button>
                 </Link>
               </div>
@@ -256,19 +277,27 @@ export default function OpdrachtgeverDashboardPage() {
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-4 gap-4">
           <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">{stats?.activeShifts || 0}</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {stats?.activeShifts || 0}
+            </p>
             <p className="text-xs text-muted-foreground">Actief</p>
           </div>
           <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">{stats?.weeklyShifts || 0}</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {stats?.weeklyShifts || 0}
+            </p>
             <p className="text-xs text-muted-foreground">Week</p>
           </div>
           <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">{stats?.monthlyShifts || 0}</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {stats?.monthlyShifts || 0}
+            </p>
             <p className="text-xs text-muted-foreground">Maand</p>
           </div>
           <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">{stats?.avgRating?.toFixed(1) || '0.0'}</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {stats?.avgRating?.toFixed(1) || "0.0"}
+            </p>
             <p className="text-xs text-muted-foreground">Score</p>
           </div>
         </div>
@@ -276,11 +305,14 @@ export default function OpdrachtgeverDashboardPage() {
         {/* Today Section */}
         <div>
           <h2 className="text-lg font-semibold mb-4">
-            VANDAAG - {new Date().toLocaleDateString('nl-NL', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long'
-            }).toUpperCase()}
+            VANDAAG -{" "}
+            {new Date()
+              .toLocaleDateString("nl-NL", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })
+              .toUpperCase()}
           </h2>
 
           {/* Active Shifts */}
@@ -293,15 +325,21 @@ export default function OpdrachtgeverDashboardPage() {
             <div className="space-y-4">
               {shiftsLoading ? (
                 [...Array(2)].map((_, i) => (
-                  <div key={i} className="border-b border-green-200 last:border-0 pb-4 last:pb-0">
+                  <div
+                    key={i}
+                    className="border-b border-green-200 last:border-0 pb-4 last:pb-0"
+                  >
                     <Skeleton className="h-4 w-48 mb-2" />
                     <Skeleton className="h-3 w-32 mb-2" />
                     <Skeleton className="h-3 w-24" />
                   </div>
                 ))
               ) : activeShifts.length > 0 ? (
-                activeShifts.map((shift: any) => (
-                  <div key={shift.id} className="border-b border-green-200 last:border-0 pb-4 last:pb-0">
+                activeShifts.map((shift) => (
+                  <div
+                    key={shift.id}
+                    className="border-b border-green-200 last:border-0 pb-4 last:pb-0"
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h4 className="font-medium">{shift.title}</h4>
@@ -312,7 +350,9 @@ export default function OpdrachtgeverDashboardPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span>{shift.startTime}-{shift.endTime}</span>
+                            <span>
+                              {shift.startTime}-{shift.endTime}
+                            </span>
                           </div>
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
@@ -320,17 +360,20 @@ export default function OpdrachtgeverDashboardPage() {
                           </div>
                         </div>
                       </div>
-                      {getStatusBadge(shift.status, shift.filled, shift.requiredBeveiligers)}
+                      {getStatusBadge(
+                        shift.status,
+                        shift.filled,
+                        shift.requiredBeveiligers,
+                      )}
                     </div>
 
                     {shift.isActive && (
                       <div className="flex items-center gap-2 text-sm">
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         <span className="text-green-700">
-                          {shift.acceptedBeveiliger ?
-                            `${shift.acceptedBeveiliger.name} is actief` :
-                            "Shift is actief"
-                          }
+                          {shift.acceptedBeveiliger
+                            ? `${shift.acceptedBeveiliger.name} is actief`
+                            : "Shift is actief"}
                         </span>
                       </div>
                     )}
@@ -417,16 +460,20 @@ export default function OpdrachtgeverDashboardPage() {
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full transition-all duration-300 ${
-                          day.percentage === 100 ? 'bg-green-500' :
-                          day.percentage > 50 ? 'bg-blue-500' :
-                          day.percentage > 0 ? 'bg-amber-500' : 'bg-gray-300'
+                          day.percentage === 100
+                            ? "bg-green-500"
+                            : day.percentage > 50
+                              ? "bg-blue-500"
+                              : day.percentage > 0
+                                ? "bg-amber-500"
+                                : "bg-gray-300"
                         }`}
                         style={{ width: `${day.percentage}%` }}
                       ></div>
                     </div>
                   </div>
                   <span className="text-sm text-right w-16">
-                    {day.shifts > 0 ? `${day.shifts} shifts` : '0 geplanned'}
+                    {day.shifts > 0 ? `${day.shifts} shifts` : "0 geplanned"}
                   </span>
                 </div>
               ))}

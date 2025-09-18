@@ -1,6 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import {
+  AlertTriangle,
+  Clock,
+  Loader2,
+  LogOut,
+  RefreshCw,
+  Shield,
+  Trash2,
+} from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,20 +23,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  AlertTriangle,
-  Trash2,
-  LogOut,
-  X,
-  Shield,
-  Clock,
-  RefreshCw,
-  Loader2
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Confirm dialog variant types
-type ConfirmVariant = "default" | "destructive" | "warning" | "security" | "logout";
+type ConfirmVariant =
+  | "default"
+  | "destructive"
+  | "warning"
+  | "security"
+  | "logout";
 
 interface ConfirmDialogProps {
   trigger?: React.ReactNode;
@@ -125,11 +130,14 @@ export function ConfirmDialog({
     <AlertDialogContent className="sm:max-w-[425px]">
       <AlertDialogHeader>
         <div className="flex items-center gap-3">
-          <div className={cn("p-2 rounded-full bg-muted",
-            variant === "destructive" && "bg-red-100 dark:bg-red-900/20",
-            variant === "warning" && "bg-orange-100 dark:bg-orange-900/20",
-            variant === "security" && "bg-purple-100 dark:bg-purple-900/20"
-          )}>
+          <div
+            className={cn(
+              "p-2 rounded-full bg-muted",
+              variant === "destructive" && "bg-red-100 dark:bg-red-900/20",
+              variant === "warning" && "bg-orange-100 dark:bg-orange-900/20",
+              variant === "security" && "bg-purple-100 dark:bg-purple-900/20",
+            )}
+          >
             <IconComponent className={cn("h-5 w-5", config.iconClass)} />
           </div>
           <AlertDialogTitle className="text-left">{title}</AlertDialogTitle>
@@ -139,19 +147,11 @@ export function ConfirmDialog({
         </AlertDialogDescription>
       </AlertDialogHeader>
 
-      {children && (
-        <div className="py-4">
-          {children}
-        </div>
-      )}
+      {children && <div className="py-4">{children}</div>}
 
       <AlertDialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
         <AlertDialogCancel asChild>
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isLoading}
-          >
+          <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
             {cancelText}
           </Button>
         </AlertDialogCancel>
@@ -174,9 +174,7 @@ export function ConfirmDialog({
   if (trigger) {
     return (
       <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <AlertDialogTrigger asChild>
-          {trigger}
-        </AlertDialogTrigger>
+        <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
         {dialogContent}
       </AlertDialog>
     );
@@ -423,7 +421,7 @@ export function useConfirm() {
 export async function quickConfirm(
   title: string,
   description: string,
-  options?: Partial<UseConfirmOptions>
+  _options?: Partial<UseConfirmOptions>,
 ): Promise<boolean> {
   return new Promise((resolve) => {
     // This would need to be implemented with a global dialog context

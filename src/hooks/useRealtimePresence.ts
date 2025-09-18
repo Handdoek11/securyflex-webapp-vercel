@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { trackUserPresence, getOnlineUsers } from "@/lib/supabase";
 import type { UserRole } from "@prisma/client";
+import { useCallback, useEffect, useState } from "react";
+import { getOnlineUsers, trackUserPresence } from "@/lib/supabase";
 
 interface OnlineUser {
   user_id: string;
@@ -34,7 +34,7 @@ export function useRealtimePresence(userId?: string, metadata?: any) {
       }
 
       // Get all online users
-      const users = await getOnlineUsers() as OnlineUser[];
+      const users = (await getOnlineUsers()) as OnlineUser[];
       setOnlineUsers(users);
     };
 
@@ -47,36 +47,45 @@ export function useRealtimePresence(userId?: string, metadata?: any) {
         setIsTracking(false);
       }
     };
-  }, [userId, JSON.stringify(metadata)]);
+  }, [userId, metadata]);
 
   /**
    * Check if a specific user is online
    */
-  const isUserOnline = useCallback((checkUserId: string) => {
-    return onlineUsers.some(user => user.user_id === checkUserId);
-  }, [onlineUsers]);
+  const isUserOnline = useCallback(
+    (checkUserId: string) => {
+      return onlineUsers.some((user) => user.user_id === checkUserId);
+    },
+    [onlineUsers],
+  );
 
   /**
    * Get online users by role (e.g., all online ZZP_BEVEILIGER)
    */
-  const getOnlineUsersByRole = useCallback((role: UserRole) => {
-    return onlineUsers.filter(user => user.role === role);
-  }, [onlineUsers]);
+  const getOnlineUsersByRole = useCallback(
+    (role: UserRole) => {
+      return onlineUsers.filter((user) => user.role === role);
+    },
+    [onlineUsers],
+  );
 
   /**
    * Update current user's metadata (e.g., location)
    */
-  const updatePresence = useCallback(async (newMetadata: any) => {
-    if (!userId) return;
+  const updatePresence = useCallback(
+    async (newMetadata: any) => {
+      if (!userId) return;
 
-    const channel = trackUserPresence(userId, {
-      ...metadata,
-      ...newMetadata,
-      updated_at: new Date().toISOString(),
-    });
+      const channel = trackUserPresence(userId, {
+        ...metadata,
+        ...newMetadata,
+        updated_at: new Date().toISOString(),
+      });
 
-    return channel;
-  }, [userId, metadata]);
+      return channel;
+    },
+    [userId, metadata],
+  );
 
   return {
     onlineUsers,
@@ -91,15 +100,19 @@ export function useRealtimePresence(userId?: string, metadata?: any) {
  * Hook specifiek voor het tonen van beschikbare beveiligers
  */
 export function useAvailableBeveiligers() {
-  const [availableBeveiligers, setAvailableBeveiligers] = useState<OnlineUser[]>([]);
+  const [availableBeveiligers, setAvailableBeveiligers] = useState<
+    OnlineUser[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchAvailable = async () => {
       try {
-        const users = await getOnlineUsers("beveiligers-available") as OnlineUser[];
+        const users = (await getOnlineUsers(
+          "beveiligers-available",
+        )) as OnlineUser[];
         const beveiligers = users.filter(
-          (user) => user.role === "ZZP_BEVEILIGER"
+          (user) => user.role === "ZZP_BEVEILIGER",
         );
         setAvailableBeveiligers(beveiligers);
       } catch (error) {

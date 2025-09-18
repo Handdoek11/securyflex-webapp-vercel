@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -20,14 +20,14 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         bedrijfsnaam: true,
-        locatie: true
-      }
+        locatie: true,
+      },
     });
 
     if (!opdrachtgeverProfile) {
       return NextResponse.json(
         { success: false, error: "Opdrachtgever profile not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -38,17 +38,17 @@ export async function GET(request: NextRequest) {
     const location = searchParams.get("location") || "";
     const specialization = searchParams.get("specialization") || "";
     const minRating = parseFloat(searchParams.get("minRating") || "0");
-    const maxDistance = parseInt(searchParams.get("maxDistance") || "50");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const _maxDistance = parseInt(searchParams.get("maxDistance") || "50", 10);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
     const availableOnly = searchParams.get("availableOnly") === "true";
 
     try {
       // Build base where clause for beveiligers
       const where: any = {
         user: {
-          status: "ACTIVE"
-        }
+          status: "ACTIVE",
+        },
       };
 
       // Search by name or specialization
@@ -58,36 +58,36 @@ export async function GET(request: NextRequest) {
             user: {
               name: {
                 contains: search,
-                mode: "insensitive"
-              }
-            }
+                mode: "insensitive",
+              },
+            },
           },
           {
             specialisaties: {
-              hasSome: [search]
-            }
-          }
+              hasSome: [search],
+            },
+          },
         ];
       }
 
       // Filter by specialization
       if (specialization) {
         where.specialisaties = {
-          hasSome: [specialization]
+          hasSome: [specialization],
         };
       }
 
       // Filter by rating
       if (minRating > 0) {
         where.rating = {
-          gte: minRating
+          gte: minRating,
         };
       }
 
       // Filter by location/distance (simplified - in real app would use geographical calculations)
       if (location) {
         where.werkgebied = {
-          hasSome: [location]
+          hasSome: [location],
         };
       }
 
@@ -102,67 +102,67 @@ export async function GET(request: NextRequest) {
                 name: true,
                 email: true,
                 phone: true,
-                image: true
-              }
+                image: true,
+              },
             },
             // Get recent work history with this opdrachtgever
             werkuren: {
               where: {
                 opdracht: {
-                  opdrachtgeverId: opdrachtgeverProfile.id
-                }
+                  opdrachtgeverId: opdrachtgeverProfile.id,
+                },
               },
               orderBy: {
-                datum: "desc"
+                datum: "desc",
               },
               take: 5,
               include: {
                 opdracht: {
                   select: {
                     titel: true,
-                    datum: true
-                  }
-                }
-              }
+                    datum: true,
+                  },
+                },
+              },
             },
             // Get average ratings for this beveiliger
             reviewsReceived: {
               where: {
-                fromOpdrachtgever: opdrachtgeverProfile.id
+                fromOpdrachtgever: opdrachtgeverProfile.id,
               },
               select: {
                 rating: true,
                 commentaar: true,
-                createdAt: true
+                createdAt: true,
               },
               orderBy: {
-                createdAt: "desc"
+                createdAt: "desc",
               },
-              take: 5
-            }
+              take: 5,
+            },
           },
           orderBy: [
             { rating: "desc" },
             { totalReviews: "desc" },
-            { user: { name: "asc" } }
+            { user: { name: "asc" } },
           ],
           skip: (page - 1) * limit,
-          take: limit
+          take: limit,
         }),
-        prisma.zZPProfile.count({ where })
+        prisma.zZPProfile.count({ where }),
       ]);
 
       // Get favorites for this opdrachtgever
       const favorites = await prisma.opdrachtgeverFavoriet.findMany({
         where: {
-          opdrachtgeverId: opdrachtgeverProfile.id
+          opdrachtgeverId: opdrachtgeverProfile.id,
         },
         select: {
-          beveiligerId: true
-        }
+          beveiligerId: true,
+        },
       });
 
-      const favoriteIds = favorites.map(f => f.beveiligerId);
+      const favoriteIds = favorites.map((f) => f.beveiligerId);
 
       // Transform beveiligers data for frontend
       const transformedBeveiligers = await Promise.all(
@@ -174,10 +174,14 @@ export async function GET(request: NextRequest) {
               acceptedBeveiligerId: beveiliger.id,
               datum: {
                 gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-                lte: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+                lte: new Date(
+                  now.getFullYear(),
+                  now.getMonth(),
+                  now.getDate() + 1,
+                ),
               },
-              status: { in: ["ACTIEF", "BEVESTIGD"] }
-            }
+              status: { in: ["ACTIEF", "BEVESTIGD"] },
+            },
           });
 
           const isAvailable = todayShifts === 0;
@@ -188,35 +192,36 @@ export async function GET(request: NextRequest) {
           const totalCompletedShifts = await prisma.werkuur.count({
             where: {
               beveiligerId: beveiliger.id,
-              status: "COMPLETED"
-            }
+              status: "COMPLETED",
+            },
           });
 
           const totalAssignedShifts = await prisma.opdracht.count({
             where: {
               acceptedBeveiligerId: beveiliger.id,
-              status: { not: "GEANNULEERD" }
-            }
+              status: { not: "GEANNULEERD" },
+            },
           });
 
-          const reliabilityScore = totalAssignedShifts > 0
-            ? Math.round((totalCompletedShifts / totalAssignedShifts) * 100)
-            : null;
+          const reliabilityScore =
+            totalAssignedShifts > 0
+              ? Math.round((totalCompletedShifts / totalAssignedShifts) * 100)
+              : null;
 
           // Get next availability
           const nextShift = await prisma.opdracht.findFirst({
             where: {
               acceptedBeveiligerId: beveiliger.id,
               datum: { gt: now },
-              status: { in: ["BEVESTIGD", "ACTIEF"] }
+              status: { in: ["BEVESTIGD", "ACTIEF"] },
             },
             orderBy: {
-              datum: "asc"
+              datum: "asc",
             },
             select: {
               datum: true,
-              eindTijd: true
-            }
+              eindTijd: true,
+            },
           });
 
           return {
@@ -239,71 +244,90 @@ export async function GET(request: NextRequest) {
             availabilityText: isAvailable
               ? "Beschikbaar nu"
               : nextShift
-              ? `Beschikbaar vanaf ${nextShift.datum.toLocaleDateString('nl-NL')} ${nextShift.eindTijd}`
-              : "Bezet vandaag",
-            nextAvailable: nextShift ? {
-              date: nextShift.datum,
-              time: nextShift.eindTijd
-            } : null,
+                ? `Beschikbaar vanaf ${nextShift.datum.toLocaleDateString("nl-NL")} ${nextShift.eindTijd}`
+                : "Bezet vandaag",
+            nextAvailable: nextShift
+              ? {
+                  date: nextShift.datum,
+                  time: nextShift.eindTijd,
+                }
+              : null,
 
             // Relationship with this opdrachtgever
             isFavorite,
             hasWorkedBefore,
             reliabilityScore,
-            recentWork: beveiliger.werkuren.map(wu => ({
+            recentWork: beveiliger.werkuren.map((wu) => ({
               title: wu.opdracht.titel,
               date: wu.opdracht.datum,
               hours: wu.urenGewerkt,
-              rating: wu.ratingOpdrachtgever
+              rating: wu.ratingOpdrachtgever,
             })),
 
             // Reviews from this opdrachtgever
-            reviews: beveiliger.reviewsReceived.map(review => ({
+            reviews: beveiliger.reviewsReceived.map((review) => ({
               rating: review.rating,
               comment: review.commentaar,
-              date: review.createdAt
+              date: review.createdAt,
             })),
 
             // Distance calculation (simplified - would use real geolocation in production)
             distance: Math.floor(Math.random() * 30) + 1, // Mock distance in km
 
             // Status indicators
-            status: isAvailable ? "AVAILABLE" : todayShifts > 0 ? "BUSY" : "LIMITED",
+            status: isAvailable
+              ? "AVAILABLE"
+              : todayShifts > 0
+                ? "BUSY"
+                : "LIMITED",
             isOnline: Math.random() > 0.7, // Mock online status
             lastSeen: new Date(Date.now() - Math.random() * 60 * 60 * 1000), // Mock last seen
 
             // Premium features
-            isPremium: beveiliger.rating && beveiliger.rating >= 4.8 && beveiliger.totalReviews >= 50,
+            isPremium:
+              beveiliger.rating &&
+              beveiliger.rating >= 4.8 &&
+              beveiliger.totalReviews >= 50,
             isVerified: beveiliger.finqleOnboarded,
             isNewTalent: beveiliger.totalReviews < 10,
 
-            createdAt: beveiliger.user.createdAt
+            createdAt: beveiliger.user.createdAt,
           };
-        })
+        }),
       );
 
       // Filter based on view
       let filteredBeveiligers = transformedBeveiligers;
 
       if (view === "favorites") {
-        filteredBeveiligers = transformedBeveiligers.filter(b => b.isFavorite);
+        filteredBeveiligers = transformedBeveiligers.filter(
+          (b) => b.isFavorite,
+        );
       } else if (view === "available") {
-        filteredBeveiligers = transformedBeveiligers.filter(b => b.status === "AVAILABLE");
+        filteredBeveiligers = transformedBeveiligers.filter(
+          (b) => b.status === "AVAILABLE",
+        );
       }
 
       if (availableOnly) {
-        filteredBeveiligers = filteredBeveiligers.filter(b => b.status === "AVAILABLE");
+        filteredBeveiligers = filteredBeveiligers.filter(
+          (b) => b.status === "AVAILABLE",
+        );
       }
 
       // Calculate stats
       const stats = {
         total: totalCount,
-        available: transformedBeveiligers.filter(b => b.status === "AVAILABLE").length,
-        favorites: transformedBeveiligers.filter(b => b.isFavorite).length,
-        premium: transformedBeveiligers.filter(b => b.isPremium).length,
-        averageRating: transformedBeveiligers.length > 0
-          ? transformedBeveiligers.reduce((sum, b) => sum + b.rating, 0) / transformedBeveiligers.length
-          : 0
+        available: transformedBeveiligers.filter(
+          (b) => b.status === "AVAILABLE",
+        ).length,
+        favorites: transformedBeveiligers.filter((b) => b.isFavorite).length,
+        premium: transformedBeveiligers.filter((b) => b.isPremium).length,
+        averageRating:
+          transformedBeveiligers.length > 0
+            ? transformedBeveiligers.reduce((sum, b) => sum + b.rating, 0) /
+              transformedBeveiligers.length
+            : 0,
       };
 
       const totalPages = Math.ceil(totalCount / limit);
@@ -319,11 +343,10 @@ export async function GET(request: NextRequest) {
             total: totalCount,
             totalPages,
             hasNext: page < totalPages,
-            hasPrev: page > 1
-          }
-        }
+            hasPrev: page > 1,
+          },
+        },
       });
-
     } catch (dbError) {
       console.error("Database error fetching beveiligers:", dbError);
 
@@ -343,21 +366,21 @@ export async function GET(request: NextRequest) {
               availabilityText: "Beschikbaar nu",
               location: "Amsterdam",
               distance: 5,
-              uurtarief: 20.50,
+              uurtarief: 20.5,
               isFavorite: true,
               hasWorkedBefore: true,
               reliabilityScore: 98,
               status: "AVAILABLE",
               isPremium: true,
-              isVerified: true
-            }
+              isVerified: true,
+            },
           ],
           stats: {
             total: 234,
             available: 47,
             favorites: 12,
             premium: 23,
-            averageRating: 4.6
+            averageRating: 4.6,
           },
           pagination: {
             page: 1,
@@ -365,17 +388,16 @@ export async function GET(request: NextRequest) {
             total: 1,
             totalPages: 1,
             hasNext: false,
-            hasPrev: false
-          }
-        }
+            hasPrev: false,
+          },
+        },
       });
     }
-
   } catch (error) {
     console.error("Opdrachtgever beveiligers GET error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch beveiligers" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

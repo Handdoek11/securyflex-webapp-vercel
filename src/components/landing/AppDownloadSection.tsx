@@ -1,8 +1,20 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Apple, Smartphone, MapPin, Clock, Euro, Shield, Users, Calendar, FileText, Eye, Building } from "lucide-react";
+import {
+  Apple,
+  Building,
+  Calendar,
+  Clock,
+  Euro,
+  Eye,
+  FileText,
+  MapPin,
+  Shield,
+  Smartphone,
+  Users,
+} from "lucide-react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 import { useRole } from "@/contexts/RoleContext";
 
 export function AppDownloadSection() {
@@ -12,44 +24,96 @@ export function AppDownloadSection() {
   const roleContent = {
     ZZP_BEVEILIGER: {
       title: "JOUW WERKPLEK IN JE BROEKZAK",
-      description: "Download de SecuryFlex app en start direct met werken. Vind shifts die bij je passen, check in met GPS en krijg binnen 24 uur betaald.",
+      description:
+        "Download de SecuryFlex app en start direct met werken. Vind shifts die bij je passen, check in met GPS en krijg binnen 24 uur betaald.",
       features: [
-        { icon: MapPin, title: "GPS Check-in", description: "Automatische locatieverificatie voor je uren" },
-        { icon: Euro, title: "Direct inzicht", description: "Real-time overzicht van je verdiensten" },
-        { icon: Clock, title: "Flexibele shifts", description: "Kies zelf wanneer en waar je werkt" }
+        {
+          icon: MapPin,
+          title: "GPS Check-in",
+          description: "Automatische locatieverificatie voor je uren",
+        },
+        {
+          icon: Euro,
+          title: "Direct inzicht",
+          description: "Real-time overzicht van je verdiensten",
+        },
+        {
+          icon: Clock,
+          title: "Flexibele shifts",
+          description: "Kies zelf wanneer en waar je werkt",
+        },
       ],
-      stats: "2.847+ beveiligers werken al via de app"
+      stats: "2.847+ beveiligers werken al via de app",
     },
     BEDRIJF: {
       title: "COMPLETE TEAM MANAGEMENT",
-      description: "Beheer je team, plan shifts en monitor alles real-time. Eén platform voor al je beveiligingsoperaties.",
+      description:
+        "Beheer je team, plan shifts en monitor alles real-time. Eén platform voor al je beveiligingsoperaties.",
       features: [
-        { icon: Users, title: "Team Dashboard", description: "Overzicht van alle actieve beveiligers" },
-        { icon: Calendar, title: "Smart Planning", description: "Automatische shift matching en planning" },
-        { icon: FileText, title: "Digitale Facturatie", description: "Automatische urenregistratie en facturatie" }
+        {
+          icon: Users,
+          title: "Team Dashboard",
+          description: "Overzicht van alle actieve beveiligers",
+        },
+        {
+          icon: Calendar,
+          title: "Smart Planning",
+          description: "Automatische shift matching en planning",
+        },
+        {
+          icon: FileText,
+          title: "Digitale Facturatie",
+          description: "Automatische urenregistratie en facturatie",
+        },
       ],
-      stats: "127+ bedrijven managen hun team via de app"
+      stats: "127+ bedrijven managen hun team via de app",
     },
     OPDRACHTGEVER: {
       title: "BEVEILIGING BINNEN HANDBEREIK",
-      description: "Regel beveiliging binnen 5 minuten. Live tracking, digitale rapportages en transparante prijzen.",
+      description:
+        "Regel beveiliging binnen 5 minuten. Live tracking, digitale rapportages en transparante prijzen.",
       features: [
-        { icon: Shield, title: "Instant Booking", description: "Beveiliging regelen binnen 5 minuten" },
-        { icon: Eye, title: "Live Tracking", description: "Volg beveiligers real-time op de kaart" },
-        { icon: FileText, title: "Digitale Rapportage", description: "Direct inzicht in alle beveiligingsactiviteiten" }
+        {
+          icon: Shield,
+          title: "Instant Booking",
+          description: "Beveiliging regelen binnen 5 minuten",
+        },
+        {
+          icon: Eye,
+          title: "Live Tracking",
+          description: "Volg beveiligers real-time op de kaart",
+        },
+        {
+          icon: FileText,
+          title: "Digitale Rapportage",
+          description: "Direct inzicht in alle beveiligingsactiviteiten",
+        },
       ],
-      stats: "500+ opdrachtgevers gebruiken onze app dagelijks"
+      stats: "500+ opdrachtgevers gebruiken onze app dagelijks",
     },
     null: {
       title: "ALLES IN ÉÉN APP",
-      description: "Download de SecuryFlex app en ervaar hoe eenvoudig beveiliging kan zijn. Voor beveiligers, bedrijven én opdrachtgevers.",
+      description:
+        "Download de SecuryFlex app en ervaar hoe eenvoudig beveiliging kan zijn. Voor beveiligers, bedrijven én opdrachtgevers.",
       features: [
-        { icon: Shield, title: "Voor Beveiligers", description: "Vind shifts, GPS check-in, digitale urenbriefjes" },
-        { icon: Building, title: "Voor Beveiligingsbedrijven", description: "Team dashboard, planning tools, real-time monitoring" },
-        { icon: Users, title: "Voor Opdrachtgevers", description: "Quick booking, live tracking, digitale rapportages" }
+        {
+          icon: Shield,
+          title: "Voor Beveiligers",
+          description: "Vind shifts, GPS check-in, digitale urenbriefjes",
+        },
+        {
+          icon: Building,
+          title: "Voor Beveiligingsbedrijven",
+          description: "Team dashboard, planning tools, real-time monitoring",
+        },
+        {
+          icon: Users,
+          title: "Voor Opdrachtgevers",
+          description: "Quick booking, live tracking, digitale rapportages",
+        },
       ],
-      stats: "10.000+ downloads met 4.8 ⭐ rating"
-    }
+      stats: "10.000+ downloads met 4.8 ⭐ rating",
+    },
   };
 
   const content = roleContent[activeRole || "null"];

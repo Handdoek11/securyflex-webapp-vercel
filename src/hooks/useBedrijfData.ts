@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useApiData } from "./useApiData";
 
 // Types for bedrijf data
@@ -129,7 +129,7 @@ export interface BedrijfStats {
     aantalPersonen: number;
   }>;
   insights: Array<{
-    type: 'success' | 'warning' | 'info' | 'danger';
+    type: "success" | "warning" | "info" | "danger";
     title: string;
     message: string;
   }>;
@@ -167,31 +167,34 @@ export function useBedrijfOpdrachten(params?: {
     };
   }>({
     endpoint,
-    requireAuth: true
+    requireAuth: true,
   });
 
-  const createOpdracht = useCallback(async (opdrachtData: any) => {
-    try {
-      const response = await fetch('/api/bedrijf/opdrachten', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(opdrachtData),
-      });
+  const createOpdracht = useCallback(
+    async (opdrachtData: any) => {
+      try {
+        const response = await fetch("/api/bedrijf/opdrachten", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(opdrachtData),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to create opdracht');
+        if (!response.ok) {
+          throw new Error("Failed to create opdracht");
+        }
+
+        const result = await response.json();
+        await refetch(); // Refresh the list
+        return result;
+      } catch (error) {
+        console.error("Error creating opdracht:", error);
+        throw error;
       }
-
-      const result = await response.json();
-      await refetch(); // Refresh the list
-      return result;
-    } catch (error) {
-      console.error('Error creating opdracht:', error);
-      throw error;
-    }
-  }, [refetch]);
+    },
+    [refetch],
+  );
 
   return {
     opdrachten: data?.opdrachten || [],
@@ -200,7 +203,7 @@ export function useBedrijfOpdrachten(params?: {
     loading,
     error,
     refetch,
-    createOpdracht
+    createOpdracht,
   };
 }
 
@@ -244,37 +247,40 @@ export function useBedrijfPlanning(params?: {
     };
   }>({
     endpoint,
-    requireAuth: true
+    requireAuth: true,
   });
 
-  const assignTeamMembers = useCallback(async (assignmentData: {
-    opdrachtId: string;
-    zzpProfileIds: string[];
-    startTijd?: string;
-    eindTijd?: string;
-    notities?: string;
-  }) => {
-    try {
-      const response = await fetch('/api/bedrijf/planning', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(assignmentData),
-      });
+  const assignTeamMembers = useCallback(
+    async (assignmentData: {
+      opdrachtId: string;
+      zzpProfileIds: string[];
+      startTijd?: string;
+      eindTijd?: string;
+      notities?: string;
+    }) => {
+      try {
+        const response = await fetch("/api/bedrijf/planning", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(assignmentData),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to assign team members');
+        if (!response.ok) {
+          throw new Error("Failed to assign team members");
+        }
+
+        const result = await response.json();
+        await refetch(); // Refresh planning data
+        return result;
+      } catch (error) {
+        console.error("Error assigning team members:", error);
+        throw error;
       }
-
-      const result = await response.json();
-      await refetch(); // Refresh planning data
-      return result;
-    } catch (error) {
-      console.error('Error assigning team members:', error);
-      throw error;
-    }
-  }, [refetch]);
+    },
+    [refetch],
+  );
 
   return {
     planning: data?.planning || [],
@@ -285,7 +291,7 @@ export function useBedrijfPlanning(params?: {
     loading,
     error,
     refetch,
-    assignTeamMembers
+    assignTeamMembers,
   };
 }
 
@@ -327,35 +333,38 @@ export function useBedrijfKlanten(params?: {
     };
   }>({
     endpoint,
-    requireAuth: true
+    requireAuth: true,
   });
 
-  const updateClient = useCallback(async (clientData: {
-    clientId: string;
-    action: "add_note" | "update_contact" | "mark_favorite";
-    data: Record<string, any>;
-  }) => {
-    try {
-      const response = await fetch('/api/bedrijf/klanten', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(clientData),
-      });
+  const updateClient = useCallback(
+    async (clientData: {
+      clientId: string;
+      action: "add_note" | "update_contact" | "mark_favorite";
+      data: Record<string, any>;
+    }) => {
+      try {
+        const response = await fetch("/api/bedrijf/klanten", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(clientData),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to update client');
+        if (!response.ok) {
+          throw new Error("Failed to update client");
+        }
+
+        const result = await response.json();
+        await refetch(); // Refresh client data
+        return result;
+      } catch (error) {
+        console.error("Error updating client:", error);
+        throw error;
       }
-
-      const result = await response.json();
-      await refetch(); // Refresh client data
-      return result;
-    } catch (error) {
-      console.error('Error updating client:', error);
-      throw error;
-    }
-  }, [refetch]);
+    },
+    [refetch],
+  );
 
   return {
     klanten: data?.klanten || [],
@@ -365,7 +374,7 @@ export function useBedrijfKlanten(params?: {
     loading,
     error,
     refetch,
-    updateClient
+    updateClient,
   };
 }
 
@@ -382,14 +391,14 @@ export function useBedrijfStats(params?: {
 
   const { data, loading, error, refetch } = useApiData<BedrijfStats>({
     endpoint,
-    requireAuth: true
+    requireAuth: true,
   });
 
   return {
     stats: data,
     loading,
     error,
-    refetch
+    refetch,
   };
 }
 
@@ -416,6 +425,6 @@ export function useBedrijfRealtime() {
 
   return {
     lastUpdate,
-    refreshData
+    refreshData,
   };
 }

@@ -1,30 +1,34 @@
 "use client";
 
-import { useState } from "react";
 import {
-  Search,
-  Filter,
-  MapPin,
-  Calendar,
-  Clock,
-  Euro,
-  Users,
-  Star,
-  Shield,
-  CheckCircle,
   AlertCircle,
-  Send,
+  Building2,
+  Calendar,
+  CheckCircle,
+  Clock,
   Eye,
-  Heart,
-  TrendingUp,
-  Building2
+  MapPin,
+  Search,
+  Send,
+  Star,
+  Users,
 } from "lucide-react";
+import { useState } from "react";
+import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -32,15 +36,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
 
 interface ExternalOpdracht {
   id: string;
@@ -76,7 +71,8 @@ export default function BedrijfOpdrachtSolliciterenPage() {
   const [filterLocation, setFilterLocation] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [showOnlyDirectPayment, setShowOnlyDirectPayment] = useState(false);
-  const [selectedOpdracht, setSelectedOpdracht] = useState<ExternalOpdracht | null>(null);
+  const [selectedOpdracht, setSelectedOpdracht] =
+    useState<ExternalOpdracht | null>(null);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
 
@@ -98,7 +94,8 @@ export default function BedrijfOpdrachtSolliciterenPage() {
       urgency: "urgent",
       directPayment: true,
       matchScore: 95,
-      description: "Beveiliging van Terminal 3 tijdens nachtelijke uren. VOG en Schiphol pas vereist."
+      description:
+        "Beveiliging van Terminal 3 tijdens nachtelijke uren. VOG en Schiphol pas vereist.",
     },
     {
       id: "2",
@@ -115,7 +112,7 @@ export default function BedrijfOpdrachtSolliciterenPage() {
       skills: ["Evenement", "Crowd Control", "EHBO"],
       urgency: "normal",
       directPayment: true,
-      matchScore: 88
+      matchScore: 88,
     },
     {
       id: "3",
@@ -132,7 +129,7 @@ export default function BedrijfOpdrachtSolliciterenPage() {
       skills: ["Receptie", "Engels", "Klantvriendelijk"],
       urgency: "normal",
       directPayment: false,
-      matchScore: 75
+      matchScore: 75,
     },
     {
       id: "4",
@@ -149,8 +146,8 @@ export default function BedrijfOpdrachtSolliciterenPage() {
       skills: ["VIP", "Discrete", "Engels", "Rijbewijs"],
       urgency: "critical",
       directPayment: true,
-      matchScore: 92
-    }
+      matchScore: 92,
+    },
   ];
 
   const teamMembers: TeamMember[] = [
@@ -161,7 +158,7 @@ export default function BedrijfOpdrachtSolliciterenPage() {
       skills: ["Airport Security", "Engels", "Nachtdienst"],
       rating: 4.8,
       location: "Amsterdam",
-      finqleOnboarded: true
+      finqleOnboarded: true,
     },
     {
       id: "2",
@@ -170,7 +167,7 @@ export default function BedrijfOpdrachtSolliciterenPage() {
       skills: ["Evenement", "EHBO", "Crowd Control"],
       rating: 4.9,
       location: "Amsterdam",
-      finqleOnboarded: true
+      finqleOnboarded: true,
     },
     {
       id: "3",
@@ -179,7 +176,7 @@ export default function BedrijfOpdrachtSolliciterenPage() {
       skills: ["VIP", "Engels", "Discrete"],
       rating: 4.7,
       location: "Utrecht",
-      finqleOnboarded: true
+      finqleOnboarded: true,
     },
     {
       id: "4",
@@ -188,8 +185,8 @@ export default function BedrijfOpdrachtSolliciterenPage() {
       skills: ["Receptie", "Engels", "Klantvriendelijk"],
       rating: 4.6,
       location: "Amsterdam Noord",
-      finqleOnboarded: false
-    }
+      finqleOnboarded: false,
+    },
   ];
 
   const getUrgencyBadge = (urgency: ExternalOpdracht["urgency"]) => {
@@ -215,7 +212,12 @@ export default function BedrijfOpdrachtSolliciterenPage() {
   const handleApplication = () => {
     if (selectedOpdracht && selectedTeamMembers.length > 0) {
       // Handle application submission
-      console.log("Applying for:", selectedOpdracht.id, "with team:", selectedTeamMembers);
+      console.log(
+        "Applying for:",
+        selectedOpdracht.id,
+        "with team:",
+        selectedTeamMembers,
+      );
       setShowApplicationModal(false);
       setSelectedTeamMembers([]);
       setSelectedOpdracht(null);
@@ -223,10 +225,10 @@ export default function BedrijfOpdrachtSolliciterenPage() {
   };
 
   const availableTeamForOpdracht = (opdracht: ExternalOpdracht) => {
-    return teamMembers.filter(member => {
+    return teamMembers.filter((member) => {
       if (!member.available) return false;
       // Check if member has at least one matching skill
-      return opdracht.skills.some(skill => member.skills.includes(skill));
+      return opdracht.skills.some((skill) => member.skills.includes(skill));
     });
   };
 
@@ -236,11 +238,9 @@ export default function BedrijfOpdrachtSolliciterenPage() {
       subtitle="Solliciteer met je team op externe opdrachten"
       headerActions={
         <div className="flex items-center gap-2">
-          <Badge variant="outline">
-            {opdrachten.length} opdrachten
-          </Badge>
+          <Badge variant="outline">{opdrachten.length} opdrachten</Badge>
           <Badge variant="success">
-            {teamMembers.filter(m => m.available).length} beschikbaar
+            {teamMembers.filter((m) => m.available).length} beschikbaar
           </Badge>
         </div>
       }
@@ -300,7 +300,9 @@ export default function BedrijfOpdrachtSolliciterenPage() {
               <Checkbox
                 id="direct-payment"
                 checked={showOnlyDirectPayment}
-                onCheckedChange={(checked) => setShowOnlyDirectPayment(checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setShowOnlyDirectPayment(checked as boolean)
+                }
               />
               <Label htmlFor="direct-payment" className="cursor-pointer">
                 Alleen Direct Payment
@@ -310,13 +312,18 @@ export default function BedrijfOpdrachtSolliciterenPage() {
         </Card>
 
         {/* Alert for urgent opdrachten */}
-        {opdrachten.filter(o => o.urgency === "critical").length > 0 && (
+        {opdrachten.filter((o) => o.urgency === "critical").length > 0 && (
           <Card className="p-4 bg-red-50 dark:bg-red-900/20 border-red-200">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-red-500" />
               <div className="flex-1">
                 <p className="font-medium text-red-800 dark:text-red-200">
-                  {opdrachten.filter(o => o.urgency === "critical").length} kritieke opdracht{opdrachten.filter(o => o.urgency === "critical").length > 1 ? "en" : ""} vereisen directe actie
+                  {opdrachten.filter((o) => o.urgency === "critical").length}{" "}
+                  kritieke opdracht
+                  {opdrachten.filter((o) => o.urgency === "critical").length > 1
+                    ? "en"
+                    : ""}{" "}
+                  vereisen directe actie
                 </p>
               </div>
               <Button size="sm" variant="destructive">
@@ -332,12 +339,17 @@ export default function BedrijfOpdrachtSolliciterenPage() {
             const availableTeam = availableTeamForOpdracht(opdracht);
 
             return (
-              <Card key={opdracht.id} className="p-4 hover:shadow-lg transition-shadow">
+              <Card
+                key={opdracht.id}
+                className="p-4 hover:shadow-lg transition-shadow"
+              >
                 <div className="space-y-4">
                   {/* Header */}
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-semibold text-lg">{opdracht.title}</h3>
+                      <h3 className="font-semibold text-lg">
+                        {opdracht.title}
+                      </h3>
                       <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                         <Building2 className="h-4 w-4" />
                         {opdracht.client}
@@ -361,7 +373,9 @@ export default function BedrijfOpdrachtSolliciterenPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{opdracht.startTime} - {opdracht.endTime}</span>
+                      <span>
+                        {opdracht.startTime} - {opdracht.endTime}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -381,7 +395,9 @@ export default function BedrijfOpdrachtSolliciterenPage() {
                   {/* Financial & Status */}
                   <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
                     <div>
-                      <p className="text-2xl font-bold">€{opdracht.hourlyRate}/uur</p>
+                      <p className="text-2xl font-bold">
+                        €{opdracht.hourlyRate}/uur
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         Totaal: €{opdracht.totalValue.toLocaleString("nl-NL")}
                       </p>
@@ -398,10 +414,19 @@ export default function BedrijfOpdrachtSolliciterenPage() {
                   <div className="flex items-center justify-between">
                     <div className="text-sm">
                       <span className="text-muted-foreground">Jouw team: </span>
-                      <span className={availableTeam.length >= opdracht.requiredBeveiligers ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
+                      <span
+                        className={
+                          availableTeam.length >= opdracht.requiredBeveiligers
+                            ? "text-green-600 font-medium"
+                            : "text-amber-600 font-medium"
+                        }
+                      >
                         {availableTeam.length} beschikbaar
                       </span>
-                      <span className="text-muted-foreground"> / {opdracht.requiredBeveiligers} nodig</span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        / {opdracht.requiredBeveiligers} nodig
+                      </span>
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {opdracht.applicants} sollicitaties
@@ -437,69 +462,89 @@ export default function BedrijfOpdrachtSolliciterenPage() {
         </div>
 
         {/* Application Modal */}
-        <Dialog open={showApplicationModal} onOpenChange={setShowApplicationModal}>
+        <Dialog
+          open={showApplicationModal}
+          onOpenChange={setShowApplicationModal}
+        >
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Team Selecteren voor Sollicitatie</DialogTitle>
               <DialogDescription>
                 {selectedOpdracht && (
                   <>
-                    Selecteer team leden voor: <strong>{selectedOpdracht.title}</strong>
+                    Selecteer team leden voor:{" "}
+                    <strong>{selectedOpdracht.title}</strong>
                     <br />
-                    Benodigde beveiligers: {selectedOpdracht.requiredBeveiligers}
+                    Benodigde beveiligers:{" "}
+                    {selectedOpdracht.requiredBeveiligers}
                   </>
                 )}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 my-4 max-h-96 overflow-y-auto">
-              {selectedOpdracht && availableTeamForOpdracht(selectedOpdracht).map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      checked={selectedTeamMembers.includes(member.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedTeamMembers([...selectedTeamMembers, member.id]);
-                        } else {
-                          setSelectedTeamMembers(selectedTeamMembers.filter(id => id !== member.id));
-                        }
-                      }}
-                    />
-                    <div>
-                      <p className="font-medium">{member.name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Star className="h-3 w-3" />
-                        <span>{member.rating}</span>
-                        <span>•</span>
-                        <span>{member.location}</span>
-                        {!member.finqleOnboarded && (
-                          <>
-                            <span>•</span>
-                            <span className="text-amber-600">Finqle setup nodig</span>
-                          </>
-                        )}
+              {selectedOpdracht &&
+                availableTeamForOpdracht(selectedOpdracht).map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={selectedTeamMembers.includes(member.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedTeamMembers([
+                              ...selectedTeamMembers,
+                              member.id,
+                            ]);
+                          } else {
+                            setSelectedTeamMembers(
+                              selectedTeamMembers.filter(
+                                (id) => id !== member.id,
+                              ),
+                            );
+                          }
+                        }}
+                      />
+                      <div>
+                        <p className="font-medium">{member.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Star className="h-3 w-3" />
+                          <span>{member.rating}</span>
+                          <span>•</span>
+                          <span>{member.location}</span>
+                          {!member.finqleOnboarded && (
+                            <>
+                              <span>•</span>
+                              <span className="text-amber-600">
+                                Finqle setup nodig
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex gap-1">
+                      {member.skills.slice(0, 2).map((skill) => (
+                        <Badge
+                          key={skill}
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    {member.skills.slice(0, 2).map(skill => (
-                      <Badge key={skill} variant="outline" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
 
             {selectedOpdracht && (
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <p className="text-sm">
-                  <strong>Geselecteerd:</strong> {selectedTeamMembers.length} van {selectedOpdracht.requiredBeveiligers} beveiligers
+                  <strong>Geselecteerd:</strong> {selectedTeamMembers.length}{" "}
+                  van {selectedOpdracht.requiredBeveiligers} beveiligers
                 </p>
                 {selectedOpdracht.directPayment && (
                   <p className="text-sm text-green-600 mt-1">
@@ -510,13 +555,20 @@ export default function BedrijfOpdrachtSolliciterenPage() {
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowApplicationModal(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowApplicationModal(false)}
+              >
                 Annuleren
               </Button>
               <Button
                 onClick={handleApplication}
-                disabled={selectedTeamMembers.length === 0 ||
-                  (selectedOpdracht && selectedTeamMembers.length > selectedOpdracht.requiredBeveiligers)}
+                disabled={
+                  selectedTeamMembers.length === 0 ||
+                  (selectedOpdracht &&
+                    selectedTeamMembers.length >
+                      selectedOpdracht.requiredBeveiligers)
+                }
               >
                 Sollicitatie versturen
               </Button>

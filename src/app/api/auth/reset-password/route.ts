@@ -1,8 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyPasswordResetToken, markPasswordResetTokenUsed } from "@/lib/auth/tokens";
-import { hashPassword } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { hashPassword } from "@/lib/auth";
+import {
+  markPasswordResetTokenUsed,
+  verifyPasswordResetToken,
+} from "@/lib/auth/tokens";
+import prisma from "@/lib/prisma";
 
 const resetPasswordSchema = z.object({
   token: z.string(),
@@ -24,9 +27,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Ongeldige invoer",
-          details: validationResult.error.errors.map(err => err.message).join(", ")
+          details: validationResult.error.errors
+            .map((err) => err.message)
+            .join(", "),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +42,15 @@ export async function POST(request: NextRequest) {
     if (!tokenResult.success) {
       return NextResponse.json(
         { error: tokenResult.error || "Ongeldige of verlopen token" },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    // Type guard ensures tokenId and userId exist when success is true
+    if (!tokenResult.tokenId || !tokenResult.userId) {
+      return NextResponse.json(
+        { error: "Token verification failed" },
+        { status: 400 },
       );
     }
 
@@ -52,25 +65,26 @@ export async function POST(request: NextRequest) {
         // Reset failed login attempts on successful password reset
         failedLoginAttempts: 0,
         lastFailedLogin: null,
-        lockedUntil: null
-      }
+        lockedUntil: null,
+      },
     });
 
     // Mark token as used
-    await markPasswordResetTokenUsed(tokenResult.tokenId!, tokenResult.userId);
+    await markPasswordResetTokenUsed(tokenResult.tokenId, tokenResult.userId);
 
     return NextResponse.json(
       {
         success: true,
-        message: "Wachtwoord succesvol gereset. Je kunt nu inloggen met je nieuwe wachtwoord."
+        message:
+          "Wachtwoord succesvol gereset. Je kunt nu inloggen met je nieuwe wachtwoord.",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Password reset error:", error);
     return NextResponse.json(
       { error: "Er is een fout opgetreden bij het resetten van je wachtwoord" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -81,10 +95,7 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("token");
 
   if (!token) {
-    return NextResponse.json(
-      { error: "Token is verplicht" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Token is verplicht" }, { status: 400 });
   }
 
   const result = await verifyPasswordResetToken(token);
@@ -92,15 +103,15 @@ export async function GET(request: NextRequest) {
   if (!result.success) {
     return NextResponse.json(
       { error: result.error || "Ongeldige of verlopen token" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   return NextResponse.json(
     {
       success: true,
-      message: "Token is geldig"
+      message: "Token is geldig",
     },
-    { status: 200 }
+    { status: 200 },
   );
 }

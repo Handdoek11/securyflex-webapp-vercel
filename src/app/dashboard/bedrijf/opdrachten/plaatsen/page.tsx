@@ -1,29 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Calendar,
-  Clock,
-  MapPin,
-  Users,
-  Euro,
-  Shield,
-  Plus,
-  Trash2,
-  AlertCircle,
   CheckCircle,
   FileText,
+  MapPin,
+  Plus,
   Save,
-  Send
+  Send,
+  Shield,
+  Trash2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -31,7 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ShiftRequirement {
   id: string;
@@ -63,8 +59,8 @@ export default function BedrijfOpdrachtPlaatsenPage() {
       date: "",
       startTime: "",
       endTime: "",
-      beveiligers: 1
-    }
+      beveiligers: 1,
+    },
   ]);
 
   const addShift = () => {
@@ -75,36 +71,40 @@ export default function BedrijfOpdrachtPlaatsenPage() {
         date: "",
         startTime: "",
         endTime: "",
-        beveiligers: 1
-      }
+        beveiligers: 1,
+      },
     ]);
   };
 
   const removeShift = (id: string) => {
     if (shifts.length > 1) {
-      setShifts(shifts.filter(s => s.id !== id));
+      setShifts(shifts.filter((s) => s.id !== id));
     }
   };
 
-  const updateShift = (id: string, field: keyof ShiftRequirement, value: string | number) => {
-    setShifts(shifts.map(s =>
-      s.id === id ? { ...s, [field]: value } : s
-    ));
+  const updateShift = (
+    id: string,
+    field: keyof ShiftRequirement,
+    value: string | number,
+  ) => {
+    setShifts(shifts.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
   };
 
   const calculateTotalValue = () => {
     return shifts.reduce((total, shift) => {
       if (shift.startTime && shift.endTime) {
-        const start = parseInt(shift.startTime.split(":")[0]);
-        const end = parseInt(shift.endTime.split(":")[0]);
+        const start = parseInt(shift.startTime.split(":")[0], 10);
+        const end = parseInt(shift.endTime.split(":")[0], 10);
         const hours = end > start ? end - start : 0;
-        return total + (hours * shift.beveiligers * parseFloat(hourlyRate || "0"));
+        return (
+          total + hours * shift.beveiligers * parseFloat(hourlyRate || "0")
+        );
       }
       return total;
     }, 0);
   };
 
-  const handleSubmit = async (isDraft: boolean = false) => {
+  const handleSubmit = async (_isDraft: boolean = false) => {
     setIsSubmitting(true);
 
     // Simulate API call
@@ -123,7 +123,7 @@ export default function BedrijfOpdrachtPlaatsenPage() {
     "Airport Security",
     "Engels",
     "EHBO",
-    "BHV"
+    "BHV",
   ];
 
   return (
@@ -153,7 +153,8 @@ export default function BedrijfOpdrachtPlaatsenPage() {
                 Finqle Direct Payment beschikbaar
               </p>
               <p className="text-sm text-green-700 dark:text-green-200">
-                ZZP'ers kunnen kiezen voor directe uitbetaling binnen 24 uur. Kredietlimiet: €80.000 beschikbaar.
+                ZZP'ers kunnen kiezen voor directe uitbetaling binnen 24 uur.
+                Kredietlimiet: €80.000 beschikbaar.
               </p>
             </div>
           </div>
@@ -264,7 +265,9 @@ export default function BedrijfOpdrachtPlaatsenPage() {
                     <Input
                       type="date"
                       value={shift.date}
-                      onChange={(e) => updateShift(shift.id, "date", e.target.value)}
+                      onChange={(e) =>
+                        updateShift(shift.id, "date", e.target.value)
+                      }
                     />
                   </div>
 
@@ -273,7 +276,9 @@ export default function BedrijfOpdrachtPlaatsenPage() {
                     <Input
                       type="time"
                       value={shift.startTime}
-                      onChange={(e) => updateShift(shift.id, "startTime", e.target.value)}
+                      onChange={(e) =>
+                        updateShift(shift.id, "startTime", e.target.value)
+                      }
                     />
                   </div>
 
@@ -282,7 +287,9 @@ export default function BedrijfOpdrachtPlaatsenPage() {
                     <Input
                       type="time"
                       value={shift.endTime}
-                      onChange={(e) => updateShift(shift.id, "endTime", e.target.value)}
+                      onChange={(e) =>
+                        updateShift(shift.id, "endTime", e.target.value)
+                      }
                     />
                   </div>
 
@@ -292,7 +299,13 @@ export default function BedrijfOpdrachtPlaatsenPage() {
                       type="number"
                       min="1"
                       value={shift.beveiligers}
-                      onChange={(e) => updateShift(shift.id, "beveiligers", parseInt(e.target.value))}
+                      onChange={(e) =>
+                        updateShift(
+                          shift.id,
+                          "beveiligers",
+                          parseInt(e.target.value, 10),
+                        )
+                      }
                     />
                   </div>
                 </div>
@@ -300,11 +313,7 @@ export default function BedrijfOpdrachtPlaatsenPage() {
             ))}
           </div>
 
-          <Button
-            variant="outline"
-            className="w-full mt-3"
-            onClick={addShift}
-          >
+          <Button variant="outline" className="w-full mt-3" onClick={addShift}>
             <Plus className="h-4 w-4 mr-2" />
             Shift toevoegen
           </Button>
@@ -328,7 +337,7 @@ export default function BedrijfOpdrachtPlaatsenPage() {
                     className="cursor-pointer"
                     onClick={() => {
                       if (skills.includes(skill)) {
-                        setSkills(skills.filter(s => s !== skill));
+                        setSkills(skills.filter((s) => s !== skill));
                       } else {
                         setSkills([...skills, skill]);
                       }
@@ -362,7 +371,9 @@ export default function BedrijfOpdrachtPlaatsenPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="direct-payment">Finqle Direct Payment</Label>
-                  <Badge variant="success" className="text-xs">Aanbevolen</Badge>
+                  <Badge variant="success" className="text-xs">
+                    Aanbevolen
+                  </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Sta ZZP'ers toe om directe betaling aan te vragen
@@ -379,7 +390,9 @@ export default function BedrijfOpdrachtPlaatsenPage() {
               <div className="space-y-1">
                 <Label htmlFor="auto-accept">Automatisch accepteren</Label>
                 <p className="text-sm text-muted-foreground">
-                  Accepteer automatisch de eerste {shifts.reduce((sum, s) => sum + s.beveiligers, 0)} sollicitaties
+                  Accepteer automatisch de eerste{" "}
+                  {shifts.reduce((sum, s) => sum + s.beveiligers, 0)}{" "}
+                  sollicitaties
                 </p>
               </div>
               <Switch

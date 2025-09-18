@@ -19,7 +19,7 @@ export async function sendEmail({ to, subject, html, text }: EmailOptions) {
       to,
       subject,
       html,
-      text
+      text,
     });
 
     if (error) {
@@ -37,7 +37,11 @@ export async function sendEmail({ to, subject, html, text }: EmailOptions) {
 /**
  * Send verification email
  */
-export async function sendVerificationEmail(email: string, name: string, token: string) {
+export async function sendVerificationEmail(
+  email: string,
+  name: string,
+  token: string,
+) {
   const verificationUrl = `${process.env.NEXTAUTH_URL}/auth/verify?token=${token}`;
 
   const html = `
@@ -154,14 +158,18 @@ export async function sendVerificationEmail(email: string, name: string, token: 
     to: email,
     subject: "Verifieer je SecuryFlex account",
     html,
-    text
+    text,
   });
 }
 
 /**
  * Send password reset email
  */
-export async function sendPasswordResetEmail(email: string, name: string, token: string) {
+export async function sendPasswordResetEmail(
+  email: string,
+  name: string,
+  token: string,
+) {
   const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`;
 
   const html = `
@@ -294,7 +302,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
     to: email,
     subject: "Reset je SecuryFlex wachtwoord",
     html,
-    text
+    text,
   });
 }
 
@@ -305,7 +313,7 @@ export async function sendTeamInvitationEmail(
   email: string,
   name: string,
   companyName: string,
-  inviterName: string
+  inviterName: string,
 ) {
   const loginUrl = `${process.env.NEXTAUTH_URL}/auth/login`;
 
@@ -430,6 +438,6 @@ export async function sendTeamInvitationEmail(
     to: email,
     subject: `Uitnodiging voor ${companyName} team op SecuryFlex`,
     html,
-    text
+    text,
   });
 }

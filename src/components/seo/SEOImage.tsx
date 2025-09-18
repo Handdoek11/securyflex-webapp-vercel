@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import Image from "next/image";
 
 interface SEOImageProps {
   src: string;
@@ -19,7 +19,7 @@ export function SEOImage({
   className,
   priority = false,
   sizes,
-  quality = 75
+  quality = 75,
 }: SEOImageProps) {
   return (
     <Image

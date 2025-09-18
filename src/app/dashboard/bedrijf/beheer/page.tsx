@@ -1,38 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import {
-  Settings,
-  Building2,
-  Shield,
-  Bell,
-  CreditCard,
-  Users,
-  FileText,
-  Globe,
-  Key,
-  Mail,
-  Phone,
-  MapPin,
-  Save,
   AlertCircle,
+  Bell,
+  Building2,
   CheckCircle,
-  ExternalLink,
-  Upload,
+  CreditCard,
   Download,
-  Calendar,
   Euro,
-  Lock,
+  ExternalLink,
   Eye,
-  EyeOff
+  EyeOff,
+  FileText,
+  Lock,
+  Save,
+  Shield,
+  Upload,
 } from "lucide-react";
+import { useState } from "react";
+import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -40,13 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function BedrijfBeheerPage() {
   const [isSaving, setIsSaving] = useState(false);
@@ -287,7 +274,9 @@ export default function BedrijfBeheerPage() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <Label htmlFor="document-alerts">Document Waarschuwingen</Label>
+                  <Label htmlFor="document-alerts">
+                    Document Waarschuwingen
+                  </Label>
                   <p className="text-sm text-muted-foreground">
                     Verlopen certificaten, ontbrekende documenten
                   </p>
@@ -346,7 +335,11 @@ export default function BedrijfBeheerPage() {
                     size="icon"
                     onClick={() => setShowApiKey(!showApiKey)}
                   >
-                    {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showApiKey ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
@@ -452,14 +445,14 @@ export default function BedrijfBeheerPage() {
                 </div>
               </div>
 
-              <Button className="mt-4">
-                Wachtwoord Wijzigen
-              </Button>
+              <Button className="mt-4">Wachtwoord Wijzigen</Button>
             </div>
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Twee-Factor Authenticatie</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Twee-Factor Authenticatie
+            </h3>
 
             <div className="space-y-4">
               <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
@@ -529,7 +522,9 @@ export default function BedrijfBeheerPage() {
 
           {/* Subscription Info */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">SecuryFlex Abonnement</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              SecuryFlex Abonnement
+            </h3>
 
             <div className="space-y-4">
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -560,9 +555,7 @@ export default function BedrijfBeheerPage() {
                   <FileText className="h-4 w-4 mr-2" />
                   Download Facturen
                 </Button>
-                <Button variant="outline">
-                  Upgrade Plan
-                </Button>
+                <Button variant="outline">Upgrade Plan</Button>
               </div>
             </div>
           </Card>

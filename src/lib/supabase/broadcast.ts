@@ -48,7 +48,7 @@ export enum BroadcastEvent {
   VERZEKERING_AANVRAAG_CREATED = "verzekering:aanvraag_created",
   VERZEKERING_AANVRAAG_UPDATED = "verzekering:aanvraag_updated",
   VERZEKERING_OFFERTE_RECEIVED = "verzekering:offerte_received",
-  VERZEKERING_ACTIVATED = "verzekering:activated"
+  VERZEKERING_ACTIVATED = "verzekering:activated",
 }
 
 export interface BroadcastPayload {
@@ -71,23 +71,21 @@ export async function broadcastEvent(
     userId?: string;
     bedrijfId?: string;
     opdrachtgeverId?: string;
-  }
+  },
 ) {
   try {
     const payload: BroadcastPayload = {
       event,
       data,
       timestamp: new Date().toISOString(),
-      ...metadata
+      ...metadata,
     };
 
-    const response = await supabaseAdmin
-      .channel(channel)
-      .send({
-        type: "broadcast",
-        event: event,
-        payload
-      });
+    const response = await supabaseAdmin.channel(channel).send({
+      type: "broadcast",
+      event: event,
+      payload,
+    });
 
     return { success: true, response };
   } catch (error) {
@@ -102,13 +100,10 @@ export async function broadcastEvent(
 export async function broadcastOpdrachtEvent(
   event: BroadcastEvent,
   opdracht: any,
-  additionalData?: any
+  additionalData?: any,
 ) {
   // Broadcast to multiple channels for different user types
-  const channels = [
-    `opdracht:${opdracht.id}`,
-    `opdrachten:all`,
-  ];
+  const channels = [`opdracht:${opdracht.id}`, `opdrachten:all`];
 
   // Add specific channels based on opdracht properties
   if (opdracht.opdrachtgeverId) {
@@ -122,12 +117,12 @@ export async function broadcastOpdrachtEvent(
   }
 
   const results = await Promise.all(
-    channels.map(channel =>
-      broadcastEvent(channel, event, { opdracht, ...additionalData })
-    )
+    channels.map((channel) =>
+      broadcastEvent(channel, event, { opdracht, ...additionalData }),
+    ),
   );
 
-  return results.every(r => r.success);
+  return results.every((r) => r.success);
 }
 
 /**
@@ -136,7 +131,7 @@ export async function broadcastOpdrachtEvent(
 export async function broadcastSollicitatieEvent(
   event: BroadcastEvent,
   sollicitatie: any,
-  opdracht: any
+  opdracht: any,
 ) {
   const channels = [
     `opdracht:${opdracht.id}:sollicitaties`,
@@ -157,12 +152,12 @@ export async function broadcastSollicitatieEvent(
   }
 
   const results = await Promise.all(
-    channels.map(channel =>
-      broadcastEvent(channel, event, { sollicitatie, opdracht })
-    )
+    channels.map((channel) =>
+      broadcastEvent(channel, event, { sollicitatie, opdracht }),
+    ),
   );
 
-  return results.every(r => r.success);
+  return results.every((r) => r.success);
 }
 
 /**
@@ -171,20 +166,17 @@ export async function broadcastSollicitatieEvent(
 export async function broadcastTeamEvent(
   event: BroadcastEvent,
   teamData: any,
-  bedrijfId: string
+  bedrijfId: string,
 ) {
-  const channels = [
-    `bedrijf:${bedrijfId}:team`,
-    `team:updates`,
-  ];
+  const channels = [`bedrijf:${bedrijfId}:team`, `team:updates`];
 
   const results = await Promise.all(
-    channels.map(channel =>
-      broadcastEvent(channel, event, teamData, { bedrijfId })
-    )
+    channels.map((channel) =>
+      broadcastEvent(channel, event, teamData, { bedrijfId }),
+    ),
   );
 
-  return results.every(r => r.success);
+  return results.every((r) => r.success);
 }
 
 /**
@@ -193,24 +185,21 @@ export async function broadcastTeamEvent(
 export async function broadcastWerkuurEvent(
   event: BroadcastEvent,
   werkuur: any,
-  opdracht?: any
+  opdracht?: any,
 ) {
-  const channels = [
-    `werkuur:${werkuur.id}`,
-    `zzp:${werkuur.zzpId}:werkuren`,
-  ];
+  const channels = [`werkuur:${werkuur.id}`, `zzp:${werkuur.zzpId}:werkuren`];
 
   if (werkuur.opdrachtId) {
     channels.push(`opdracht:${werkuur.opdrachtId}:werkuren`);
   }
 
   const results = await Promise.all(
-    channels.map(channel =>
-      broadcastEvent(channel, event, { werkuur, opdracht })
-    )
+    channels.map((channel) =>
+      broadcastEvent(channel, event, { werkuur, opdracht }),
+    ),
   );
 
-  return results.every(r => r.success);
+  return results.every((r) => r.success);
 }
 
 /**
@@ -219,12 +208,9 @@ export async function broadcastWerkuurEvent(
 export async function broadcastPaymentEvent(
   event: BroadcastEvent,
   payment: any,
-  metadata?: any
+  metadata?: any,
 ) {
-  const channels = [
-    `payment:${payment.id}`,
-    `payments:all`,
-  ];
+  const channels = [`payment:${payment.id}`, `payments:all`];
 
   // Add channels for involved parties
   if (payment.zzpId) {
@@ -238,12 +224,12 @@ export async function broadcastPaymentEvent(
   }
 
   const results = await Promise.all(
-    channels.map(channel =>
-      broadcastEvent(channel, event, { payment, ...metadata })
-    )
+    channels.map((channel) =>
+      broadcastEvent(channel, event, { payment, ...metadata }),
+    ),
   );
 
-  return results.every(r => r.success);
+  return results.every((r) => r.success);
 }
 
 /**
@@ -251,13 +237,13 @@ export async function broadcastPaymentEvent(
  */
 export async function broadcastNotificationEvent(
   userId: string,
-  notification: any
+  notification: any,
 ) {
   return broadcastEvent(
     `user:${userId}:notifications`,
     BroadcastEvent.NOTIFICATION_NEW,
     notification,
-    { userId }
+    { userId },
   );
 }
 
@@ -267,7 +253,7 @@ export async function broadcastNotificationEvent(
 export async function broadcastMessageEvent(
   event: BroadcastEvent,
   message: any,
-  conversationId: string
+  conversationId: string,
 ) {
   const channels = [
     `conversation:${conversationId}`,
@@ -276,12 +262,10 @@ export async function broadcastMessageEvent(
   ];
 
   const results = await Promise.all(
-    channels.map(channel =>
-      broadcastEvent(channel, event, message)
-    )
+    channels.map((channel) => broadcastEvent(channel, event, message)),
   );
 
-  return results.every(r => r.success);
+  return results.every((r) => r.success);
 }
 
 /**
@@ -290,7 +274,7 @@ export async function broadcastMessageEvent(
 export async function broadcastVerzekeringEvent(
   event: BroadcastEvent | string,
   payload: any,
-  userId?: string
+  userId?: string,
 ) {
   const channels = ["verzekeringen"];
 
@@ -299,10 +283,10 @@ export async function broadcastVerzekeringEvent(
   }
 
   const results = await Promise.all(
-    channels.map(channel =>
-      broadcastEvent(channel, event as BroadcastEvent, payload)
-    )
+    channels.map((channel) =>
+      broadcastEvent(channel, event as BroadcastEvent, payload),
+    ),
   );
 
-  return results.every(r => r.success);
+  return results.every((r) => r.success);
 }

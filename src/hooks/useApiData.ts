@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 
 interface UseApiDataOptions {
   endpoint: string;
@@ -30,7 +30,7 @@ export function useApiData<T = any>({
   requireAuth = true,
   params = {},
   enabled = true,
-  refreshInterval = 0
+  refreshInterval = 0,
 }: UseApiDataOptions): UseApiDataReturn<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,14 +50,18 @@ export function useApiData<T = any>({
 
       const response = await fetch(url.toString(), {
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        credentials: "include"
+        credentials: "include",
       });
 
       if (!response.ok) {
-        console.error(`API endpoint not found or error: ${url.toString()} - Status: ${response.status}`);
-        throw new Error(`API error: ${response.statusText} (${response.status}) - Endpoint: ${endpoint}`);
+        console.error(
+          `API endpoint not found or error: ${url.toString()} - Status: ${response.status}`,
+        );
+        throw new Error(
+          `API error: ${response.statusText} (${response.status}) - Endpoint: ${endpoint}`,
+        );
       }
 
       const result = await response.json();
@@ -107,14 +111,14 @@ export function useApiData<T = any>({
       const interval = setInterval(fetchData, refreshInterval);
       return () => clearInterval(interval);
     }
-  }, [endpoint, status, enabled, JSON.stringify(params)]);
+  }, [status, enabled, fetchData, refreshInterval, requireAuth]);
 
   return {
     data,
     loading,
     error,
     refetch: fetchData,
-    mutate: setData
+    mutate: setData,
   };
 }
 
@@ -124,28 +128,42 @@ export function useApiData<T = any>({
 export function useTeamMembers() {
   const fallbackData = {
     teamMembers: [
-      { id: "1", name: "Jan de Vries", available: true, rating: 4.8, skills: ["Evenement", "Objectbeveiliging"] },
-      { id: "2", name: "Piet Bakker", available: true, rating: 4.6, skills: ["Horeca", "Crowd Control"] }
+      {
+        id: "1",
+        name: "Jan de Vries",
+        available: true,
+        rating: 4.8,
+        skills: ["Evenement", "Objectbeveiliging"],
+      },
+      {
+        id: "2",
+        name: "Piet Bakker",
+        available: true,
+        rating: 4.6,
+        skills: ["Horeca", "Crowd Control"],
+      },
     ],
     stats: {
       total: 2,
       active: 2,
       invited: 0,
-      finqleReady: 0
-    }
+      finqleReady: 0,
+    },
   };
 
   return useApiData({
     endpoint: "/api/bedrijf/team",
     fallbackData,
-    requireAuth: true
+    requireAuth: true,
   });
 }
 
 /**
  * Hook for fetching opdrachten
  */
-export function useOpdrachten(view: "available" | "own" | "team" = "available") {
+export function useOpdrachten(
+  view: "available" | "own" | "team" = "available",
+) {
   const fallbackData = {
     opdrachten: [],
     pagination: {
@@ -154,28 +172,30 @@ export function useOpdrachten(view: "available" | "own" | "team" = "available") 
       total: 0,
       totalPages: 0,
       hasNext: false,
-      hasPrev: false
-    }
+      hasPrev: false,
+    },
   };
 
   return useApiData({
     endpoint: "/api/opdrachten",
     params: { view },
     fallbackData,
-    requireAuth: true
+    requireAuth: true,
   });
 }
 
 /**
  * Hook for fetching jobs/opdrachten with filters
  */
-export function useJobs(filters: {
-  search?: string;
-  location?: string;
-  type?: string;
-  minRate?: string;
-  page?: number;
-} = {}) {
+export function useJobs(
+  filters: {
+    search?: string;
+    location?: string;
+    type?: string;
+    minRate?: string;
+    page?: number;
+  } = {},
+) {
   const params: Record<string, string> = {};
 
   if (filters.search) params.search = filters.search;
@@ -195,10 +215,10 @@ export function useJobs(filters: {
         total: 0,
         totalPages: 0,
         hasNext: false,
-        hasPrev: false
-      }
+        hasPrev: false,
+      },
     },
-    requireAuth: false // Jobs can be viewed without auth
+    requireAuth: false, // Jobs can be viewed without auth
   });
 }
 
@@ -214,10 +234,10 @@ export function useDashboardStats() {
       totalRevenue: 0,
       teamSize: 0,
       weeklyHours: 0,
-      pendingInvoices: 0
+      pendingInvoices: 0,
     },
     requireAuth: true,
-    refreshInterval: 60000 // Refresh every minute
+    refreshInterval: 60000, // Refresh every minute
   });
 }
 
@@ -231,10 +251,10 @@ export function useNotifications(unreadOnly = false) {
     fallbackData: {
       notifications: [],
       unreadCount: 0,
-      categoryCounts: {}
+      categoryCounts: {},
     },
     requireAuth: true,
-    refreshInterval: 30000 // Refresh every 30 seconds
+    refreshInterval: 30000, // Refresh every 30 seconds
   });
 }
 
@@ -249,7 +269,7 @@ export function useWerkuren(status?: string) {
     endpoint: "/api/werkuren",
     params,
     fallbackData: [],
-    requireAuth: true
+    requireAuth: true,
   });
 }
 
@@ -268,7 +288,7 @@ export function useOpdrachtgeverStats() {
         id: "",
         bedrijfsnaam: "Uw Bedrijf",
         kvkNummer: "",
-        contactpersoon: ""
+        contactpersoon: "",
       },
       stats: {
         activeShifts: 0,
@@ -280,24 +300,26 @@ export function useOpdrachtgeverStats() {
         beveiligerCount: 0,
         urgentShifts: 0,
         completedThisMonth: 0,
-        pendingApprovals: 0
-      }
+        pendingApprovals: 0,
+      },
     },
     requireAuth: true,
-    refreshInterval: 60000 // Refresh every minute
+    refreshInterval: 60000, // Refresh every minute
   });
 }
 
 /**
  * Hook for fetching opdrachtgever shifts with filters
  */
-export function useOpdrachtgeverShifts(filters: {
-  status?: "open" | "active" | "completed" | "cancelled";
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-} = {}) {
+export function useOpdrachtgeverShifts(
+  filters: {
+    status?: "open" | "active" | "completed" | "cancelled";
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+  } = {},
+) {
   const params: Record<string, string> = {};
 
   if (filters.status) params.status = filters.status;
@@ -317,10 +339,10 @@ export function useOpdrachtgeverShifts(filters: {
         total: 0,
         totalPages: 0,
         hasNext: false,
-        hasPrev: false
-      }
+        hasPrev: false,
+      },
     },
-    requireAuth: true
+    requireAuth: true,
   });
 }
 
@@ -332,24 +354,26 @@ export function useOpdrachtgeverShift(shiftId: string, enabled = true) {
     endpoint: `/api/opdrachtgever/shifts/${shiftId}`,
     fallbackData: null,
     requireAuth: true,
-    enabled: enabled && !!shiftId
+    enabled: enabled && !!shiftId,
   });
 }
 
 /**
  * Hook for fetching beveiligers pool with filters
  */
-export function useOpdrachtgeverBeveiligers(filters: {
-  view?: "all" | "favorites" | "available";
-  search?: string;
-  location?: string;
-  specialization?: string;
-  minRating?: number;
-  maxDistance?: number;
-  availableOnly?: boolean;
-  page?: number;
-  limit?: number;
-} = {}) {
+export function useOpdrachtgeverBeveiligers(
+  filters: {
+    view?: "all" | "favorites" | "available";
+    search?: string;
+    location?: string;
+    specialization?: string;
+    minRating?: number;
+    maxDistance?: number;
+    availableOnly?: boolean;
+    page?: number;
+    limit?: number;
+  } = {},
+) {
   const params: Record<string, string> = {};
 
   if (filters.view) params.view = filters.view;
@@ -372,7 +396,7 @@ export function useOpdrachtgeverBeveiligers(filters: {
         available: 0,
         favorites: 0,
         premium: 0,
-        averageRating: 0
+        averageRating: 0,
       },
       pagination: {
         page: 1,
@@ -380,10 +404,10 @@ export function useOpdrachtgeverBeveiligers(filters: {
         total: 0,
         totalPages: 0,
         hasNext: false,
-        hasPrev: false
-      }
+        hasPrev: false,
+      },
     },
-    requireAuth: true
+    requireAuth: true,
   });
 }
 
@@ -395,23 +419,25 @@ export function useOpdrachtgeverFavorites() {
     endpoint: "/api/opdrachtgever/beveiligers/favorites",
     fallbackData: {
       favorites: [],
-      count: 0
+      count: 0,
     },
     requireAuth: true,
-    refreshInterval: 30000 // Refresh every 30 seconds
+    refreshInterval: 30000, // Refresh every 30 seconds
   });
 }
 
 /**
  * Hook for fetching opdrachtgever notifications
  */
-export function useOpdrachtgeverNotifications(filters: {
-  unreadOnly?: boolean;
-  category?: "shift" | "application" | "system" | "payment";
-  priority?: "high" | "normal" | "low";
-  page?: number;
-  limit?: number;
-} = {}) {
+export function useOpdrachtgeverNotifications(
+  filters: {
+    unreadOnly?: boolean;
+    category?: "shift" | "application" | "system" | "payment";
+    priority?: "high" | "normal" | "low";
+    page?: number;
+    limit?: number;
+  } = {},
+) {
   const params: Record<string, string> = {};
 
   if (filters.unreadOnly) params.unreadOnly = "true";
@@ -430,7 +456,7 @@ export function useOpdrachtgeverNotifications(filters: {
         shift: 0,
         application: 0,
         system: 0,
-        payment: 0
+        payment: 0,
       },
       pagination: {
         page: 1,
@@ -438,11 +464,11 @@ export function useOpdrachtgeverNotifications(filters: {
         total: 0,
         totalPages: 0,
         hasNext: false,
-        hasPrev: false
-      }
+        hasPrev: false,
+      },
     },
     requireAuth: true,
-    refreshInterval: 30000 // Refresh every 30 seconds
+    refreshInterval: 30000, // Refresh every 30 seconds
   });
 }
 
@@ -472,10 +498,10 @@ export function useUpdateShift(shiftId: string) {
       const response = await fetch(`/api/opdrachtgever/shifts/${shiftId}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        credentials: "include"
+        credentials: "include",
       });
 
       const result = await response.json();
@@ -486,7 +512,8 @@ export function useUpdateShift(shiftId: string) {
 
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -497,7 +524,7 @@ export function useUpdateShift(shiftId: string) {
   return {
     updateShift,
     loading,
-    error
+    error,
   };
 }
 
@@ -515,7 +542,7 @@ export function useCancelShift(shiftId: string) {
 
       const response = await fetch(`/api/opdrachtgever/shifts/${shiftId}`, {
         method: "DELETE",
-        credentials: "include"
+        credentials: "include",
       });
 
       const result = await response.json();
@@ -526,7 +553,8 @@ export function useCancelShift(shiftId: string) {
 
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -537,7 +565,7 @@ export function useCancelShift(shiftId: string) {
   return {
     cancelShift,
     loading,
-    error
+    error,
   };
 }
 
@@ -567,10 +595,10 @@ export function useUpdateNotifications() {
       const response = await fetch("/api/opdrachtgever/notifications", {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        credentials: "include"
+        credentials: "include",
       });
 
       const result = await response.json();
@@ -581,7 +609,8 @@ export function useUpdateNotifications() {
 
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -592,7 +621,7 @@ export function useUpdateNotifications() {
   return {
     updateNotifications,
     loading,
-    error
+    error,
   };
 }
 
@@ -607,7 +636,9 @@ export function useApiMutation<T = any>(endpoint: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const mutate = async (data: any): Promise<{ success: boolean; data?: T; error?: string }> => {
+  const mutate = async (
+    data: any,
+  ): Promise<{ success: boolean; data?: T; error?: string }> => {
     try {
       setLoading(true);
       setError(null);
@@ -615,10 +646,10 @@ export function useApiMutation<T = any>(endpoint: string) {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        credentials: "include"
+        credentials: "include",
       });
 
       const result = await response.json();
@@ -629,7 +660,8 @@ export function useApiMutation<T = any>(endpoint: string) {
 
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -640,6 +672,6 @@ export function useApiMutation<T = any>(endpoint: string) {
   return {
     mutate,
     loading,
-    error
+    error,
   };
 }

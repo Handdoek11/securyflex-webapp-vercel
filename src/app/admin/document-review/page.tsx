@@ -1,28 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Eye,
+  FileText,
+  Filter,
+  RefreshCw,
+  Shield,
+  XCircle,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
-import { Card } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  FileText,
-  Eye,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  Search,
-  Filter,
-  Download,
-  Upload,
-  Shield,
-  RefreshCw
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DocumentVerification {
   id: string;
@@ -67,17 +69,18 @@ export default function DocumentReviewPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, _setCurrentPage] = useState(1);
 
   // Check if user is admin
-  const adminEmails = ['stef@securyflex.com', 'robert@securyflex.com'];
-  const isAdmin = session?.user?.email && adminEmails.includes(session.user.email);
+  const adminEmails = ["stef@securyflex.com", "robert@securyflex.com"];
+  const isAdmin =
+    session?.user?.email && adminEmails.includes(session.user.email);
 
   // If not admin, show access denied
   useEffect(() => {
-    if (status === 'loading') return;
+    if (status === "loading") return;
 
-    if (status === 'unauthenticated' || !isAdmin) {
+    if (status === "unauthenticated" || !isAdmin) {
       setAccessDenied(true);
       setLoading(false);
       return;
@@ -89,17 +92,17 @@ export default function DocumentReviewPage() {
       setError(null);
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: "20"
+        limit: "20",
       });
 
       if (statusFilter !== "all") params.append("status", statusFilter);
       if (typeFilter !== "all") params.append("documentType", typeFilter);
 
       const response = await fetch(`/api/admin/documents?${params}`, {
-        credentials: 'include',
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
-        }
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
@@ -122,13 +125,19 @@ export default function DocumentReviewPage() {
   };
 
   useEffect(() => {
-    if (isAdmin && status === 'authenticated') {
+    if (isAdmin && status === "authenticated") {
       fetchDocuments();
     }
-  }, [currentPage, statusFilter, typeFilter, isAdmin, status]);
+  }, [isAdmin, status, fetchDocuments]);
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
+    const statusConfig: Record<
+      string,
+      {
+        variant: "default" | "secondary" | "destructive" | "outline";
+        label: string;
+      }
+    > = {
       PENDING: { variant: "outline", label: "Wachtend" },
       IN_REVIEW: { variant: "default", label: "In Review" },
       APPROVED: { variant: "default", label: "Goedgekeurd" },
@@ -136,10 +145,13 @@ export default function DocumentReviewPage() {
       ADDITIONAL_INFO: { variant: "secondary", label: "Info Nodig" },
       EXPIRED: { variant: "destructive", label: "Verlopen" },
       NEEDS_RENEWAL: { variant: "secondary", label: "Hernieuwing" },
-      SUSPENDED: { variant: "destructive", label: "Opgeschort" }
+      SUSPENDED: { variant: "destructive", label: "Opgeschort" },
     };
 
-    const config = statusConfig[status] || { variant: "outline" as const, label: status };
+    const config = statusConfig[status] || {
+      variant: "outline" as const,
+      label: status,
+    };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
@@ -161,12 +173,12 @@ export default function DocumentReviewPage() {
       HORECA_PORTIER: "Horeca Portier",
       VERZEKERINGSBEWIJS: "Verzekeringsbewijs",
       CONTRACT: "Contract",
-      OVERIGE: "Overige"
+      OVERIGE: "Overige",
     };
     return typeLabels[type] || type;
   };
 
-  if (status === 'loading' || loading) {
+  if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -182,7 +194,8 @@ export default function DocumentReviewPage() {
             <Shield className="h-16 w-16 mx-auto mb-4 text-orange-500" />
             <h1 className="text-2xl font-bold mb-2">Toegang geweigerd</h1>
             <p className="text-muted-foreground mb-4">
-              Beheerderstoegang vereist. Alleen geautoriseerde beheerders kunnen documenten beoordelen.
+              Beheerderstoegang vereist. Alleen geautoriseerde beheerders kunnen
+              documenten beoordelen.
             </p>
           </div>
         </div>
@@ -196,7 +209,9 @@ export default function DocumentReviewPage() {
         <div className="flex flex-col items-center justify-center min-h-screen">
           <div className="text-center">
             <XCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
-            <h1 className="text-2xl font-bold mb-2">Fout bij laden documenten</h1>
+            <h1 className="text-2xl font-bold mb-2">
+              Fout bij laden documenten
+            </h1>
             <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={fetchDocuments}>
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -214,7 +229,8 @@ export default function DocumentReviewPage() {
         <div>
           <h1 className="text-3xl font-bold">Documentverificatie</h1>
           <p className="text-muted-foreground">
-            Handmatige verificatie van geüploade documenten voor echtheidscontrole
+            Handmatige verificatie van geüploade documenten voor
+            echtheidscontrole
           </p>
         </div>
         <div className="flex gap-2">
@@ -231,8 +247,12 @@ export default function DocumentReviewPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Wachtend op review</p>
-                <p className="text-2xl font-bold">{stats.byStatus.PENDING || 0}</p>
+                <p className="text-sm text-muted-foreground">
+                  Wachtend op review
+                </p>
+                <p className="text-2xl font-bold">
+                  {stats.byStatus.PENDING || 0}
+                </p>
               </div>
               <Clock className="h-8 w-8 text-orange-500" />
             </div>
@@ -242,7 +262,9 @@ export default function DocumentReviewPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Goedgekeurd</p>
-                <p className="text-2xl font-bold">{stats.byStatus.APPROVED || 0}</p>
+                <p className="text-2xl font-bold">
+                  {stats.byStatus.APPROVED || 0}
+                </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
@@ -252,7 +274,9 @@ export default function DocumentReviewPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Afgewezen</p>
-                <p className="text-2xl font-bold">{stats.byStatus.REJECTED || 0}</p>
+                <p className="text-2xl font-bold">
+                  {stats.byStatus.REJECTED || 0}
+                </p>
               </div>
               <XCircle className="h-8 w-8 text-red-500" />
             </div>
@@ -261,7 +285,9 @@ export default function DocumentReviewPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Vervallen binnenkort</p>
+                <p className="text-sm text-muted-foreground">
+                  Vervallen binnenkort
+                </p>
                 <p className="text-2xl font-bold">{stats.expiringCount || 0}</p>
               </div>
               <AlertTriangle className="h-8 w-8 text-yellow-500" />
@@ -310,12 +336,16 @@ export default function DocumentReviewPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle types</SelectItem>
-                <SelectItem value="IDENTITEITSBEWIJS">Identiteitsbewijs</SelectItem>
+                <SelectItem value="IDENTITEITSBEWIJS">
+                  Identiteitsbewijs
+                </SelectItem>
                 <SelectItem value="PASPOORT">Paspoort</SelectItem>
                 <SelectItem value="KVK_UITTREKSEL">KvK Uittreksel</SelectItem>
                 <SelectItem value="ND_NUMMER">ND-nummer</SelectItem>
                 <SelectItem value="BOA_CERTIFICAAT">BOA Certificaat</SelectItem>
-                <SelectItem value="SVPB_DIPLOMA_BEVEILIGER">SVPB Diploma</SelectItem>
+                <SelectItem value="SVPB_DIPLOMA_BEVEILIGER">
+                  SVPB Diploma
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -348,9 +378,13 @@ export default function DocumentReviewPage() {
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <p className="font-medium text-sm">{doc.originalFileName}</p>
+                        <p className="font-medium text-sm">
+                          {doc.originalFileName}
+                        </p>
                         {doc.documentNummer && (
-                          <p className="text-xs text-muted-foreground">{doc.documentNummer}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {doc.documentNummer}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -358,16 +392,20 @@ export default function DocumentReviewPage() {
                   <td className="p-2">
                     <div>
                       <p className="font-medium text-sm">{doc.user.name}</p>
-                      <p className="text-xs text-muted-foreground">{doc.user.email}</p>
-                      <Badge variant="outline" className="text-xs">{doc.user.role}</Badge>
+                      <p className="text-xs text-muted-foreground">
+                        {doc.user.email}
+                      </p>
+                      <Badge variant="outline" className="text-xs">
+                        {doc.user.role}
+                      </Badge>
                     </div>
                   </td>
                   <td className="p-2">
-                    <span className="text-sm">{getDocumentTypeLabel(doc.documentType)}</span>
+                    <span className="text-sm">
+                      {getDocumentTypeLabel(doc.documentType)}
+                    </span>
                   </td>
-                  <td className="p-2">
-                    {getStatusBadge(doc.status)}
-                  </td>
+                  <td className="p-2">{getStatusBadge(doc.status)}</td>
                   <td className="p-2">
                     <span className="text-sm">
                       {new Date(doc.uploadedAt).toLocaleString("nl-NL")}
@@ -378,7 +416,12 @@ export default function DocumentReviewPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(`/admin/document-review/${doc.id}`, '_blank')}
+                        onClick={() =>
+                          window.open(
+                            `/admin/document-review/${doc.id}`,
+                            "_blank",
+                          )
+                        }
                       >
                         <Eye className="h-4 w-4" />
                       </Button>

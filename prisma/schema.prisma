@@ -4,13 +4,741 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")  // Uses connection pooling (PgBouncer)
-  directUrl = env("DIRECT_URL")    // Direct connection for migrations
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// ============================================
-// USER & AUTH MODELS
-// ============================================
+model User {
+  id                       String                    @id @default(cuid())
+  email                    String                    @unique
+  password                 String
+  name                     String
+  phone                    String?
+  role                     UserRole
+  status                   AccountStatus             @default(PENDING)
+  emailVerified            DateTime?
+  image                    String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  failedLoginAttempts      Int                       @default(0)
+  lastFailedLogin          DateTime?
+  lockedUntil              DateTime?
+  accounts                 Account[]
+  bedrijfProfile           BedrijfProfile?
+  conversationParticipants ConversationParticipant[]
+  documentVerificaties     DocumentVerificatie[]
+  messages                 Message[]
+  notifications            Notification[]
+  feedbackGiven            OpdrachtFeedback[]
+  opdrachtgever            Opdrachtgever?
+  passwordResetTokens      PasswordResetToken[]
+  reviewsReceived          Review[]                  @relation("ReviewsReceived")
+  reviewsGiven             Review[]                  @relation("ReviewsGiven")
+  sessions                 Session[]
+  verificationTokens       VerificationToken[]
+  zzpProfile               ZZPProfile?
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expires   DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expires   DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model ZZPProfile {
+  id                      String                 @id @default(cuid())
+  userId                  String                 @unique
+  kvkNummer               String                 @unique
+  btwNummer               String?
+  specialisaties          String[]
+  certificaten            String[]
+  werkgebied              String[]
+  beschikbaarheid         Json
+  uurtarief               Decimal                @db.Decimal(10, 2)
+  rating                  Decimal?               @db.Decimal(2, 1)
+  totalReviews            Int                    @default(0)
+  subscriptionId          String?
+  trialEndsAt             DateTime?
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  finqleMerchantId        String?                @unique
+  finqleOnboarded         Boolean                @default(false)
+  ndNummer                String?                @unique
+  ndNummerLaatsteControle DateTime?
+  ndNummerOpmerking       String?
+  ndNummerStatus          NDNummerStatus         @default(NIET_GEREGISTREERD)
+  ndNummerVervalDatum     DateTime?
+  voornaam                String                 @db.VarChar(255)
+  achternaam              String                 @db.VarChar(255)
+  teamMemberships         BedrijfTeamLid[]
+  facturen                Factuur[]
+  ndNummerAuditLogs       NDNummerAuditLog[]     @relation("ZZPNDNummerAuditLogs")
+  sollicitaties           OpdrachtSollicitatie[]
+  verzekeringAanvragen    VerzekeringAanvraag[]
+  werkuren                Werkuur[]
+  subscription            Subscription?          @relation(fields: [subscriptionId], references: [id])
+  user                    User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verzekeringProfile      ZZPVerzekeringProfile?
+}
+
+model BedrijfProfile {
+  id                      String                 @id @default(cuid())
+  userId                  String                 @unique
+  bedrijfsnaam            String
+  kvkNummer               String                 @unique
+  btwNummer               String
+  teamSize                Int                    @default(1)
+  extraAccounts           Int                    @default(0)
+  subscriptionTier        SubscriptionTier       @default(SMALL)
+  subscriptionId          String?
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  finqleCreditLimit       Decimal?               @db.Decimal(10, 2)
+  finqleDebtorId          String?                @unique
+  ndNummer                String?                @unique
+  ndNummerLaatsteControle DateTime?
+  ndNummerManagers        Json?
+  ndNummerOpmerking       String?
+  ndNummerStatus          NDNummerStatus         @default(NIET_GEREGISTREERD)
+  ndNummerVervalDatum     DateTime?
+  subscription            Subscription?          @relation(fields: [subscriptionId], references: [id])
+  user                    User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamLeden               BedrijfTeamLid[]
+  facturen                Factuur[]
+  kredietLimiet           FinqleKredietLimiet?
+  medewerkers             Medewerker[]
+  ndNummerAuditLogs       NDNummerAuditLog[]     @relation("BedrijfNDNummerAuditLogs")
+  acceptedOpdrachten      Opdracht[]             @relation("AcceptedOpdrachten")
+  createdOpdrachten       Opdracht[]             @relation("CreatedOpdrachten")
+  sollicitaties           OpdrachtSollicitatie[] @relation("BedrijfSollicitaties")
+  verzamelFacturen        VerzamelFactuur[]
+}
+
+model Opdrachtgever {
+  id                String               @id @default(cuid())
+  userId            String               @unique
+  bedrijfsnaam      String
+  kvkNummer         String?
+  contactpersoon    String
+  totalHoursBooked  Decimal              @default(0) @db.Decimal(10, 2)
+  totalSpent        Decimal              @default(0) @db.Decimal(10, 2)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  finqleCreditLimit Decimal?             @db.Decimal(10, 2)
+  finqleDebtorId    String?              @unique
+  kredietLimiet     FinqleKredietLimiet?
+  opdrachten        Opdracht[]
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verzamelFacturen  VerzamelFactuur[]
+}
+
+model Opdracht {
+  id                String                 @id @default(cuid())
+  titel             String
+  beschrijving      String
+  locatie           String
+  startDatum        DateTime
+  eindDatum         DateTime
+  aantalBeveiligers Int
+  uurtarief         Decimal                @db.Decimal(10, 2)
+  status            OpdrachtStatus         @default(OPEN)
+  opdrachtgeverId   String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  acceptedBedrijfId String?
+  autoAccept        Boolean                @default(false)
+  creatorBedrijfId  String?
+  creatorId         String
+  creatorType       CreatorType
+  directZZPAllowed  Boolean                @default(true)
+  isUrgent          Boolean                @default(false)
+  minTeamSize       Int?
+  targetAudience    TargetAudience         @default(BEIDEN)
+  type              String?
+  vereisten         String[]
+  conversations     Conversation[]
+  acceptedBedrijf   BedrijfProfile?        @relation("AcceptedOpdrachten", fields: [acceptedBedrijfId], references: [id])
+  creatorBedrijf    BedrijfProfile?        @relation("CreatedOpdrachten", fields: [creatorBedrijfId], references: [id])
+  opdrachtgever     Opdrachtgever?         @relation(fields: [opdrachtgeverId], references: [id])
+  assignments       OpdrachtAssignment[]
+  feedback          OpdrachtFeedback[]
+  sollicitaties     OpdrachtSollicitatie[]
+  reviews           Review[]
+  werkuren          Werkuur[]
+}
+
+model OpdrachtSollicitatie {
+  id                String             @id @default(cuid())
+  opdrachtId        String
+  sollicitantType   SollicitantType
+  zzpId             String?
+  bedrijfId         String?
+  status            SollicitatieStatus @default(PENDING)
+  motivatie         String?
+  voorgesteldTarief Decimal?           @db.Decimal(10, 2)
+  teamGrootte       Int?
+  sollicitatiedatum DateTime           @default(now())
+  beoordeeldOp      DateTime?
+  beoordeeldDoor    String?
+  bedrijf           BedrijfProfile?    @relation("BedrijfSollicitaties", fields: [bedrijfId], references: [id])
+  opdracht          Opdracht           @relation(fields: [opdrachtId], references: [id])
+  zzp               ZZPProfile?        @relation(fields: [zzpId], references: [id])
+
+  @@unique([opdrachtId, zzpId])
+  @@unique([opdrachtId, bedrijfId])
+}
+
+model Subscription {
+  id               String           @id @default(cuid())
+  tier             SubscriptionTier
+  price            Decimal          @db.Decimal(10, 2)
+  externalId       String?          @unique
+  status           String
+  currentPeriodEnd DateTime
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  bedrijfProfiles  BedrijfProfile[]
+  zzpProfiles      ZZPProfile[]
+}
+
+model Werkuur {
+  id                     String             @id @default(cuid())
+  opdrachtId             String
+  startTijd              DateTime
+  eindTijd               DateTime?
+  startLocatie           Json
+  eindLocatie            Json?
+  urenGewerkt            Decimal            @db.Decimal(10, 2)
+  uurtarief              Decimal            @db.Decimal(10, 2)
+  platformFee            Decimal            @default(2.99) @db.Decimal(10, 2)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  directPaymentRequested Boolean            @default(false)
+  factorFee              Decimal?           @db.Decimal(10, 2)
+  medewerkerId           String?
+  verzamelFactuurId      String?
+  zzpId                  String?
+  status                 WerkuurStatus      @default(PENDING)
+  finqleTransaction      FinqleTransaction?
+  opdracht               Opdracht           @relation(fields: [opdrachtId], references: [id])
+  verzamelFactuur        VerzamelFactuur?   @relation(fields: [verzamelFactuurId], references: [id])
+  zzp                    ZZPProfile?        @relation(fields: [zzpId], references: [id])
+}
+
+model VerzamelFactuur {
+  id                String              @id @default(cuid())
+  weekNummer        Int
+  jaar              Int
+  factuurNummer     String              @unique
+  opdrachtgeverId   String?
+  bedrijfId         String?
+  finqleInvoiceId   String?             @unique
+  kredietGebruikt   Decimal             @default(0) @db.Decimal(10, 2)
+  subtotaal         Decimal             @db.Decimal(10, 2)
+  platformFees      Decimal             @db.Decimal(10, 2)
+  totaalBedrag      Decimal             @db.Decimal(10, 2)
+  status            FactuurStatus       @default(PENDING)
+  createdAt         DateTime            @default(now())
+  dueDate           DateTime
+  paidAt            DateTime?
+  betalingen        Betaling[]
+  finqleTransacties FinqleTransaction[]
+  bedrijf           BedrijfProfile?     @relation(fields: [bedrijfId], references: [id])
+  opdrachtgever     Opdrachtgever?      @relation(fields: [opdrachtgeverId], references: [id])
+  werkuren          Werkuur[]
+
+  @@index([weekNummer, jaar])
+  @@index([opdrachtgeverId])
+  @@index([bedrijfId])
+}
+
+model FinqleKredietLimiet {
+  id              String          @id @default(cuid())
+  opdrachtgeverId String?         @unique
+  bedrijfId       String?         @unique
+  kredietLimiet   Decimal         @db.Decimal(10, 2)
+  gebruiktKrediet Decimal         @default(0) @db.Decimal(10, 2)
+  beschikbaar     Decimal         @db.Decimal(10, 2)
+  finqleDebtorId  String          @unique
+  lastSyncAt      DateTime        @default(now())
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  bedrijf         BedrijfProfile? @relation(fields: [bedrijfId], references: [id])
+  opdrachtgever   Opdrachtgever?  @relation(fields: [opdrachtgeverId], references: [id])
+}
+
+model Review {
+  id            String    @id @default(cuid())
+  rating        Int
+  comment       String?
+  createdAt     DateTime  @default(now())
+  aspectRatings Json?
+  isPublic      Boolean   @default(true)
+  opdrachtId    String?
+  response      String?
+  responseAt    DateTime?
+  reviewedId    String
+  reviewerId    String
+  updatedAt     DateTime  @updatedAt
+  opdracht      Opdracht? @relation(fields: [opdrachtId], references: [id])
+  reviewed      User      @relation("ReviewsReceived", fields: [reviewedId], references: [id])
+  reviewer      User      @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+
+  @@unique([reviewerId, reviewedId, opdrachtId])
+}
+
+model Medewerker {
+  id        String         @id @default(cuid())
+  email     String         @unique
+  naam      String
+  functie   String
+  bedrijfId String
+  createdAt DateTime       @default(now())
+  bedrijf   BedrijfProfile @relation(fields: [bedrijfId], references: [id])
+}
+
+model Factuur {
+  id        String          @id @default(cuid())
+  nummer    String          @unique
+  bedrag    Decimal         @db.Decimal(10, 2)
+  status    String
+  zzpId     String?
+  bedrijfId String?
+  createdAt DateTime        @default(now())
+  bedrijf   BedrijfProfile? @relation(fields: [bedrijfId], references: [id])
+  zzp       ZZPProfile?     @relation(fields: [zzpId], references: [id])
+}
+
+model Betaling {
+  id                String           @id @default(cuid())
+  bedrag            Decimal          @db.Decimal(10, 2)
+  methode           String?
+  createdAt         DateTime         @default(now())
+  betalerId         String
+  betalerType       BetalerType
+  finqleReferentie  String?
+  ontvangerId       String
+  ontvangerType     OntvangerType
+  paidAt            DateTime?
+  status            PaymentStatus    @default(PENDING)
+  type              BetalingType
+  verzamelFactuurId String?
+  verzamelFactuur   VerzamelFactuur? @relation(fields: [verzamelFactuurId], references: [id])
+}
+
+model Account {
+  id                String @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BedrijfTeamLid {
+  id          String               @id @default(cuid())
+  bedrijfId   String
+  zzpId       String
+  role        TeamRole             @default(MEMBER)
+  status      TeamStatus           @default(INVITED)
+  joinedAt    DateTime?
+  createdAt   DateTime             @default(now())
+  bedrijf     BedrijfProfile       @relation(fields: [bedrijfId], references: [id])
+  zzp         ZZPProfile           @relation(fields: [zzpId], references: [id])
+  assignments OpdrachtAssignment[]
+
+  @@unique([bedrijfId, zzpId])
+}
+
+model OpdrachtAssignment {
+  id         String           @id @default(cuid())
+  opdrachtId String
+  teamLidId  String
+  assignedBy String
+  assignedAt DateTime         @default(now())
+  status     AssignmentStatus @default(ASSIGNED)
+  opdracht   Opdracht         @relation(fields: [opdrachtId], references: [id])
+  teamLid    BedrijfTeamLid   @relation(fields: [teamLidId], references: [id])
+
+  @@unique([opdrachtId, teamLidId])
+}
+
+model FinqleTransaction {
+  id                String                @id @default(cuid())
+  werkuurId         String?               @unique
+  merchantId        String
+  debtorId          String
+  amount            Decimal               @db.Decimal(10, 2)
+  directPayment     Boolean               @default(false)
+  finqleRequestId   String?
+  finqleInvoiceId   String?
+  status            PaymentStatus         @default(PENDING)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  factorFee         Decimal?              @db.Decimal(10, 2)
+  failureReason     String?
+  netAmount         Decimal               @db.Decimal(10, 2)
+  paidAt            DateTime?
+  platformFee       Decimal               @default(2.99) @db.Decimal(10, 2)
+  requestedAt       DateTime              @default(now())
+  transactionType   FinqleTransactionType
+  verzamelFactuurId String?
+  verzamelFactuur   VerzamelFactuur?      @relation(fields: [verzamelFactuurId], references: [id])
+  werkuur           Werkuur?              @relation(fields: [werkuurId], references: [id])
+}
+
+model Conversation {
+  id            String                    @id @default(cuid())
+  type          ConversationType          @default(DIRECT)
+  title         String?
+  opdrachtId    String?
+  lastMessageAt DateTime?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  opdracht      Opdracht?                 @relation(fields: [opdrachtId], references: [id])
+  participants  ConversationParticipant[]
+  messages      Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  unreadCount    Int          @default(0)
+  lastReadAt     DateTime?
+  isActive       Boolean      @default(true)
+  joinedAt       DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  type           MessageType  @default(TEXT)
+  attachments    Json?
+  metadata       Json?
+  isEdited       Boolean      @default(false)
+  editedAt       DateTime?
+  isDeleted      Boolean      @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation(fields: [senderId], references: [id])
+}
+
+model Notification {
+  id          String               @id @default(cuid())
+  userId      String
+  type        NotificationType
+  category    NotificationCategory
+  title       String
+  message     String
+  isRead      Boolean              @default(false)
+  readAt      DateTime?
+  actionUrl   String?
+  actionLabel String?
+  metadata    Json?
+  createdAt   DateTime             @default(now())
+  user        User                 @relation(fields: [userId], references: [id])
+}
+
+model OpdrachtFeedback {
+  id                 String       @id @default(cuid())
+  opdrachtId         String
+  authorId           String
+  type               FeedbackType
+  rating             Int?
+  qualityScore       Int?
+  communicationScore Int?
+  valueScore         Int?
+  positives          String[]
+  improvements       String[]
+  comment            String?
+  requiresAction     Boolean      @default(false)
+  actionTaken        String?
+  actionBy           String?
+  actionAt           DateTime?
+  createdAt          DateTime     @default(now())
+  author             User         @relation(fields: [authorId], references: [id])
+  opdracht           Opdracht     @relation(fields: [opdrachtId], references: [id])
+}
+
+model VerzekeringCategorie {
+  id           String               @id @default(cuid())
+  naam         String               @unique
+  beschrijving String
+  sortOrder    Int                  @default(0)
+  isActief     Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  producten    VerzekeringProduct[]
+
+  @@index([sortOrder])
+}
+
+model VerzekeringProduct {
+  id                String                      @id @default(cuid())
+  naam              String
+  beschrijving      String
+  korteBeschrijving String?
+  categorieId       String
+  verzekeraar       String
+  verzekeraarLogo   String?
+  basispremie       Decimal?                    @db.Decimal(10, 2)
+  kortingPercentage Decimal                     @default(0) @db.Decimal(5, 2)
+  vereisteBasisdata Json
+  productFeatures   String[]
+  externalProductId String?
+  apiEndpoint       String?
+  isActief          Boolean                     @default(true)
+  isFeatured        Boolean                     @default(false)
+  sortOrder         Int                         @default(0)
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+  aanvragen         VerzekeringAanvraag[]
+  categorie         VerzekeringCategorie        @relation(fields: [categorieId], references: [id])
+  kortingen         VerzekeringProductKorting[]
+
+  @@unique([categorieId, naam])
+  @@index([isActief, isFeatured])
+  @@index([categorieId, sortOrder])
+}
+
+model VerzekeringKorting {
+  id                String                      @id @default(cuid())
+  code              String                      @unique
+  naam              String
+  beschrijving      String?
+  kortingType       KortingType
+  waarde            Decimal                     @db.Decimal(10, 2)
+  geldigVan         DateTime
+  geldigTot         DateTime
+  maxGebruik        Int?
+  gebruiktAantal    Int                         @default(0)
+  maxPerGebruiker   Int                         @default(1)
+  minAbonnementDuur Int?
+  nieuweKlantenOnly Boolean                     @default(false)
+  isActief          Boolean                     @default(true)
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+  aanvragen         VerzekeringAanvraag[]
+  producten         VerzekeringProductKorting[]
+
+  @@index([code])
+  @@index([geldigVan, geldigTot])
+}
+
+model VerzekeringProductKorting {
+  id        String             @id @default(cuid())
+  productId String
+  kortingId String
+  korting   VerzekeringKorting @relation(fields: [kortingId], references: [id], onDelete: Cascade)
+  product   VerzekeringProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, kortingId])
+}
+
+model VerzekeringAanvraag {
+  id               String                    @id @default(cuid())
+  zzpId            String
+  productId        String
+  kortingId        String?
+  kortingCode      String?
+  aanvraagData     Json
+  offertePremie    Decimal?                  @db.Decimal(10, 2)
+  platformKorting  Decimal?                  @db.Decimal(10, 2)
+  codeKorting      Decimal?                  @db.Decimal(10, 2)
+  finaalPremie     Decimal?                  @db.Decimal(10, 2)
+  externalRef      String?
+  offerteUrl       String?
+  status           VerzekeringAanvraagStatus @default(CONCEPT)
+  statusReden      String?
+  notificatiesSent Json?
+  laatsteContact   DateTime?
+  ipAdres          String?
+  userAgent        String?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  korting          VerzekeringKorting?       @relation(fields: [kortingId], references: [id])
+  product          VerzekeringProduct        @relation(fields: [productId], references: [id])
+  zzp              ZZPProfile                @relation(fields: [zzpId], references: [id])
+
+  @@index([zzpId, status])
+  @@index([productId, status])
+  @@index([status, createdAt])
+}
+
+model ZZPVerzekeringProfile {
+  id                  String          @id @default(cuid())
+  zzpId               String          @unique
+  intereseCategorieen String[]
+  budgetRange         String?
+  contactVoorkeur     ContactVoorkeur @default(EMAIL)
+  marketingOptIn      Boolean         @default(true)
+  totaalAanvragen     Int             @default(0)
+  totaalAfgesloten    Int             @default(0)
+  laatsteActiviteit   DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  zzp                 ZZPProfile      @relation(fields: [zzpId], references: [id])
+}
+
+model DocumentVerificatie {
+  id                  String                        @id @default(cuid())
+  userId              String
+  documentType        DocumentType
+  documentNummer      String?
+  fileName            String
+  originalFileName    String
+  fileUrl             String
+  fileSize            Int
+  mimeType            String
+  status              VerificatieStatus             @default(PENDING)
+  adminNotes          String?
+  verificatieDatum    DateTime?
+  verifiedBy          String?
+  rejectionReason     String?
+  geldigTot           DateTime?
+  expiryWarnings      Int                           @default(0)
+  lastExpiryWarning   DateTime?
+  externalVerified    Boolean                       @default(false)
+  externalSource      String?
+  externalRef         String?
+  uploadedAt          DateTime                      @default(now())
+  ipAddress           String?
+  userAgent           String?
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+  user                User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verificationHistory DocumentVerificationHistory[]
+
+  @@index([userId, documentType])
+  @@index([status])
+  @@index([geldigTot])
+  @@index([documentType, status])
+  @@index([verifiedBy])
+}
+
+model DocumentVerificationHistory {
+  id              String              @id @default(cuid())
+  documentId      String
+  action          VerificationAction
+  oldStatus       VerificatieStatus?
+  newStatus       VerificatieStatus
+  adminNotes      String?
+  performedBy     String
+  performedByName String
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime            @default(now())
+  document        DocumentVerificatie @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([performedBy])
+  @@index([createdAt])
+}
+
+model DocumentTemplate {
+  id                 String       @id @default(cuid())
+  documentType       DocumentType @unique
+  naam               String
+  beschrijving       String
+  vereist            Boolean      @default(false)
+  verificatieStappen String[]
+  echtheidskenmerken String[]
+  externalUrls       Json?
+  contactInfo        Json?
+  geldigheid         Int?
+  waarschuwingen     Int[]        @default([90, 30, 7])
+  acceptedFormats    String[]     @default(["pdf", "jpg", "jpeg", "png"])
+  maxFileSize        Int          @default(10485760)
+  sortOrder          Int          @default(0)
+  isActive           Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model SecurityLog {
+  id        String            @id @default(cuid())
+  userId    String?
+  email     String?
+  eventType SecurityEventType
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime          @default(now())
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model NDNummerAuditLog {
+  id                 String          @id @default(cuid())
+  profileType        NDProfileType
+  zzpProfileId       String?
+  bedrijfProfileId   String?
+  ndNummer           String?
+  previousStatus     NDNummerStatus?
+  newStatus          NDNummerStatus
+  action             NDNummerAction
+  performedBy        String?
+  verificationSource String?
+  expiryDate         DateTime?
+  nextCheckDue       DateTime?
+  complianceNotes    String?
+  ipAddress          String?
+  userAgent          String?
+  apiResponse        Json?
+  createdAt          DateTime        @default(now())
+  bedrijfProfile     BedrijfProfile? @relation("BedrijfNDNummerAuditLogs", fields: [bedrijfProfileId], references: [id])
+  zzpProfile         ZZPProfile?     @relation("ZZPNDNummerAuditLogs", fields: [zzpProfileId], references: [id])
+
+  @@index([profileType])
+  @@index([zzpProfileId])
+  @@index([bedrijfProfileId])
+  @@index([ndNummer])
+  @@index([action])
+  @@index([newStatus])
+  @@index([createdAt])
+  @@index([expiryDate])
+}
 
 enum UserRole {
   ZZP_BEVEILIGER
@@ -26,903 +754,45 @@ enum AccountStatus {
   CANCELLED
 }
 
-model User {
-  id            String        @id @default(cuid())
-  email         String        @unique
-  password      String
-  name          String
-  phone         String?
-  role          UserRole
-  status        AccountStatus @default(PENDING)
-  emailVerified DateTime?
-  image         String?
-
-  // Failed Login Tracking
-  failedLoginAttempts Int      @default(0)
-  lastFailedLogin     DateTime?
-  lockedUntil         DateTime?
-
-  // Finqle integration fields (used in webhooks)
-  finqleId         String?   @unique
-  finqleKYCStatus  String?   // KYC verification status from Finqle
-  finqleVerified   Boolean   @default(false)
-  finqleVerifiedAt DateTime?
-
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  // Relations
-  zzpProfile     ZZPProfile?
-  bedrijfProfile BedrijfProfile?
-  opdrachtgever  Opdrachtgever?
-  sessions       Session[]
-  accounts       Account[]
-
-  // Communication Relations
-  conversationParticipants ConversationParticipant[]
-  messages                 Message[]
-  notifications            Notification[]
-
-  // Review Relations
-  reviewsGiven            Review[] @relation("ReviewsGiven")
-  reviewsReceived         Review[] @relation("ReviewsReceived")
-
-  // Feedback Relations
-  feedbackGiven           OpdrachtFeedback[]
-
-  // Token Relations
-  verificationTokens      VerificationToken[]
-  passwordResetTokens     PasswordResetToken[]
-
-  // Document Verification Relations
-  documentVerificaties    DocumentVerificatie[]
-}
-
-// ============================================
-// AUTHENTICATION TOKENS
-// ============================================
-
-model VerificationToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expires   DateTime
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([token])
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expires   DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([token])
-}
-
-// ============================================
-// ROLE-SPECIFIC PROFILES
-// ============================================
-
-model ZZPProfile {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Basis profiel info
-  voornaam          String
-  achternaam        String
-  geboortedatum     DateTime?
-
-  // Bedrijfsinfo
-  kvkNummer         String   @unique
-  btwNummer         String?
-  specialisaties    String[] // ["Evenementen", "Objectbeveiliging", etc]
-  certificatenLegacy String[] // Legacy certificaten as strings (to be migrated)
-
-  // Adresgegevens
-  adres             String?
-  postcode          String?
-  plaats            String?
-
-  // Persoonlijke info
-  rijbewijs         Boolean  @default(false)
-  autoDescikbaar    Boolean  @default(false)
-  ervaring          Int?     // Jaren ervaring
-
-  // ND-nummer (Nederlandse Dienstnummer) - WPBR compliance
-  ndNummer          String?  @unique // Required for legal operation in Netherlands
-  ndNummerVervalDatum DateTime? // Expiry date (valid for 5 years)
-  ndNummerStatus    NDNummerStatus @default(NIET_GEREGISTREERD)
-  ndNummerLaatsteControle DateTime? // Last verification date
-  ndNummerOpmerking String?  // Notes or reasons for status
-
-  // Locatie & Beschikbaarheid
-  werkgebied        String[] // ["Amsterdam", "Rotterdam", etc]
-  beschikbaarheid   Json     // Kalender data
-
-  // Platform features
-  uurtarief         Decimal  @db.Decimal(10, 2)
-  rating            Decimal? @db.Decimal(2, 1)
-  totalReviews      Int      @default(0)
-
-  // Subscription
-  subscriptionId    String?
-  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
-  trialEndsAt       DateTime?
-
-  // Finqle integration
-  finqleMerchantId  String?  @unique
-  finqleOnboarded   Boolean  @default(false)
-  finqleAccountId   String?  @unique // Additional Finqle account reference
-  finqleVerified    Boolean  @default(false) // KYC verification status
-
-  // Relations
-  sollicitaties       OpdrachtSollicitatie[]
-  werkuren            Werkuur[]
-  facturen            Factuur[]
-  teamMemberships     BedrijfTeamLid[]
-  verzekeringAanvragen VerzekeringAanvraag[]
-  verzekeringProfile   ZZPVerzekeringProfile?
-  ndNummerAuditLogs   NDNummerAuditLog[] @relation("ZZPNDNummerAuditLogs")
-
-  // Missing relations that are used in queries
-  certificaten        Certificate[]
-  documenten          Document[]
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-model BedrijfProfile {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Bedrijfsinfo
-  bedrijfsnaam      String
-  kvkNummer         String   @unique
-  btwNummer         String
-
-  // Adresgegevens
-  adres             String?
-  postcode          String?
-  plaats            String?
-
-  // Bedrijfsgegevens
-  website           String?
-  beschrijving      String?  @db.Text
-  werkgebied        String[]
-  specialisaties    String[]
-  aantalMedewerkers Int?
-  oprichtingsjaar   Int?
-  certificeringen   String[]
-  bedrijfsstructuur String?
-
-  // ND-nummer (Nederlandse Dienstnummer) - WPBR compliance
-  ndNummer          String?  @unique // Required for security company operation
-  ndNummerVervalDatum DateTime? // Expiry date (valid for 5 years)
-  ndNummerStatus    NDNummerStatus @default(NIET_GEREGISTREERD)
-  ndNummerLaatsteControle DateTime? // Last verification date
-  ndNummerOpmerking String?  // Notes or reasons for status
-  ndNummerManagers  Json?    // List of authorized managers with their details
-
-  // Team management
-  teamSize          Int      @default(1)
-  extraAccounts     Int      @default(0)
-  medewerkers       Medewerker[]
-  teamLeden         BedrijfTeamLid[]
-
-  // Subscription
-  subscriptionTier  SubscriptionTier @default(SMALL)
-  subscriptionId    String?
-  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
-
-  // Finqle integration
-  finqleDebtorId    String?  @unique
-  finqleCreditLimit Decimal? @db.Decimal(10, 2)
-
-  // Relations
-  createdOpdrachten   Opdracht[] @relation("CreatedOpdrachten")
-  acceptedOpdrachten  Opdracht[] @relation("AcceptedOpdrachten")
-  sollicitaties       OpdrachtSollicitatie[] @relation("BedrijfSollicitaties")
-  verzamelFacturen    VerzamelFactuur[]
-  kredietLimiet       FinqleKredietLimiet?
-  facturen            Factuur[]
-  ndNummerAuditLogs   NDNummerAuditLog[] @relation("BedrijfNDNummerAuditLogs")
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-model Opdrachtgever {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Bedrijfsinfo
-  bedrijfsnaam      String
-  kvkNummer         String?
-  contactpersoon    String
-
-  // Billing
-  totalHoursBooked  Decimal  @default(0) @db.Decimal(10, 2)
-  totalSpent        Decimal  @default(0) @db.Decimal(10, 2)
-
-  // Finqle integration
-  finqleDebtorId    String?  @unique
-  finqleCreditLimit Decimal? @db.Decimal(10, 2)
-
-  // Relations
-  opdrachten        Opdracht[]
-  verzamelFacturen  VerzamelFactuur[]
-  kredietLimiet     FinqleKredietLimiet?
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-// ============================================
-// OPDRACHTEN & MATCHING
-// ============================================
-
-model Opdracht {
-  id                String   @id @default(cuid())
-
-  // Opdrachtdetails
-  titel             String
-  beschrijving      String
-  startDatum        DateTime
-  eindDatum         DateTime
-  aantalBeveiligers Int
-  uurtarief         Decimal  @db.Decimal(10, 2)
-  vereisten         String[] // Skills/certificaten vereist
-  type              String?  // Type opdracht (evenement, object, etc.)
-  isUrgent          Boolean  @default(false)
-
-  // Status
-  status            OpdrachtStatus @default(OPEN)
-
-  // Creator tracking (wie maakte de opdracht)
-  creatorType       CreatorType
-  creatorId         String  // ID van maker (opdrachtgever of bedrijf)
-
-  // Sollicitatie instellingen
-  targetAudience    TargetAudience @default(BEIDEN)
-  directZZPAllowed  Boolean @default(true)
-  minTeamSize       Int?
-  autoAccept        Boolean @default(false)
-
-  // Relations - Opdrachtgever (optioneel)
-  opdrachtgeverId   String?
-  opdrachtgever     Opdrachtgever? @relation(fields: [opdrachtgeverId], references: [id])
-
-  // Relations - Creator Bedrijf (als bedrijf de opdracht maakte)
-  creatorBedrijfId  String?
-  creatorBedrijf    BedrijfProfile? @relation("CreatedOpdrachten", fields: [creatorBedrijfId], references: [id])
-
-  // Relations - Accepted Bedrijf (bedrijf dat opdracht uitvoert)
-  acceptedBedrijfId String?
-  acceptedBedrijf   BedrijfProfile? @relation("AcceptedOpdrachten", fields: [acceptedBedrijfId], references: [id])
-
-  // Sollicitaties en assignments
-  sollicitaties     OpdrachtSollicitatie[]
-  assignments       OpdrachtAssignment[]
-  werkuren          Werkuur[]
-
-  // Location relation
-  locatie           OpdrachtLocatie?
-
-  // Communication Relations
-  conversations     Conversation[]
-  reviews           Review[]
-  feedback          OpdrachtFeedback[]
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-model OpdrachtLocatie {
-  id          String   @id @default(cuid())
-  opdrachtId  String   @unique
-  opdracht    Opdracht @relation(fields: [opdrachtId], references: [id], onDelete: Cascade)
-
-  // Address components
-  adres       String
-  postcode    String
-  plaats      String
-
-  // GPS coordinates (optional)
-  lat         Decimal? @db.Decimal(10, 8)  // Latitude
-  lng         Decimal? @db.Decimal(11, 8)  // Longitude
-
-  // Additional location info
-  reisafstand Int?     // Travel distance in km
-  parkeerinfo String?  // Parking information
-  openbaarvervoer Json? // Public transport info
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([postcode])
-  @@index([plaats])
-}
-
-// Renamed from OpdrachtenBeveiligers for clarity
-model OpdrachtSollicitatie {
-  id                String   @id @default(cuid())
-  opdracht          Opdracht @relation(fields: [opdrachtId], references: [id])
-  opdrachtId        String
-
-  // Sollicitant kan ZZP OF Bedrijf zijn
-  sollicitantType   SollicitantType
-
-  // Als ZZP solliciteert
-  zzpId             String?
-  zzp               ZZPProfile? @relation(fields: [zzpId], references: [id])
-
-  // Als Bedrijf solliciteert
-  bedrijfId         String?
-  bedrijf           BedrijfProfile? @relation("BedrijfSollicitaties", fields: [bedrijfId], references: [id])
-
-  // Sollicitatie details
-  status            SollicitatieStatus @default(PENDING)
-  motivatie         String? @db.Text
-  voorgesteldTarief Decimal? @db.Decimal(10, 2)
-  teamGrootte       Int?  // Voor bedrijf sollicitaties
-
-  // Tracking
-  sollicitatiedatum DateTime @default(now())
-  beoordeeldOp      DateTime?
-  beoordeeldDoor    String?
-
-  @@unique([opdrachtId, zzpId])
-  @@unique([opdrachtId, bedrijfId])
-}
-
-// ============================================
-// BILLING & SUBSCRIPTIONS
-// ============================================
-
 enum SubscriptionTier {
-  ZZP           // €4.99
-  SMALL         // €19.99 (1-5)
-  MEDIUM        // €29.99 (6-15)
-  LARGE         // Custom
+  ZZP
+  SMALL
+  MEDIUM
+  LARGE
 }
-
-model Subscription {
-  id                String   @id @default(cuid())
-  tier              SubscriptionTier
-  price             Decimal  @db.Decimal(10, 2)
-  
-  // Stripe/Mollie info
-  externalId        String?  @unique
-  status            String   // active, cancelled, past_due
-  currentPeriodEnd  DateTime
-  
-  // Relations
-  zzpProfiles       ZZPProfile[]
-  bedrijfProfiles   BedrijfProfile[]
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-model Werkuur {
-  id                String   @id @default(cuid())
-  opdrachtId        String
-  opdracht          Opdracht @relation(fields: [opdrachtId], references: [id])
-
-  // Beveiliger tracking (ZZP of via Bedrijf)
-  zzpId             String?
-  zzp               ZZPProfile? @relation(fields: [zzpId], references: [id])
-
-  // Voor bedrijf medewerkers (later uit te werken)
-  medewerkerId      String?
-
-  // GPS Clock-in/out
-  startTijd         DateTime
-  eindTijd          DateTime?
-  startLocatie      Json     // {lat, lng}
-  eindLocatie       Json?
-
-  // Billing
-  urenGewerkt       Decimal  @db.Decimal(10, 2)
-  uurtarief         Decimal  @db.Decimal(10, 2)
-  platformFee       Decimal  @default(2.99) @db.Decimal(10, 2)
-
-  // Finqle payment choice
-  directPaymentRequested Boolean @default(false)
-  factorFee         Decimal? @db.Decimal(10, 2) // 2.9% indien direct payment
-
-  // Invoice tracking
-  verzamelFactuurId String?
-  verzamelFactuur   VerzamelFactuur? @relation(fields: [verzamelFactuurId], references: [id])
-
-  status            WerkuurStatus @default(PENDING)
-
-  // Finqle integration
-  finqleTransaction FinqleTransaction?
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-// Verzamelfactuur voor wekelijkse Finqle facturatie
-model VerzamelFactuur {
-  id                String   @id @default(cuid())
-  weekNummer        Int
-  jaar              Int
-  factuurNummer     String   @unique
-
-  // Debtor (betaler) - kan Opdrachtgever of Bedrijf zijn
-  opdrachtgeverId   String?
-  opdrachtgever     Opdrachtgever? @relation(fields: [opdrachtgeverId], references: [id])
-
-  bedrijfId         String?
-  bedrijf           BedrijfProfile? @relation(fields: [bedrijfId], references: [id])
-
-  // Finqle integration
-  finqleInvoiceId   String?  @unique
-  kredietGebruikt   Decimal  @db.Decimal(10, 2) @default(0)
-
-  // Amounts
-  subtotaal         Decimal  @db.Decimal(10, 2) // Totaal werkuren
-  platformFees      Decimal  @db.Decimal(10, 2) // Totaal platform fees (€2.99 per uur)
-  totaalBedrag      Decimal  @db.Decimal(10, 2) // Subtotaal + platform fees
-
-  status            FactuurStatus @default(PENDING)
-
-  // Relations
-  werkuren          Werkuur[]
-  betalingen        Betaling[]
-  finqleTransacties FinqleTransaction[]
-
-  // Dates
-  createdAt         DateTime @default(now())
-  dueDate           DateTime
-  paidAt            DateTime?
-
-  @@index([weekNummer, jaar])
-  @@index([opdrachtgeverId])
-  @@index([bedrijfId])
-}
-
-// Finqle kredietlimiet tracking per debiteur
-model FinqleKredietLimiet {
-  id                String   @id @default(cuid())
-
-  // Debtor tracking - één van beide
-  opdrachtgeverId   String?  @unique
-  opdrachtgever     Opdrachtgever? @relation(fields: [opdrachtgeverId], references: [id])
-
-  bedrijfId         String?  @unique
-  bedrijf           BedrijfProfile? @relation(fields: [bedrijfId], references: [id])
-
-  // Credit limits
-  kredietLimiet     Decimal  @db.Decimal(10, 2)
-  gebruiktKrediet   Decimal  @db.Decimal(10, 2) @default(0)
-  beschikbaar       Decimal  @db.Decimal(10, 2)
-
-  // Finqle sync
-  finqleDebtorId    String   @unique
-  lastSyncAt        DateTime @default(now())
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-// ============================================
-// SUPPORT MODELS
-// ============================================
-
-model Review {
-  id           String @id @default(cuid())
-  rating       Int    // 1-5
-  comment      String? @db.Text
-
-  // Who is reviewing
-  reviewerId   String
-  reviewer     User @relation("ReviewsGiven", fields: [reviewerId], references: [id])
-
-  // Who is being reviewed
-  reviewedId   String
-  reviewed     User @relation("ReviewsReceived", fields: [reviewedId], references: [id])
-
-  // Context
-  opdrachtId   String?
-  opdracht     Opdracht? @relation(fields: [opdrachtId], references: [id])
-
-  // Review aspects (optional detailed ratings)
-  aspectRatings Json? // {punctuality: 5, professionalism: 4, etc}
-
-  isPublic     Boolean @default(true)
-  response     String? @db.Text // Optionele reactie van gereviewed
-  responseAt   DateTime?
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@unique([reviewerId, reviewedId, opdrachtId])
-}
-
-model Medewerker {
-  id                String          @id @default(cuid())
-  email             String          @unique
-  naam              String
-  functie           String
-  
-  bedrijfId         String
-  bedrijf           BedrijfProfile  @relation(fields: [bedrijfId], references: [id])
-  
-  createdAt         DateTime        @default(now())
-}
-
-model Factuur {
-  id                String          @id @default(cuid())
-  nummer            String          @unique
-  bedrag            Decimal         @db.Decimal(10, 2)
-  status            String          // OPEN, PAID, OVERDUE
-  
-  zzpId             String?
-  zzp               ZZPProfile?     @relation(fields: [zzpId], references: [id])
-  
-  bedrijfId         String?
-  bedrijf           BedrijfProfile? @relation(fields: [bedrijfId], references: [id])
-  
-  createdAt         DateTime        @default(now())
-}
-
-model Betaling {
-  id                String          @id @default(cuid())
-
-  // Type of payment
-  type              BetalingType    // INVOICE_PAYMENT, DIRECT_PAYMENT, MARGIN_PAYMENT, SUBSCRIPTION
-  bedrag            Decimal         @db.Decimal(10, 2)
-  methode           String?         // IDEAL, CREDITCARD, BANK_TRANSFER, FINQLE
-
-  // Van wie (betaler)
-  betalerType       BetalerType     // OPDRACHTGEVER, BEDRIJF, FINQLE, PLATFORM
-  betalerId         String          // ID of the payer entity
-
-  // Naar wie (ontvanger)
-  ontvangerType     OntvangerType   // ZZP, BEDRIJF, PLATFORM, FINQLE
-  ontvangerId       String          // ID of the receiver entity
-
-  // Linked to invoice
-  verzamelFactuurId String?
-  verzamelFactuur   VerzamelFactuur? @relation(fields: [verzamelFactuurId], references: [id])
-
-  // Status tracking
-  status            PaymentStatus @default(PENDING)
-
-  // Finqle integration (used in webhooks)
-  finqleReferentie  String?
-  externalId        String?  @unique // External payment ID from Finqle
-  payoutDate        DateTime? // Date when payout was processed
-  payoutBatch       String?  // Batch ID for weekly payouts
-
-  // Additional metadata from webhooks
-  finqleMetadata    Json?     // Additional webhook data
-
-  createdAt         DateTime @default(now())
-  paidAt            DateTime?
-}
-
-// NextAuth models
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// ============================================
-// TEAM MANAGEMENT & ASSIGNMENT MODELS
-// ============================================
-
-model BedrijfTeamLid {
-  id           String      @id @default(cuid())
-  bedrijfId    String
-  bedrijf      BedrijfProfile @relation(fields: [bedrijfId], references: [id])
-  zzpId        String
-  zzp          ZZPProfile  @relation(fields: [zzpId], references: [id])
-  role         TeamRole    @default(MEMBER)
-  status       TeamStatus  @default(INVITED)
-  joinedAt     DateTime?
-  createdAt    DateTime    @default(now())
-
-  // Relations
-  assignments  OpdrachtAssignment[]
-
-  @@unique([bedrijfId, zzpId])
-}
-
-model OpdrachtAssignment {
-  id           String      @id @default(cuid())
-  opdrachtId   String
-  opdracht     Opdracht    @relation(fields: [opdrachtId], references: [id])
-  teamLidId    String
-  teamLid      BedrijfTeamLid @relation(fields: [teamLidId], references: [id])
-  assignedBy   String      // userId who made assignment
-  assignedAt   DateTime    @default(now())
-  status       AssignmentStatus @default(ASSIGNED)
-
-  @@unique([opdrachtId, teamLidId])
-}
-
-model FinqleTransaction {
-  id                String   @id @default(cuid())
-
-  // Transaction type
-  transactionType   FinqleTransactionType // DIRECT_PAYMENT, INVOICE_PAYMENT, MARGIN_PAYMENT
-
-  // Linked entities
-  werkuurId         String?  @unique
-  werkuur           Werkuur? @relation(fields: [werkuurId], references: [id])
-
-  verzamelFactuurId String?
-  verzamelFactuur   VerzamelFactuur? @relation(fields: [verzamelFactuurId], references: [id])
-
-  // Finqle IDs
-  merchantId        String   // Finqle merchant ID (ZZP'er)
-  debtorId          String   // Finqle debtor ID (Opdrachtgever/Bedrijf)
-
-  // Amounts
-  amount            Decimal  @db.Decimal(10, 2)
-  factorFee         Decimal? @db.Decimal(10, 2) // 2.9% for direct payment
-  platformFee       Decimal  @db.Decimal(10, 2) @default(2.99)
-  netAmount         Decimal  @db.Decimal(10, 2) // Amount after fees
-
-  // Direct payment choice
-  directPayment     Boolean  @default(false)
-
-  // Finqle references
-  finqleRequestId   String?
-  finqleInvoiceId   String?
-
-  // Status tracking
-  status            PaymentStatus @default(PENDING)
-
-  // Timestamps
-  requestedAt       DateTime @default(now())
-  paidAt            DateTime?
-  failureReason     String?
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-// ============================================
-// COMMUNICATION & MESSAGING MODELS
-// ============================================
-
-model Conversation {
-  id            String   @id @default(cuid())
-  type          ConversationType @default(DIRECT)
-  title         String?  // Voor groepsgesprekken
-  opdrachtId    String?  // Optioneel gekoppeld aan opdracht
-  opdracht      Opdracht? @relation(fields: [opdrachtId], references: [id])
-
-  participants  ConversationParticipant[]
-  messages      Message[]
-  lastMessageAt DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model ConversationParticipant {
-  id             String @id @default(cuid())
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  userId         String
-  user           User @relation(fields: [userId], references: [id])
-
-  unreadCount    Int @default(0)
-  lastReadAt     DateTime?
-  isActive       Boolean @default(true)
-  joinedAt       DateTime @default(now())
-
-  @@unique([conversationId, userId])
-}
-
-model Message {
-  id             String @id @default(cuid())
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  senderId       String
-  sender         User @relation(fields: [senderId], references: [id])
-
-  content        String @db.Text
-  type           MessageType @default(TEXT)
-  attachments    Json?   // [{url, name, type, size}]
-  metadata       Json?   // Voor system messages, locaties, etc.
-
-  isEdited       Boolean @default(false)
-  editedAt       DateTime?
-  isDeleted      Boolean @default(false)
-  deletedAt      DateTime?
-
-  createdAt      DateTime @default(now())
-}
-
-model Notification {
-  id           String @id @default(cuid())
-  userId       String
-  user         User @relation(fields: [userId], references: [id])
-
-  type         NotificationType
-  category     NotificationCategory
-  title        String
-  message      String @db.Text
-
-  isRead       Boolean @default(false)
-  readAt       DateTime?
-
-  actionUrl    String?
-  actionLabel  String?
-  metadata     Json?
-
-  createdAt    DateTime @default(now())
-}
-
-model OpdrachtFeedback {
-  id           String @id @default(cuid())
-  opdrachtId   String
-  opdracht     Opdracht @relation(fields: [opdrachtId], references: [id])
-
-  authorId     String
-  author       User @relation(fields: [authorId], references: [id])
-
-  type         FeedbackType
-  rating       Int?    // Overall satisfaction 1-5
-
-  // Feedback categories
-  qualityScore     Int?  // 1-5
-  communicationScore Int? // 1-5
-  valueScore       Int?  // 1-5
-
-  positives    String[] // Wat ging goed
-  improvements String[] // Wat kan beter
-  comment      String? @db.Text
-
-  // Follow-up
-  requiresAction Boolean @default(false)
-  actionTaken   String?
-  actionBy      String?
-  actionAt      DateTime?
-
-  createdAt    DateTime @default(now())
-}
-
-// ============================================
-// MISSING MODELS USED IN QUERIES
-// ============================================
-
-model Certificate {
-  id              String   @id @default(cuid())
-  zzpId           String
-  zzp             ZZPProfile @relation(fields: [zzpId], references: [id], onDelete: Cascade)
-
-  // Certificate details
-  naam            String
-  uitgever        String
-  certificaatNummer String?
-  uitgifteDatum   DateTime?
-  verloopdatum    DateTime?
-  beschrijving    String?  @db.Text
-
-  // File information
-  fileName        String?
-  fileUrl         String?
-
-  // Verification
-  isVerified      Boolean  @default(false)
-  verifiedAt      DateTime?
-  verifiedBy      String?  // Admin user ID
-
-  // Status
-  status          CertificateStatus @default(PENDING)
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([zzpId])
-  @@index([status])
-  @@index([verloopdatum])
-}
-
-model Document {
-  id              String   @id @default(cuid())
-  zzpId           String
-  zzp             ZZPProfile @relation(fields: [zzpId], references: [id], onDelete: Cascade)
-
-  // Document details
-  titel           String
-  beschrijving    String?  @db.Text
-  documentType    DocumentType
-
-  // File information
-  fileName        String
-  originalFileName String
-  fileUrl         String
-  fileSize        Int
-  mimeType        String
-
-  // Status tracking
-  status          DocumentStatus @default(PENDING)
-  uploadedAt      DateTime @default(now())
-  reviewedAt      DateTime?
-  reviewedBy      String?  // Admin user ID
-  reviewNotes     String?  @db.Text
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([zzpId])
-  @@index([documentType])
-  @@index([status])
-  @@index([uploadedAt])
-}
-
-// ============================================
-// ENUMS
-// ============================================
 
 enum OpdrachtStatus {
   OPEN
-  URGENT
   TOEGEWEZEN
   BEZIG
   AFGEROND
   GEANNULEERD
+  URGENT
 }
 
 enum CreatorType {
-  OPDRACHTGEVER  // Externe klant plaatst opdracht
-  BEDRIJF        // Beveiligingsbedrijf plaatst opdracht
+  OPDRACHTGEVER
+  BEDRIJF
 }
 
 enum TargetAudience {
-  ALLEEN_BEDRIJVEN     // Alleen bedrijven met teams kunnen reageren
-  ALLEEN_ZZP           // Direct ZZP'ers kunnen solliciteren
-  BEIDEN               // Zowel bedrijven als ZZP'ers
-  EIGEN_TEAM           // Alleen eigen team (voor bedrijf-created opdrachten)
+  ALLEEN_BEDRIJVEN
+  ALLEEN_ZZP
+  BEIDEN
+  EIGEN_TEAM
 }
 
 enum SollicitantType {
-  ZZP_BEVEILIGER  // Individuele ZZP'er solliciteert
-  BEDRIJF         // Bedrijf solliciteert met team
+  ZZP_BEVEILIGER
+  BEDRIJF
 }
 
 enum SollicitatieStatus {
-  PENDING    // In afwachting van review
-  REVIEWING  // Wordt beoordeeld
-  ACCEPTED   // Geaccepteerd
-  REJECTED   // Afgewezen
-  WITHDRAWN  // Ingetrokken door sollicitant
+  PENDING
+  REVIEWING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
 }
 
 enum TeamRole {
@@ -953,546 +823,209 @@ enum PaymentStatus {
 }
 
 enum ConversationType {
-  DIRECT        // 1-on-1 conversation
-  GROUP         // Group conversation
-  OPDRACHT      // Related to specific opdracht
-  SUPPORT       // Support/admin conversation
+  DIRECT
+  GROUP
+  OPDRACHT
+  SUPPORT
 }
 
 enum MessageType {
-  TEXT          // Regular text message
-  IMAGE         // Image attachment
-  FILE          // Document attachment
-  LOCATION      // Location share
-  SYSTEM        // System message (joined, left, etc)
-  ASSIGNMENT    // Assignment related update
+  TEXT
+  IMAGE
+  FILE
+  LOCATION
+  SYSTEM
+  ASSIGNMENT
 }
 
 enum NotificationType {
-  OPDRACHT_NEW         // New opdracht available
-  OPDRACHT_ASSIGNED    // Assigned to opdracht
-  OPDRACHT_UPDATED     // Opdracht details changed
-  OPDRACHT_CANCELLED   // Opdracht cancelled
-  TEAM_INVITED         // Invited to team
-  TEAM_ACCEPTED        // Team invitation accepted
-  MESSAGE_NEW          // New message received
-  REVIEW_RECEIVED      // New review received
-  PAYMENT_RECEIVED     // Payment received
-  PAYMENT_PENDING      // Payment pending approval
-  WERKUUR_APPROVED     // Work hours approved
-  WERKUUR_DISPUTED     // Work hours disputed
-  SYSTEM_ANNOUNCEMENT  // System-wide announcement
+  OPDRACHT_NEW
+  OPDRACHT_ASSIGNED
+  OPDRACHT_UPDATED
+  OPDRACHT_CANCELLED
+  TEAM_INVITED
+  TEAM_ACCEPTED
+  MESSAGE_NEW
+  REVIEW_RECEIVED
+  PAYMENT_RECEIVED
+  PAYMENT_PENDING
+  WERKUUR_APPROVED
+  WERKUUR_DISPUTED
+  SYSTEM_ANNOUNCEMENT
 }
 
 enum NotificationCategory {
-  OPDRACHT      // Assignment related
-  TEAM          // Team management
-  PAYMENT       // Financial
-  MESSAGE       // Communication
-  REVIEW        // Ratings and feedback
-  SYSTEM        // Platform updates
+  OPDRACHT
+  TEAM
+  PAYMENT
+  MESSAGE
+  REVIEW
+  SYSTEM
 }
 
 enum FeedbackType {
-  OPDRACHTGEVER_TO_BEDRIJF     // Client feedback to company
-  BEDRIJF_TO_OPDRACHTGEVER     // Company feedback to client
-  BEDRIJF_TO_ZZP                // Company feedback to freelancer
-  ZZP_TO_BEDRIJF                // Freelancer feedback to company
-  PLATFORM_QUALITY_CHECK        // Platform quality assessment
+  OPDRACHTGEVER_TO_BEDRIJF
+  BEDRIJF_TO_OPDRACHTGEVER
+  BEDRIJF_TO_ZZP
+  ZZP_TO_BEDRIJF
+  PLATFORM_QUALITY_CHECK
 }
 
-// ============================================
-// FINANCIAL FLOW ENUMS
-// ============================================
-
 enum WerkuurStatus {
-  PENDING           // In afwachting van goedkeuring
-  APPROVED          // Goedgekeurd door opdrachtgever/bedrijf
-  DISPUTED          // Betwist
-  INVOICED          // Opgenomen in verzamelfactuur
-  PAID              // Betaald
+  PENDING
+  APPROVED
+  DISPUTED
+  INVOICED
+  PAID
 }
 
 enum FactuurStatus {
-  PENDING           // Aangemaakt, nog niet verstuurd
-  SENT              // Verstuurd naar Finqle/debiteur
-  OVERDUE           // Verlopen betalingstermijn
-  PAID              // Betaald
-  PARTIALLY_PAID    // Gedeeltelijk betaald
-  CANCELLED         // Geannuleerd
+  PENDING
+  SENT
+  OVERDUE
+  PAID
+  PARTIALLY_PAID
+  CANCELLED
 }
 
 enum BetalingType {
-  INVOICE_PAYMENT   // Betaling van verzamelfactuur
-  DIRECT_PAYMENT    // Directe uitbetaling via Finqle
-  MARGIN_PAYMENT    // Platform marge uitbetaling
-  SUBSCRIPTION      // Subscription betaling
-  REFUND            // Terugbetaling
+  INVOICE_PAYMENT
+  DIRECT_PAYMENT
+  MARGIN_PAYMENT
+  SUBSCRIPTION
+  REFUND
 }
 
 enum BetalerType {
-  OPDRACHTGEVER     // Opdrachtgever betaalt
-  BEDRIJF           // Beveiligingsbedrijf betaalt
-  FINQLE            // Finqle betaalt (bij factoring)
-  PLATFORM          // Platform betaalt
-  ZZP               // ZZP betaalt (voor subscription)
+  OPDRACHTGEVER
+  BEDRIJF
+  FINQLE
+  PLATFORM
+  ZZP
 }
 
 enum OntvangerType {
-  ZZP               // ZZP'er ontvangt
-  BEDRIJF           // Beveiligingsbedrijf ontvangt
-  PLATFORM          // Platform ontvangt (marge/fees)
-  FINQLE            // Finqle ontvangt
-  OPDRACHTGEVER     // Opdrachtgever ontvangt (refund)
+  ZZP
+  BEDRIJF
+  PLATFORM
+  FINQLE
+  OPDRACHTGEVER
 }
 
 enum FinqleTransactionType {
-  DIRECT_PAYMENT    // Direct payment to ZZP'er
-  INVOICE_PAYMENT   // Payment from invoice
-  MARGIN_PAYMENT    // Platform margin payment
-  FEE_PAYMENT       // Platform fee payment
+  DIRECT_PAYMENT
+  INVOICE_PAYMENT
+  MARGIN_PAYMENT
+  FEE_PAYMENT
 }
-
-// ============================================
-// VERZEKERINGEN MODULE
-// ============================================
-
-model VerzekeringCategorie {
-  id            String   @id @default(cuid())
-  naam          String   @unique
-  beschrijving  String   @db.Text
-  sortOrder     Int      @default(0)
-  isActief      Boolean  @default(true)
-
-  producten     VerzekeringProduct[]
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([sortOrder])
-}
-
-model VerzekeringProduct {
-  id                String   @id @default(cuid())
-  naam              String
-  beschrijving      String   @db.Text
-  korteBeschrijving String?
-
-  categorieId       String
-  categorie         VerzekeringCategorie @relation(fields: [categorieId], references: [id])
-
-  verzekeraar       String   // "Schouten Zekerheid", etc.
-  verzekeraarLogo   String?  // URL to logo
-
-  // Pricing
-  basispremie       Decimal? @db.Decimal(10, 2) // Optional base premium
-  kortingPercentage Decimal  @db.Decimal(5, 2) @default(0) // Platform discount %
-
-  // Configuration
-  vereisteBasisdata Json     // Required fields for quote { fields: [...] }
-  productFeatures   String[] // Key features list
-
-  // External integration
-  externalProductId String?  // ID at insurance partner
-  apiEndpoint       String?  // Partner API endpoint
-
-  // Display
-  isActief          Boolean  @default(true)
-  isFeatured        Boolean  @default(false)
-  sortOrder         Int      @default(0)
-
-  // Relations
-  aanvragen         VerzekeringAanvraag[]
-  kortingen         VerzekeringProductKorting[]
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@unique([categorieId, naam])
-  @@index([isActief, isFeatured])
-  @@index([categorieId, sortOrder])
-}
-
-model VerzekeringKorting {
-  id              String   @id @default(cuid())
-  code            String   @unique
-  naam            String   // Display name "Nieuwe klant korting"
-  beschrijving    String?
-
-  // Discount configuration
-  kortingType     KortingType
-  waarde          Decimal  @db.Decimal(10, 2)
-
-  // Validity
-  geldigVan       DateTime
-  geldigTot       DateTime
-
-  // Usage limits
-  maxGebruik      Int?     // Optional usage limit
-  gebruiktAantal  Int      @default(0)
-  maxPerGebruiker Int      @default(1)
-
-  // Conditions
-  minAbonnementDuur Int?   // Minimum subscription months
-  nieuweKlantenOnly Boolean @default(false)
-
-  isActief        Boolean  @default(true)
-
-  // Relations
-  producten       VerzekeringProductKorting[]
-  aanvragen       VerzekeringAanvraag[]
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([code])
-  @@index([geldigVan, geldigTot])
-}
-
-// Many-to-many relation between products and discounts
-model VerzekeringProductKorting {
-  id         String @id @default(cuid())
-  productId  String
-  product    VerzekeringProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
-  kortingId  String
-  korting    VerzekeringKorting @relation(fields: [kortingId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, kortingId])
-}
-
-model VerzekeringAanvraag {
-  id              String   @id @default(cuid())
-
-  // User relation
-  zzpId           String
-  zzp             ZZPProfile @relation(fields: [zzpId], references: [id])
-
-  // Product relation
-  productId       String
-  product         VerzekeringProduct @relation(fields: [productId], references: [id])
-
-  // Optional discount
-  kortingId       String?
-  korting         VerzekeringKorting? @relation(fields: [kortingId], references: [id])
-  kortingCode     String?  // Store code used for tracking
-
-  // Application data
-  aanvraagData    Json     // Form data submitted by user
-
-  // Quote information
-  offertePremie   Decimal? @db.Decimal(10, 2)  // Base quote from insurer
-  platformKorting Decimal? @db.Decimal(10, 2)  // Platform discount amount
-  codeKorting     Decimal? @db.Decimal(10, 2)  // Discount code amount
-  finaalPremie    Decimal? @db.Decimal(10, 2)  // Final premium after discounts
-
-  // External references
-  externalRef     String?  // Reference at insurance company
-  offerteUrl      String?  // URL to full quote/application
-
-  // Status tracking
-  status          VerzekeringAanvraagStatus @default(CONCEPT)
-  statusReden     String?  // Reason for current status
-
-  // Communication
-  notificatiesSent Json?   // Track notifications sent
-  laatsteContact   DateTime?
-
-  // Metadata
-  ipAdres         String?
-  userAgent       String?
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([zzpId, status])
-  @@index([productId, status])
-  @@index([status, createdAt])
-}
-
-// Link verzekeringen to ZZP profiles
-model ZZPVerzekeringProfile {
-  id                    String   @id @default(cuid())
-  zzpId                 String   @unique
-  zzp                   ZZPProfile @relation(fields: [zzpId], references: [id])
-
-  // Preferences
-  intereseCategorieen   String[] // Categories user is interested in
-  budgetRange           String?  // "0-50", "50-100", etc.
-  contactVoorkeur       ContactVoorkeur @default(EMAIL)
-  marketingOptIn        Boolean  @default(true)
-
-  // History
-  totaalAanvragen       Int      @default(0)
-  totaalAfgesloten      Int      @default(0)
-  laatsteActiviteit     DateTime?
-
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-}
-
-// ============================================
-// VERZEKERINGEN ENUMS
-// ============================================
 
 enum KortingType {
-  PERCENTAGE    // Percentage discount
-  VAST_BEDRAG   // Fixed amount discount
+  PERCENTAGE
+  VAST_BEDRAG
 }
 
 enum VerzekeringAanvraagStatus {
-  CONCEPT       // Draft, not yet submitted
-  AANGEVRAAGD   // Submitted, awaiting quote
-  OFFERTE       // Quote received
-  GEACCEPTEERD  // Application accepted by insurer
-  AFGEWEZEN     // Application rejected
-  GEANNULEERD   // Cancelled by user
-  ACTIEF        // Policy is active
-  VERLOPEN      // Policy expired
+  CONCEPT
+  AANGEVRAAGD
+  OFFERTE
+  GEACCEPTEERD
+  AFGEWEZEN
+  GEANNULEERD
+  ACTIEF
+  VERLOPEN
 }
 
 enum ContactVoorkeur {
-  EMAIL         // Email contact preferred
-  TELEFOON      // Phone contact preferred
-  SMS           // SMS contact preferred
-}
-
-enum CertificateStatus {
-  PENDING       // Awaiting verification
-  APPROVED      // Verified and approved
-  REJECTED      // Rejected after review
-  EXPIRED       // Certificate has expired
-  SUSPENDED     // Temporarily suspended
-}
-
-enum DocumentStatus {
-  PENDING       // Awaiting review
-  IN_REVIEW     // Under review by admin
-  APPROVED      // Approved by admin
-  REJECTED      // Rejected by admin
-  EXPIRED       // Document has expired
-  NEEDS_UPDATE  // Requires update
+  EMAIL
+  TELEFOON
+  SMS
 }
 
 enum NDNummerStatus {
-  NIET_GEREGISTREERD    // Not registered/applied
-  AANGEVRAAGD          // Application submitted
-  PENDING_VERIFICATIE  // Pending verification by Justis
-  ACTIEF               // Active and valid
-  VERLOPEN             // Expired
-  INGETROKKEN          // Revoked by authorities
-  GESCHORST            // Suspended
-  GEWEIGERD            // Application denied
+  NIET_GEREGISTREERD
+  AANGEVRAAGD
+  PENDING_VERIFICATIE
+  ACTIEF
+  VERLOPEN
+  INGETROKKEN
+  GESCHORST
+  GEWEIGERD
 }
 
 enum NDProfileType {
-  ZZP      // Individual security professional
-  BEDRIJF  // Security company
+  ZZP
+  BEDRIJF
 }
 
 enum NDNummerAction {
-  REGISTRATIE          // Initial registration
-  VERIFICATIE          // Manual or API verification
-  HERNIEUWING          // Renewal process
-  STATUS_WIJZIGING     // Status change
-  DOCUMENTEN_UPLOAD    // Document upload
-  HERINNERING_VERSTUURD // Expiry reminder sent
-  AUTOMATISCHE_CHECK   // Automated status check
-  HANDMATIGE_UPDATE    // Manual update by admin
-  GESCHORST            // Suspension action
-  HERSTELD             // Restoration after suspension
-  INGETROKKEN          // Revocation
+  REGISTRATIE
+  VERIFICATIE
+  HERNIEUWING
+  STATUS_WIJZIGING
+  DOCUMENTEN_UPLOAD
+  HERINNERING_VERSTUURD
+  AUTOMATISCHE_CHECK
+  HANDMATIGE_UPDATE
+  GESCHORST
+  HERSTELD
+  INGETROKKEN
 }
-
-// ============================================
-// DOCUMENT VERIFICATION SYSTEM
-// ============================================
-
-model DocumentVerificatie {
-  id                String   @id @default(cuid())
-
-  // User relations
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Document details
-  documentType      DocumentType
-  documentNummer    String?  // ND-nummer, BSN, certificaat nummer, etc.
-  fileName          String
-  originalFileName  String
-  fileUrl           String   // Secure upload location
-  fileSize          Int
-  mimeType          String
-
-  // Verification details
-  status            VerificatieStatus @default(PENDING)
-  adminNotes        String?  @db.Text
-  verificatieDatum  DateTime?
-  verifiedBy        String?  // Admin user ID
-  rejectionReason   String?  @db.Text
-
-  // Expiry tracking
-  geldigTot         DateTime?
-  expiryWarnings    Int      @default(0)
-  lastExpiryWarning DateTime?
-
-  // External verification
-  externalVerified  Boolean  @default(false)
-  externalSource    String?  // "V:base", "Justis", "KvK", etc.
-  externalRef       String?  // Reference number from external system
-
-  // Metadata
-  uploadedAt        DateTime @default(now())
-  ipAddress         String?
-  userAgent         String?
-
-  // Audit trail
-  verificationHistory DocumentVerificationHistory[]
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@index([userId, documentType])
-  @@index([status])
-  @@index([geldigTot])
-  @@index([documentType, status])
-  @@index([verifiedBy])
-}
-
-model DocumentVerificationHistory {
-  id              String   @id @default(cuid())
-  documentId      String
-  document        DocumentVerificatie @relation(fields: [documentId], references: [id], onDelete: Cascade)
-
-  // Action details
-  action          VerificationAction
-  oldStatus       VerificatieStatus?
-  newStatus       VerificatieStatus
-  adminNotes      String?  @db.Text
-
-  // Who performed the action
-  performedBy     String   // Admin user ID
-  performedByName String   // Admin name for audit trail
-
-  // Metadata
-  ipAddress       String?
-  userAgent       String?
-
-  createdAt       DateTime @default(now())
-
-  @@index([documentId])
-  @@index([performedBy])
-  @@index([createdAt])
-}
-
-model DocumentTemplate {
-  id              String   @id @default(cuid())
-  documentType    DocumentType @unique
-
-  // Template information
-  naam            String
-  beschrijving    String   @db.Text
-  vereist         Boolean  @default(false)
-
-  // Verification guidelines
-  verificatieStappen String[] // Stap-voor-stap instructies
-  echtheidskenmerken String[] // Wat te controleren op echtheid
-  externalUrls       Json?    // URLs voor externe verificatie
-  contactInfo        Json?    // Contact informatie voor hulp
-
-  // Expiry settings
-  geldigheid         Int?     // Maanden geldig
-  waarschuwingen     Int[]    @default([90, 30, 7]) // Dagen voor expiry warnings
-
-  // Display settings
-  acceptedFormats    String[] @default(["pdf", "jpg", "jpeg", "png"])
-  maxFileSize        Int      @default(10485760) // 10MB in bytes
-  sortOrder          Int      @default(0)
-  isActive           Boolean  @default(true)
-
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  @@index([isActive, sortOrder])
-}
-
-// ============================================
-// DOCUMENT VERIFICATION ENUMS
-// ============================================
 
 enum DocumentType {
-  // Identiteitsdocumenten
   IDENTITEITSBEWIJS
   PASPOORT
   RIJBEWIJS
-
-  // Bedrijfsdocumenten
   KVK_UITTREKSEL
   BTW_NUMMER
-
-  // WPBR Documenten
   ND_NUMMER
   LEGITIMATIEBEWIJS
   TOESTEMMINGSBEWIJS
   VOG_P_CERTIFICAAT
-
-  // Beveiligingscertificaten - SVPB
   SVPB_DIPLOMA_BEVEILIGER
   SVPB_CERTIFICAAT_PERSOONSBEVEILIGING
   SVPB_CERTIFICAAT_WINKELSURVEILLANCE
   SVPB_CERTIFICAAT_EVENT_SECURITY
   SVPB_CERTIFICAAT_CENTRALIST
-
-  // Beveiligingscertificaten - Overig
   BOA_CERTIFICAAT
   BHV_CERTIFICAAT
   KNVB_STEWARD
   HORECA_PORTIER
   MBV_CERTIFICAAT
   TBV_CERTIFICAAT
-
-  // Financieel & Verzekeringen
   VERZEKERINGSBEWIJS
   BANKGEGEVENS
   IBAN_BEWIJS
-
-  // Contractueel
   CONTRACT
   ARBEIDSOVEREENKOMST
   FREELANCER_OVEREENKOMST
-
-  // Overig
   DIPLOMA_OVERIG
   CERTIFICAAT_OVERIG
   OVERIGE
 }
 
 enum VerificatieStatus {
-  PENDING           // Wacht op admin review
-  IN_REVIEW         // Admin bekijkt document
-  ADDITIONAL_INFO   // Aanvullende informatie nodig
-  APPROVED          // Goedgekeurd
-  REJECTED          // Afgewezen
-  EXPIRED           // Verlopen
-  NEEDS_RENEWAL     // Hernieuwing vereist
-  SUSPENDED         // Tijdelijk opgeschort
+  PENDING
+  IN_REVIEW
+  ADDITIONAL_INFO
+  APPROVED
+  REJECTED
+  EXPIRED
+  NEEDS_RENEWAL
+  SUSPENDED
 }
 
 enum VerificationAction {
-  UPLOADED          // Document geüpload
-  REVIEW_STARTED    // Review gestart
-  APPROVED          // Goedgekeurd
-  REJECTED          // Afgewezen
-  INFO_REQUESTED    // Aanvullende info gevraagd
-  UPDATED           // Document bijgewerkt
-  EXPIRED           // Automatisch verlopen
-  RENEWED           // Hernieuwd
-  DELETED           // Verwijderd
-  NOTE_ADDED        // Notitie toegevoegd
+  UPLOADED
+  REVIEW_STARTED
+  APPROVED
+  REJECTED
+  INFO_REQUESTED
+  UPDATED
+  EXPIRED
+  RENEWED
+  DELETED
+  NOTE_ADDED
 }
-
-// ============================================
-// SECURITY LOGGING
-// ============================================
 
 enum SecurityEventType {
   LOGIN_SUCCESS
@@ -1505,69 +1038,4 @@ enum SecurityEventType {
   ACCOUNT_LOCKED
   ACCOUNT_UNLOCKED
   SUSPICIOUS_ACTIVITY
-}
-
-model SecurityLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  email     String?  // For failed logins where user might not exist
-  eventType SecurityEventType
-  ipAddress String?
-  userAgent String?
-  metadata  Json?    // Additional event-specific data
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([eventType])
-  @@index([createdAt])
-}
-
-// ============================================
-// ND-NUMMER COMPLIANCE TRACKING
-// ============================================
-
-model NDNummerAuditLog {
-  id              String   @id @default(cuid())
-
-  // Subject of the audit log - polymorphic relation
-  profileType     NDProfileType // ZZP or BEDRIJF
-
-  // ZZP relation (optional)
-  zzpProfileId    String?
-  zzpProfile      ZZPProfile? @relation("ZZPNDNummerAuditLogs", fields: [zzpProfileId], references: [id])
-
-  // Bedrijf relation (optional)
-  bedrijfProfileId String?
-  bedrijfProfile   BedrijfProfile? @relation("BedrijfNDNummerAuditLogs", fields: [bedrijfProfileId], references: [id])
-
-  // ND-nummer details at time of action
-  ndNummer        String?
-  previousStatus  NDNummerStatus?
-  newStatus       NDNummerStatus
-
-  // Action details
-  action          NDNummerAction
-  performedBy     String?       // User ID who performed action
-  verificationSource String?    // "Justis API", "Manual", "Automated"
-
-  // Compliance tracking
-  expiryDate      DateTime?
-  nextCheckDue    DateTime?
-  complianceNotes String?       @db.Text
-
-  // Audit metadata
-  ipAddress       String?
-  userAgent       String?
-  apiResponse     Json?         // Full API response from Justis
-
-  createdAt       DateTime      @default(now())
-
-  @@index([profileType])
-  @@index([zzpProfileId])
-  @@index([bedrijfProfileId])
-  @@index([ndNummer])
-  @@index([action])
-  @@index([newStatus])
-  @@index([createdAt])
-  @@index([expiryDate])
 }

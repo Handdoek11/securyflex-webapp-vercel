@@ -1,34 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
 import {
-  ArrowLeft,
+  AlertCircle,
   Building2,
   Calendar,
+  CheckCircle,
   Clock,
   Euro,
-  MapPin,
-  Users,
-  Shield,
-  CheckCircle,
-  AlertCircle,
-  Zap,
   Heart,
+  MapPin,
   Share2,
-  Phone,
-  Mail,
-  Star
+  Shield,
+  Star,
+  Users,
+  Zap,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { WithdrawApplicationConfirm } from "@/components/ui/confirm-dialog";
-import { JobDetailsSkeleton } from "@/components/ui/loading-skeleton";
-import { toast, jobToast } from "@/components/ui/toast";
-import { useSession } from "next-auth/react";
+import { jobToast, toast } from "@/components/ui/toast";
 
 interface JobDetails {
   id: string;
@@ -65,11 +60,11 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [_showApplyModal, setShowApplyModal] = useState(false);
 
   useEffect(() => {
     fetchJobDetails();
-  }, [jobId]);
+  }, [fetchJobDetails]);
 
   const fetchJobDetails = async () => {
     try {
@@ -101,8 +96,8 @@ export default function JobDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           quickApply: true,
-          requestDirectPayment: true
-        })
+          requestDirectPayment: true,
+        }),
       });
 
       const data = await response.json();
@@ -113,7 +108,7 @@ export default function JobDetailPage() {
           setJob({
             ...job,
             applicationStatus: data.data.status,
-            applicantCount: job.applicantCount + 1
+            applicantCount: job.applicantCount + 1,
           });
         }
 
@@ -143,7 +138,7 @@ export default function JobDetailPage() {
     setApplying(true);
     try {
       const response = await fetch(`/api/jobs/${jobId}/apply`, {
-        method: "DELETE"
+        method: "DELETE",
       });
 
       const data = await response.json();
@@ -154,7 +149,7 @@ export default function JobDetailPage() {
           setJob({
             ...job,
             applicationStatus: null,
-            applicantCount: job.applicantCount - 1
+            applicantCount: job.applicantCount - 1,
           });
         }
         alert("Sollicitatie ingetrokken");
@@ -171,10 +166,7 @@ export default function JobDetailPage() {
 
   if (loading) {
     return (
-      <DashboardLayout
-        title="Laden..."
-        showBackButton
-      >
+      <DashboardLayout title="Laden..." showBackButton>
         <div className="p-4 space-y-4">
           <Skeleton className="h-48 w-full" />
           <Skeleton className="h-32 w-full" />
@@ -186,17 +178,13 @@ export default function JobDetailPage() {
 
   if (!job) {
     return (
-      <DashboardLayout
-        title="Opdracht niet gevonden"
-        showBackButton
-      >
+      <DashboardLayout title="Opdracht niet gevonden" showBackButton>
         <div className="p-4 text-center">
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Deze opdracht bestaat niet of is verwijderd.</p>
-          <Button
-            className="mt-4"
-            onClick={() => router.back()}
-          >
+          <p className="text-muted-foreground">
+            Deze opdracht bestaat niet of is verwijderd.
+          </p>
+          <Button className="mt-4" onClick={() => router.back()}>
             Terug naar overzicht
           </Button>
         </div>
@@ -218,7 +206,10 @@ export default function JobDetailPage() {
       );
     }
 
-    if (job.applicationStatus === "PENDING" || job.applicationStatus === "REVIEWING") {
+    if (
+      job.applicationStatus === "PENDING" ||
+      job.applicationStatus === "REVIEWING"
+    ) {
       return (
         <>
           <Button className="w-full" disabled variant="outline">
@@ -297,7 +288,9 @@ export default function JobDetailPage() {
             size="icon"
             onClick={() => setIsFavorite(!isFavorite)}
           >
-            <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+            <Heart
+              className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`}
+            />
           </Button>
           <Button variant="ghost" size="icon">
             <Share2 className="h-5 w-5" />
@@ -316,13 +309,22 @@ export default function JobDetailPage() {
               </Badge>
             )}
             {job.applicationStatus && (
-              <Badge variant={
-                job.applicationStatus === "ACCEPTED" ? "success" :
-                job.applicationStatus === "REJECTED" ? "destructive" : "default"
-              }>
-                {job.applicationStatus === "ACCEPTED" ? "Geaccepteerd" :
-                 job.applicationStatus === "REJECTED" ? "Afgewezen" :
-                 job.applicationStatus === "PENDING" ? "In behandeling" : "In review"}
+              <Badge
+                variant={
+                  job.applicationStatus === "ACCEPTED"
+                    ? "success"
+                    : job.applicationStatus === "REJECTED"
+                      ? "destructive"
+                      : "default"
+                }
+              >
+                {job.applicationStatus === "ACCEPTED"
+                  ? "Geaccepteerd"
+                  : job.applicationStatus === "REJECTED"
+                    ? "Afgewezen"
+                    : job.applicationStatus === "PENDING"
+                      ? "In behandeling"
+                      : "In review"}
               </Badge>
             )}
           </div>
@@ -333,13 +335,17 @@ export default function JobDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Euro className="h-5 w-5 text-green-600" />
-              <span className="text-2xl font-bold">€{job.hourlyRate.toFixed(2)}</span>
+              <span className="text-2xl font-bold">
+                €{job.hourlyRate.toFixed(2)}
+              </span>
               <span className="text-muted-foreground">per uur</span>
             </div>
             {job.estimatedEarnings && (
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Geschat inkomen</p>
-                <p className="font-semibold">€{job.estimatedEarnings.toFixed(2)}</p>
+                <p className="font-semibold">
+                  €{job.estimatedEarnings.toFixed(2)}
+                </p>
               </div>
             )}
           </div>
@@ -352,7 +358,7 @@ export default function JobDetailPage() {
                   {new Date(job.startDate).toLocaleDateString("nl-NL", {
                     weekday: "short",
                     day: "numeric",
-                    month: "short"
+                    month: "short",
                   })}
                 </p>
                 <p className="text-xs text-muted-foreground">Startdatum</p>
@@ -365,13 +371,17 @@ export default function JobDetailPage() {
                 <p className="font-medium">
                   {new Date(job.startDate).toLocaleTimeString("nl-NL", {
                     hour: "2-digit",
-                    minute: "2-digit"
-                  })} - {new Date(job.endDate).toLocaleTimeString("nl-NL", {
+                    minute: "2-digit",
+                  })}{" "}
+                  -{" "}
+                  {new Date(job.endDate).toLocaleTimeString("nl-NL", {
                     hour: "2-digit",
-                    minute: "2-digit"
+                    minute: "2-digit",
                   })}
                 </p>
-                <p className="text-xs text-muted-foreground">{job.estimatedHours} uur</p>
+                <p className="text-xs text-muted-foreground">
+                  {job.estimatedHours} uur
+                </p>
               </div>
             </div>
 
@@ -386,8 +396,12 @@ export default function JobDetailPage() {
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="font-medium">{job.spotsRemaining} / {job.spotsAvailable}</p>
-                <p className="text-xs text-muted-foreground">Plekken beschikbaar</p>
+                <p className="font-medium">
+                  {job.spotsRemaining} / {job.spotsAvailable}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Plekken beschikbaar
+                </p>
               </div>
             </div>
           </div>
@@ -438,7 +452,10 @@ export default function JobDetailPage() {
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-blue-600" />
               <p className="text-sm">
-                <span className="font-medium">{job.applicantCount} beveiligers</span> hebben al gesolliciteerd
+                <span className="font-medium">
+                  {job.applicantCount} beveiligers
+                </span>{" "}
+                hebben al gesolliciteerd
               </p>
             </div>
           </Card>

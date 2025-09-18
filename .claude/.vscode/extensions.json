@@ -1,26 +1,26 @@
 {
   "recommendations": [
     // Essential for SecuryFlex development
-    "dbaeumer.vscode-eslint",           // ESLint
-    "esbenp.prettier-vscode",            // Prettier
-    "bradlc.vscode-tailwindcss",         // Tailwind CSS IntelliSense
-    "ms-vscode.vscode-typescript-next",  // TypeScript
+    "dbaeumer.vscode-eslint", // ESLint
+    "esbenp.prettier-vscode", // Prettier
+    "bradlc.vscode-tailwindcss", // Tailwind CSS IntelliSense
+    "ms-vscode.vscode-typescript-next", // TypeScript
 
     // Additional helpful extensions
-    "prisma.prisma",                     // Prisma (if using)
-    "mtxr.sqltools",                     // SQL Tools
-    "mtxr.sqltools-driver-pg",           // PostgreSQL driver
-    "GitHub.copilot",                    // GitHub Copilot
-    "eamodio.gitlens",                   // GitLens
-    "usernamehw.errorlens",              // Error Lens
-    "formulahendry.auto-rename-tag",     // Auto Rename Tag
-    "naumovs.color-highlight",           // Color Highlight
-    "aaron-bond.better-comments",        // Better Comments
+    "prisma.prisma", // Prisma (if using)
+    "mtxr.sqltools", // SQL Tools
+    "mtxr.sqltools-driver-pg", // PostgreSQL driver
+    "GitHub.copilot", // GitHub Copilot
+    "eamodio.gitlens", // GitLens
+    "usernamehw.errorlens", // Error Lens
+    "formulahendry.auto-rename-tag", // Auto Rename Tag
+    "naumovs.color-highlight", // Color Highlight
+    "aaron-bond.better-comments", // Better Comments
     "streetsidesoftware.code-spell-checker", // Spell Checker
     "streetsidesoftware.code-spell-checker-dutch", // Dutch dictionary
-    "mikestead.dotenv",                  // DotENV
+    "mikestead.dotenv", // DotENV
     "christian-kohler.path-intellisense", // Path Intellisense
-    "PKief.material-icon-theme",         // Material Icon Theme
-    "zixuanchen.vitest-explorer"         // Vitest Explorer
+    "PKief.material-icon-theme", // Material Icon Theme
+    "zixuanchen.vitest-explorer" // Vitest Explorer
   ]
 }

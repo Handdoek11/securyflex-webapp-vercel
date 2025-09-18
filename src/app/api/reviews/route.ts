@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { z } from "zod";
 
 // GET /api/reviews - Get reviews
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -27,10 +27,7 @@ export async function GET(request: NextRequest) {
     } else if (userId && type === "received") {
       where.reviewedId = userId;
     } else if (userId) {
-      where.OR = [
-        { reviewerId: userId },
-        { reviewedId: userId }
-      ];
+      where.OR = [{ reviewerId: userId }, { reviewedId: userId }];
     }
 
     if (opdrachtId) {
@@ -40,7 +37,7 @@ export async function GET(request: NextRequest) {
     const reviews = await prisma.review.findMany({
       where: {
         ...where,
-        isPublic: true
+        isPublic: true,
       },
       include: {
         reviewer: {
@@ -48,42 +45,44 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             image: true,
-            role: true
-          }
+            role: true,
+          },
         },
         reviewed: {
           select: {
             id: true,
             name: true,
             image: true,
-            role: true
-          }
+            role: true,
+          },
         },
         opdracht: {
           select: {
             id: true,
             titel: true,
             startDatum: true,
-            eindDatum: true
-          }
-        }
+            eindDatum: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "desc"
-      }
+        createdAt: "desc",
+      },
     });
 
     // Calculate average ratings
-    const averageRating = reviews.length > 0
-      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-      : 0;
+    const averageRating =
+      reviews.length > 0
+        ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+          reviews.length
+        : 0;
 
     // Group ratings by aspect
     const aspectRatings: Record<string, number> = {};
     let aspectCount = 0;
 
-    reviews.forEach(review => {
-      if (review.aspectRatings && typeof review.aspectRatings === 'object') {
+    reviews.forEach((review) => {
+      if (review.aspectRatings && typeof review.aspectRatings === "object") {
         const ratings = review.aspectRatings as Record<string, number>;
         Object.entries(ratings).forEach(([aspect, rating]) => {
           if (!aspectRatings[aspect]) {
@@ -97,7 +96,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate average for each aspect
     if (aspectCount > 0) {
-      Object.keys(aspectRatings).forEach(aspect => {
+      Object.keys(aspectRatings).forEach((aspect) => {
         aspectRatings[aspect] = aspectRatings[aspect] / aspectCount;
       });
     }
@@ -111,21 +110,20 @@ export async function GET(request: NextRequest) {
           averageRating,
           aspectRatings,
           ratingDistribution: {
-            5: reviews.filter(r => r.rating === 5).length,
-            4: reviews.filter(r => r.rating === 4).length,
-            3: reviews.filter(r => r.rating === 3).length,
-            2: reviews.filter(r => r.rating === 2).length,
-            1: reviews.filter(r => r.rating === 1).length
-          }
-        }
-      }
+            5: reviews.filter((r) => r.rating === 5).length,
+            4: reviews.filter((r) => r.rating === 4).length,
+            3: reviews.filter((r) => r.rating === 3).length,
+            2: reviews.filter((r) => r.rating === 2).length,
+            1: reviews.filter((r) => r.rating === 1).length,
+          },
+        },
+      },
     });
-
   } catch (error) {
     console.error("Error fetching reviews:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch reviews" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -138,7 +136,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -147,14 +145,16 @@ export async function POST(request: NextRequest) {
       opdrachtId: z.string(),
       rating: z.number().min(1).max(5),
       comment: z.string().optional(),
-      aspectRatings: z.object({
-        punctuality: z.number().min(1).max(5).optional(),
-        professionalism: z.number().min(1).max(5).optional(),
-        quality: z.number().min(1).max(5).optional(),
-        communication: z.number().min(1).max(5).optional(),
-        value: z.number().min(1).max(5).optional()
-      }).optional(),
-      isPublic: z.boolean().default(true)
+      aspectRatings: z
+        .object({
+          punctuality: z.number().min(1).max(5).optional(),
+          professionalism: z.number().min(1).max(5).optional(),
+          quality: z.number().min(1).max(5).optional(),
+          communication: z.number().min(1).max(5).optional(),
+          value: z.number().min(1).max(5).optional(),
+        })
+        .optional(),
+      isPublic: z.boolean().default(true),
     });
 
     const body = await request.json();
@@ -168,26 +168,33 @@ export async function POST(request: NextRequest) {
         bedrijf: true,
         assignments: {
           include: {
-            teamLid: true
-          }
-        }
-      }
+            teamLid: true,
+          },
+        },
+      },
     });
 
     if (!opdracht) {
       return NextResponse.json(
         { success: false, error: "Opdracht not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Validate review relationship
-    const canReview = validateReviewPermission(session.user, opdracht, validatedData.reviewedId);
+    const canReview = validateReviewPermission(
+      session.user,
+      opdracht,
+      validatedData.reviewedId,
+    );
 
     if (!canReview) {
       return NextResponse.json(
-        { success: false, error: "You cannot review this user for this opdracht" },
-        { status: 403 }
+        {
+          success: false,
+          error: "You cannot review this user for this opdracht",
+        },
+        { status: 403 },
       );
     }
 
@@ -197,15 +204,18 @@ export async function POST(request: NextRequest) {
         reviewerId_reviewedId_opdrachtId: {
           reviewerId: session.user.id,
           reviewedId: validatedData.reviewedId,
-          opdrachtId: validatedData.opdrachtId
-        }
-      }
+          opdrachtId: validatedData.opdrachtId,
+        },
+      },
     });
 
     if (existingReview) {
       return NextResponse.json(
-        { success: false, error: "You have already reviewed this user for this opdracht" },
-        { status: 409 }
+        {
+          success: false,
+          error: "You have already reviewed this user for this opdracht",
+        },
+        { status: 409 },
       );
     }
 
@@ -218,16 +228,16 @@ export async function POST(request: NextRequest) {
         rating: validatedData.rating,
         comment: validatedData.comment,
         aspectRatings: validatedData.aspectRatings,
-        isPublic: validatedData.isPublic
+        isPublic: validatedData.isPublic,
       },
       include: {
         reviewer: {
           select: {
             name: true,
-            image: true
-          }
-        }
-      }
+            image: true,
+          },
+        },
+      },
     });
 
     // Update reviewed user's rating
@@ -244,27 +254,26 @@ export async function POST(request: NextRequest) {
         actionUrl: `/dashboard/reviews`,
         metadata: {
           reviewId: review.id,
-          rating: validatedData.rating
-        }
-      }
+          rating: validatedData.rating,
+        },
+      },
     });
 
     return NextResponse.json({
       success: true,
-      data: review
+      data: review,
     });
-
   } catch (error) {
     console.error("Error creating review:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Invalid review data", details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return NextResponse.json(
       { success: false, error: "Failed to create review" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -277,13 +286,13 @@ export async function PATCH(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const updateReviewSchema = z.object({
       reviewId: z.string(),
-      response: z.string()
+      response: z.string(),
     });
 
     const body = await request.json();
@@ -293,21 +302,24 @@ export async function PATCH(request: NextRequest) {
     const review = await prisma.review.findFirst({
       where: {
         id: validatedData.reviewId,
-        reviewedId: session.user.id
-      }
+        reviewedId: session.user.id,
+      },
     });
 
     if (!review) {
       return NextResponse.json(
-        { success: false, error: "Review not found or you're not the reviewed person" },
-        { status: 404 }
+        {
+          success: false,
+          error: "Review not found or you're not the reviewed person",
+        },
+        { status: 404 },
       );
     }
 
     if (review.response) {
       return NextResponse.json(
         { success: false, error: "Response already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -316,53 +328,67 @@ export async function PATCH(request: NextRequest) {
       where: { id: validatedData.reviewId },
       data: {
         response: validatedData.response,
-        responseAt: new Date()
-      }
+        responseAt: new Date(),
+      },
     });
 
     return NextResponse.json({
       success: true,
-      data: updatedReview
+      data: updatedReview,
     });
-
   } catch (error) {
     console.error("Error updating review:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid response data", details: error.errors },
-        { status: 400 }
+        {
+          success: false,
+          error: "Invalid response data",
+          details: error.errors,
+        },
+        { status: 400 },
       );
     }
     return NextResponse.json(
       { success: false, error: "Failed to add response" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // Helper function to validate review permission
-function validateReviewPermission(user: any, opdracht: any, reviewedId: string): boolean {
+function validateReviewPermission(
+  user: any,
+  opdracht: any,
+  reviewedId: string,
+): boolean {
   // Opdrachtgever can review Bedrijf
-  if (user.id === opdracht.opdrachtgeverId && reviewedId === opdracht.bedrijf?.userId) {
+  if (
+    user.id === opdracht.opdrachtgeverId &&
+    reviewedId === opdracht.bedrijf?.userId
+  ) {
     return true;
   }
 
   // Bedrijf can review Opdrachtgever
-  if (user.id === opdracht.bedrijf?.userId && reviewedId === opdracht.opdrachtgeverId) {
+  if (
+    user.id === opdracht.bedrijf?.userId &&
+    reviewedId === opdracht.opdrachtgeverId
+  ) {
     return true;
   }
 
   // Bedrijf can review assigned ZZP
   if (user.id === opdracht.bedrijf?.userId) {
-    const assignedZzp = opdracht.assignments.find((a: any) =>
-      a.teamLid.zzp?.userId === reviewedId && a.status === "COMPLETED"
+    const assignedZzp = opdracht.assignments.find(
+      (a: any) =>
+        a.teamLid.zzp?.userId === reviewedId && a.status === "COMPLETED",
     );
     if (assignedZzp) return true;
   }
 
   // ZZP can review Bedrijf they worked for
-  const userAssignment = opdracht.assignments.find((a: any) =>
-    a.teamLid.zzp?.userId === user.id && a.status === "COMPLETED"
+  const userAssignment = opdracht.assignments.find(
+    (a: any) => a.teamLid.zzp?.userId === user.id && a.status === "COMPLETED",
   );
   if (userAssignment && reviewedId === opdracht.bedrijf?.userId) {
     return true;
@@ -376,21 +402,22 @@ async function updateUserRating(userId: string) {
   const reviews = await prisma.review.findMany({
     where: {
       reviewedId: userId,
-      isPublic: true
+      isPublic: true,
     },
     select: {
-      rating: true
-    }
+      rating: true,
+    },
   });
 
   if (reviews.length === 0) return;
 
-  const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+  const averageRating =
+    reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
 
   // Update based on user role
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true }
+    select: { role: true },
   });
 
   if (user?.role === "ZZP_BEVEILIGER") {
@@ -398,8 +425,8 @@ async function updateUserRating(userId: string) {
       where: { userId },
       data: {
         rating: averageRating,
-        totalReviews: reviews.length
-      }
+        totalReviews: reviews.length,
+      },
     });
   }
 }

@@ -1,8 +1,8 @@
 "use client";
 
+import type { Opdracht } from "@prisma/client";
 import { useEffect, useState } from "react";
 import { subscribeToOpdrachtUpdates } from "@/lib/supabase";
-import type { Opdracht } from "@prisma/client";
 
 interface UseRealtimeOpdrachtenOptions {
   opdrachtgeverId?: string;
@@ -14,7 +14,9 @@ interface UseRealtimeOpdrachtenOptions {
  * Hook voor real-time opdracht updates
  * Gebruik dit om live updates te ontvangen wanneer opdrachten wijzigen
  */
-export function useRealtimeOpdrachten(options: UseRealtimeOpdrachtenOptions = {}) {
+export function useRealtimeOpdrachten(
+  options: UseRealtimeOpdrachtenOptions = {},
+) {
   const [opdrachten, setOpdrachten] = useState<Opdracht[]>([]);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
@@ -34,13 +36,13 @@ export function useRealtimeOpdrachten(options: UseRealtimeOpdrachtenOptions = {}
             prev.map((opdracht) =>
               opdracht.id === payload.new.id
                 ? (payload.new as Opdracht)
-                : opdracht
-            )
+                : opdracht,
+            ),
           );
           break;
         case "DELETE":
           setOpdrachten((prev) =>
-            prev.filter((opdracht) => opdracht.id !== payload.old.id)
+            prev.filter((opdracht) => opdracht.id !== payload.old.id),
           );
           break;
       }
@@ -50,7 +52,7 @@ export function useRealtimeOpdrachten(options: UseRealtimeOpdrachtenOptions = {}
     return () => {
       subscription.unsubscribe();
     };
-  }, [options.opdrachtgeverId, options.bedrijfId, options.status]);
+  }, [options.opdrachtgeverId, options.bedrijfId, options.status, options]);
 
   return {
     opdrachten,
@@ -90,18 +92,15 @@ export function useRealtimeOpdracht(opdrachtId: string | undefined) {
     fetchOpdracht();
 
     // Subscribe to updates for this specific opdracht
-    const subscription = subscribeToOpdrachtUpdates(
-      {},
-      (payload) => {
-        if (payload.new?.id === opdrachtId || payload.old?.id === opdrachtId) {
-          if (payload.eventType === "DELETE") {
-            setOpdracht(null);
-          } else if (payload.eventType === "UPDATE") {
-            setOpdracht(payload.new as Opdracht);
-          }
+    const subscription = subscribeToOpdrachtUpdates({}, (payload) => {
+      if (payload.new?.id === opdrachtId || payload.old?.id === opdrachtId) {
+        if (payload.eventType === "DELETE") {
+          setOpdracht(null);
+        } else if (payload.eventType === "UPDATE") {
+          setOpdracht(payload.new as Opdracht);
         }
       }
-    );
+    });
 
     return () => {
       subscription.unsubscribe();

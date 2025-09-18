@@ -1,17 +1,11 @@
 "use client";
 
+import { Calendar, Clock, Search, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import {
-  Search,
-  Calendar,
-  Clock,
-  User,
-  Badge
-} from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useApiData } from "@/hooks/useApiData";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   href: string;
@@ -29,17 +23,17 @@ export function BottomNavigation() {
     endpoint: "/api/notifications?unreadOnly=true&limit=0",
     fallbackData: { unreadCount: 0 },
     requireAuth: true,
-    enabled: !!session?.user?.id
+    enabled: !!session?.user?.id,
   });
 
   const { data: shiftsData } = useApiData({
     endpoint: "/api/shifts?status=aankomend&limit=0",
     fallbackData: { count: 0 },
     requireAuth: true,
-    enabled: !!session?.user?.id
+    enabled: !!session?.user?.id,
   });
 
-  const unreadCount = notificationData?.unreadCount || 0;
+  const _unreadCount = notificationData?.unreadCount || 0;
   const upcomingShifts = shiftsData?.count || 0;
 
   const navItems: NavItem[] = [
@@ -84,14 +78,14 @@ export function BottomNavigation() {
                   "hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isActive
                     ? "text-primary bg-primary/5"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <div className="relative">
                   <Icon
                     className={cn(
                       "h-5 w-5 transition-all duration-200",
-                      isActive ? "scale-110" : ""
+                      isActive ? "scale-110" : "",
                     )}
                   />
 
@@ -106,7 +100,7 @@ export function BottomNavigation() {
                 <span
                   className={cn(
                     "text-xs font-medium mt-1 transition-all duration-200 leading-none",
-                    isActive ? "text-primary" : "text-muted-foreground"
+                    isActive ? "text-primary" : "text-muted-foreground",
                   )}
                 >
                   {item.label}

@@ -1,8 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useSession } from "next-auth/react";
 import type { UserRole as PrismaUserRole } from "@prisma/client";
+import { useSession } from "next-auth/react";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 export type UserRole = PrismaUserRole | null;
 
@@ -10,7 +16,7 @@ export const RoleDisplayNames: Record<PrismaUserRole, string> = {
   ZZP_BEVEILIGER: "beveiliger",
   BEDRIJF: "beveiligingsbedrijf",
   OPDRACHTGEVER: "opdrachtgever",
-  ADMIN: "admin"
+  ADMIN: "admin",
 };
 
 interface RoleContextType {
@@ -49,7 +55,12 @@ export function RoleProvider({ children }: RoleProviderProps) {
   // Load saved role from localStorage on mount (for landing page)
   useEffect(() => {
     const savedRole = localStorage.getItem("selectedRole") as PrismaUserRole;
-    if (savedRole && Object.values(RoleDisplayNames).includes(RoleDisplayNames[savedRole as PrismaUserRole])) {
+    if (
+      savedRole &&
+      Object.values(RoleDisplayNames).includes(
+        RoleDisplayNames[savedRole as PrismaUserRole],
+      )
+    ) {
       setActiveRole(savedRole as PrismaUserRole);
     }
   }, []);
@@ -80,20 +91,18 @@ export function RoleProvider({ children }: RoleProviderProps) {
 
     // Authentication-based role detection
     userRole,
-    isZZPBeveiliger: userRole === 'ZZP_BEVEILIGER',
-    isBedrijf: userRole === 'BEDRIJF',
-    isOpdrachtgever: userRole === 'OPDRACHTGEVER',
-    isAdmin: userRole === 'ADMIN',
+    isZZPBeveiliger: userRole === "ZZP_BEVEILIGER",
+    isBedrijf: userRole === "BEDRIJF",
+    isOpdrachtgever: userRole === "OPDRACHTGEVER",
+    isAdmin: userRole === "ADMIN",
     hasRole,
     hasAnyRole,
     isAuthenticated,
-    isLoading
+    isLoading,
   };
 
   return (
-    <RoleContext.Provider value={contextValue}>
-      {children}
-    </RoleContext.Provider>
+    <RoleContext.Provider value={contextValue}>{children}</RoleContext.Provider>
   );
 }
 
@@ -113,7 +122,12 @@ interface RoleGuardProps {
   children: ReactNode;
 }
 
-export function RoleGuard({ role, roles, fallback = null, children }: RoleGuardProps) {
+export function RoleGuard({
+  role,
+  roles,
+  fallback = null,
+  children,
+}: RoleGuardProps) {
   const { hasRole, hasAnyRole, isLoading } = useRole();
 
   if (isLoading) {
@@ -136,7 +150,7 @@ export function RoleGuard({ role, roles, fallback = null, children }: RoleGuardP
 // Role-based conditional rendering hook
 export function useRoleBasedComponent<T>(
   components: Partial<Record<PrismaUserRole, T>>,
-  defaultComponent?: T
+  defaultComponent?: T,
 ): T | null {
   const { userRole } = useRole();
 
@@ -152,16 +166,16 @@ export function useRoleDashboard(): string {
   const { userRole } = useRole();
 
   switch (userRole) {
-    case 'ZZP_BEVEILIGER':
-      return '/dashboard';
-    case 'BEDRIJF':
-      return '/dashboard/bedrijf';
-    case 'OPDRACHTGEVER':
-      return '/dashboard/opdrachtgever';
-    case 'ADMIN':
-      return '/admin/dashboard';
+    case "ZZP_BEVEILIGER":
+      return "/dashboard";
+    case "BEDRIJF":
+      return "/dashboard/bedrijf";
+    case "OPDRACHTGEVER":
+      return "/dashboard/opdrachtgever";
+    case "ADMIN":
+      return "/admin/dashboard";
     default:
-      return '/dashboard';
+      return "/dashboard";
   }
 }
 
@@ -170,13 +184,13 @@ export function useRoleOnboarding(): string {
   const { userRole } = useRole();
 
   switch (userRole) {
-    case 'ZZP_BEVEILIGER':
-      return '/onboarding/beveiliger';
-    case 'BEDRIJF':
-      return '/onboarding/bedrijf';
-    case 'OPDRACHTGEVER':
-      return '/onboarding/opdrachtgever';
+    case "ZZP_BEVEILIGER":
+      return "/onboarding/beveiliger";
+    case "BEDRIJF":
+      return "/onboarding/bedrijf";
+    case "OPDRACHTGEVER":
+      return "/onboarding/opdrachtgever";
     default:
-      return '/onboarding';
+      return "/onboarding";
   }
 }

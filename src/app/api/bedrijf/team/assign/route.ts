@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -21,19 +21,19 @@ export async function POST(request: NextRequest) {
     if (!opdrachtId || !teamMemberIds || !Array.isArray(teamMemberIds)) {
       return NextResponse.json(
         { success: false, error: "Invalid request data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Get bedrijf profile
     const bedrijfProfile = await prisma.bedrijfProfile.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
     });
 
     if (!bedrijfProfile) {
       return NextResponse.json(
         { success: false, error: "Alleen bedrijven kunnen team toewijzen" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -43,27 +43,27 @@ export async function POST(request: NextRequest) {
         id: opdrachtId,
         acceptedBedrijfId: bedrijfProfile.id,
         status: {
-          in: ["TOEGEWEZEN", "BEZIG"]
-        }
+          in: ["TOEGEWEZEN", "BEZIG"],
+        },
       },
       include: {
-        assignments: true
-      }
+        assignments: true,
+      },
     });
 
     if (!opdracht) {
       return NextResponse.json(
         {
           success: false,
-          error: "Opdracht niet gevonden of niet toegewezen aan dit bedrijf"
+          error: "Opdracht niet gevonden of niet toegewezen aan dit bedrijf",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Check if we're not exceeding required beveiligers
     const currentAssignments = opdracht.assignments.filter(
-      a => a.status !== "DECLINED"
+      (a) => a.status !== "DECLINED",
     ).length;
     const newAssignments = teamMemberIds.length;
 
@@ -71,9 +71,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: `Maximum ${opdracht.aantalBeveiligers} beveiligers toegestaan voor deze opdracht`
+          error: `Maximum ${opdracht.aantalBeveiligers} beveiligers toegestaan voor deze opdracht`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -82,20 +82,20 @@ export async function POST(request: NextRequest) {
       where: {
         id: { in: teamMemberIds },
         bedrijfId: bedrijfProfile.id,
-        status: "ACTIVE"
+        status: "ACTIVE",
       },
       include: {
-        zzp: true
-      }
+        zzp: true,
+      },
     });
 
     if (teamMembers.length !== teamMemberIds.length) {
       return NextResponse.json(
         {
           success: false,
-          error: "Een of meer teamleden zijn niet beschikbaar"
+          error: "Een of meer teamleden zijn niet beschikbaar",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -103,28 +103,28 @@ export async function POST(request: NextRequest) {
     const existingAssignments = await prisma.opdrachtAssignment.findMany({
       where: {
         opdrachtId,
-        teamLidId: { in: teamMemberIds }
-      }
+        teamLidId: { in: teamMemberIds },
+      },
     });
 
     if (existingAssignments.length > 0) {
       return NextResponse.json(
         {
           success: false,
-          error: "Een of meer teamleden zijn al toegewezen aan deze opdracht"
+          error: "Een of meer teamleden zijn al toegewezen aan deze opdracht",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Create assignments
     const assignments = await prisma.opdrachtAssignment.createMany({
-      data: teamMemberIds.map(teamLidId => ({
+      data: teamMemberIds.map((teamLidId) => ({
         opdrachtId,
         teamLidId,
         assignedBy: session.user.id,
-        status: "ASSIGNED"
-      }))
+        status: "ASSIGNED",
+      })),
     });
 
     // Update opdracht status if fully assigned
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     if (totalAssignments === opdracht.aantalBeveiligers) {
       await prisma.opdracht.update({
         where: { id: opdrachtId },
-        data: { status: "BEZIG" }
+        data: { status: "BEZIG" },
       });
     }
 
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
     const createdAssignments = await prisma.opdrachtAssignment.findMany({
       where: {
         opdrachtId,
-        teamLidId: { in: teamMemberIds }
+        teamLidId: { in: teamMemberIds },
       },
       include: {
         teamLid: {
@@ -150,14 +150,14 @@ export async function POST(request: NextRequest) {
                 user: {
                   select: {
                     name: true,
-                    email: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     // TODO: Send notifications to assigned team members
@@ -166,23 +166,25 @@ export async function POST(request: NextRequest) {
       success: true,
       message: `${assignments.count} teamleden toegewezen aan opdracht`,
       data: {
-        assignments: createdAssignments.map(a => ({
+        assignments: createdAssignments.map((a) => ({
           id: a.id,
           teamMemberId: a.teamLidId,
           name: a.teamLid.zzp.user.name,
           email: a.teamLid.zzp.user.email,
           status: a.status,
-          assignedAt: a.assignedAt
+          assignedAt: a.assignedAt,
         })),
-        opdrachtStatus: totalAssignments === opdracht.aantalBeveiligers ? "BEZIG" : "TOEGEWEZEN"
-      }
+        opdrachtStatus:
+          totalAssignments === opdracht.aantalBeveiligers
+            ? "BEZIG"
+            : "TOEGEWEZEN",
+      },
     });
-
   } catch (error) {
     console.error("Error assigning team:", error);
     return NextResponse.json(
       { success: false, error: "Failed to assign team members" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -195,7 +197,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -205,32 +207,35 @@ export async function GET(request: NextRequest) {
 
     // Get bedrijf profile
     const bedrijfProfile = await prisma.bedrijfProfile.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
     });
 
     if (!bedrijfProfile) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Build query
-    const where: any = {};
+    const where: {
+      opdrachtId?: string | { in: string[] };
+      teamLidId?: string;
+    } = {};
 
     if (opdrachtId) {
       // Verify opdracht belongs to this bedrijf
       const opdracht = await prisma.opdracht.findFirst({
         where: {
           id: opdrachtId,
-          acceptedBedrijfId: bedrijfProfile.id
-        }
+          acceptedBedrijfId: bedrijfProfile.id,
+        },
       });
 
       if (!opdracht) {
         return NextResponse.json(
           { success: false, error: "Opdracht not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -242,14 +247,14 @@ export async function GET(request: NextRequest) {
       const teamMember = await prisma.bedrijfTeamLid.findFirst({
         where: {
           id: teamLidId,
-          bedrijfId: bedrijfProfile.id
-        }
+          bedrijfId: bedrijfProfile.id,
+        },
       });
 
       if (!teamMember) {
         return NextResponse.json(
           { success: false, error: "Team member not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -260,10 +265,10 @@ export async function GET(request: NextRequest) {
     if (!opdrachtId && !teamLidId) {
       const bedrijfOpdrachten = await prisma.opdracht.findMany({
         where: { acceptedBedrijfId: bedrijfProfile.id },
-        select: { id: true }
+        select: { id: true },
       });
 
-      where.opdrachtId = { in: bedrijfOpdrachten.map(o => o.id) };
+      where.opdrachtId = { in: bedrijfOpdrachten.map((o) => o.id) };
     }
 
     // Get assignments
@@ -277,8 +282,8 @@ export async function GET(request: NextRequest) {
             locatie: true,
             startDatum: true,
             eindDatum: true,
-            status: true
-          }
+            status: true,
+          },
         },
         teamLid: {
           include: {
@@ -288,21 +293,21 @@ export async function GET(request: NextRequest) {
                   select: {
                     name: true,
                     email: true,
-                    image: true
-                  }
-                }
-              }
-            }
-          }
-        }
+                    image: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: {
-        assignedAt: "desc"
-      }
+        assignedAt: "desc",
+      },
     });
 
     // Format response
-    const formattedAssignments = assignments.map(a => ({
+    const formattedAssignments = assignments.map((a) => ({
       id: a.id,
       opdracht: {
         id: a.opdracht.id,
@@ -310,17 +315,17 @@ export async function GET(request: NextRequest) {
         locatie: a.opdracht.locatie,
         startDatum: a.opdracht.startDatum,
         eindDatum: a.opdracht.eindDatum,
-        status: a.opdracht.status
+        status: a.opdracht.status,
       },
       teamMember: {
         id: a.teamLid.id,
         name: a.teamLid.zzp.user.name,
         email: a.teamLid.zzp.user.email,
         image: a.teamLid.zzp.user.image,
-        role: a.teamLid.role
+        role: a.teamLid.role,
       },
       status: a.status,
-      assignedAt: a.assignedAt
+      assignedAt: a.assignedAt,
     }));
 
     return NextResponse.json({
@@ -329,18 +334,21 @@ export async function GET(request: NextRequest) {
         assignments: formattedAssignments,
         stats: {
           total: formattedAssignments.length,
-          assigned: formattedAssignments.filter(a => a.status === "ASSIGNED").length,
-          confirmed: formattedAssignments.filter(a => a.status === "CONFIRMED").length,
-          declined: formattedAssignments.filter(a => a.status === "DECLINED").length
-        }
-      }
+          assigned: formattedAssignments.filter((a) => a.status === "ASSIGNED")
+            .length,
+          confirmed: formattedAssignments.filter(
+            (a) => a.status === "CONFIRMED",
+          ).length,
+          declined: formattedAssignments.filter((a) => a.status === "DECLINED")
+            .length,
+        },
+      },
     });
-
   } catch (error) {
     console.error("Error fetching assignments:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch assignments" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -353,7 +361,7 @@ export async function PATCH(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -364,7 +372,7 @@ export async function PATCH(request: NextRequest) {
     if (!assignmentId || !status) {
       return NextResponse.json(
         { success: false, error: "Invalid request data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -372,7 +380,7 @@ export async function PATCH(request: NextRequest) {
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { success: false, error: "Invalid status" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -383,50 +391,55 @@ export async function PATCH(request: NextRequest) {
         opdracht: true,
         teamLid: {
           include: {
-            zzp: true
-          }
-        }
-      }
+            zzp: true,
+          },
+        },
+      },
     });
 
     if (!assignment) {
       return NextResponse.json(
         { success: false, error: "Assignment not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Check if user can update this assignment
     // Either the bedrijf owner or the assigned ZZP can update
-    const isBedrijfOwner = assignment.opdracht.acceptedBedrijfId &&
-      await prisma.bedrijfProfile.findFirst({
+    const isBedrijfOwner =
+      assignment.opdracht.acceptedBedrijfId &&
+      (await prisma.bedrijfProfile.findFirst({
         where: {
           id: assignment.opdracht.acceptedBedrijfId,
-          userId: session.user.id
-        }
-      });
+          userId: session.user.id,
+        },
+      }));
 
     const isAssignedZZP = assignment.teamLid.zzp.userId === session.user.id;
 
     if (!isBedrijfOwner && !isAssignedZZP) {
       return NextResponse.json(
         { success: false, error: "Unauthorized to update this assignment" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // ZZP can only confirm or decline
-    if (isAssignedZZP && !isBedrijfOwner && !["CONFIRMED", "DECLINED"].includes(status)) {
+    if (
+      isAssignedZZP &&
+      !isBedrijfOwner &&
+      !["CONFIRMED", "DECLINED"].includes(status)
+    ) {
       return NextResponse.json(
         { success: false, error: "Invalid status update" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Update assignment
     const updatedAssignment = await prisma.opdrachtAssignment.update({
       where: { id: assignmentId },
-      data: { status }
+      data: { status },
     });
 
     // TODO: Send notifications based on status change
@@ -436,15 +449,14 @@ export async function PATCH(request: NextRequest) {
       message: `Assignment status updated to ${status}`,
       data: {
         assignmentId: updatedAssignment.id,
-        status: updatedAssignment.status
-      }
+        status: updatedAssignment.status,
+      },
     });
-
   } catch (error) {
     console.error("Error updating assignment:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update assignment" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

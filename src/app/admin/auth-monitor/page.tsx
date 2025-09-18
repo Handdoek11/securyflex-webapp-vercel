@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { Card } from "@/components/ui/card";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Lock,
+  LogOut,
+  RefreshCw,
+  Shield,
+  XCircle,
+} from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Shield, AlertTriangle, CheckCircle, XCircle, LogOut, Lock } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { Card } from "@/components/ui/card";
 
 interface SecurityLog {
   id: string;
@@ -14,7 +21,7 @@ interface SecurityLog {
   eventType: string;
   ipAddress: string | null;
   userAgent: string | null;
-  metadata: any;
+  metadata: Record<string, unknown> | null;
   createdAt: string;
 }
 
@@ -34,34 +41,45 @@ export default function AuthMonitorPage() {
   const [error, setError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Check if user is admin
-  const adminEmails = ['stef@securyflex.com', 'robert@securyflex.com'];
-  const isAdmin = session?.user?.email && adminEmails.includes(session.user.email);
-
-  // If not loading and not authenticated, or not admin, redirect to admin login
   useEffect(() => {
-    if (status === 'loading') return;
+    if (status === "loading") return;
 
-    // Check if admin is authenticated via admin login page
-    const adminAuthenticated = sessionStorage.getItem("adminAuthenticated");
-    const adminEmail = sessionStorage.getItem("adminEmail");
+    const checkAdminStatus = async () => {
+      if (status === "unauthenticated") {
+        window.location.href = "/admin/login";
+        return;
+      }
 
-    if (status === 'unauthenticated' || !isAdmin || !adminAuthenticated || !adminEmails.includes(adminEmail || '')) {
-      // Redirect to admin login page
-      window.location.href = '/admin/login';
-      return;
-    }
-  }, [status, isAdmin]);
+      try {
+        const response = await fetch("/api/admin/auth");
+        const data = await response.json();
 
-  const fetchLogs = async () => {
+        if (!data.isAdmin) {
+          setAccessDenied(true);
+          window.location.href = "/admin/login";
+        } else {
+          setIsAdmin(true);
+        }
+      } catch (error) {
+        console.error("Failed to verify admin status:", error);
+        setAccessDenied(true);
+      }
+    };
+
+    checkAdminStatus();
+  }, [status]);
+
+  const fetchLogs = useCallback(async () => {
     try {
       setError(null);
       const response = await fetch("/api/admin/auth-logs?limit=100", {
-        credentials: 'include',
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
-        }
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
@@ -78,10 +96,18 @@ export default function AuthMonitorPage() {
       const normalizedData = {
         logs: Array.isArray(result.logs) ? result.logs : [],
         stats: {
-          last24Hours: Array.isArray(result.stats?.last24Hours) ? result.stats.last24Hours : [],
-          recentFailedLogins: typeof result.stats?.recentFailedLogins === 'number' ? result.stats.recentFailedLogins : 0,
-          currentlyLockedAccounts: typeof result.stats?.currentlyLockedAccounts === 'number' ? result.stats.currentlyLockedAccounts : 0
-        }
+          last24Hours: Array.isArray(result.stats?.last24Hours)
+            ? result.stats.last24Hours
+            : [],
+          recentFailedLogins:
+            typeof result.stats?.recentFailedLogins === "number"
+              ? result.stats.recentFailedLogins
+              : 0,
+          currentlyLockedAccounts:
+            typeof result.stats?.currentlyLockedAccounts === "number"
+              ? result.stats.currentlyLockedAccounts
+              : 0,
+        },
       };
 
       setData(normalizedData);
@@ -94,17 +120,17 @@ export default function AuthMonitorPage() {
         stats: {
           last24Hours: [],
           recentFailedLogins: 0,
-          currentlyLockedAccounts: 0
-        }
+          currentlyLockedAccounts: 0,
+        },
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Only fetch logs if user is admin
-    if (isAdmin && status === 'authenticated') {
+    if (isAdmin && status === "authenticated") {
       fetchLogs();
 
       if (autoRefresh) {
@@ -112,7 +138,7 @@ export default function AuthMonitorPage() {
         return () => clearInterval(interval);
       }
     }
-  }, [autoRefresh, isAdmin, status]);
+  }, [autoRefresh, isAdmin, status, fetchLogs]);
 
   const getEventTypeIcon = (eventType: string) => {
     switch (eventType) {
@@ -146,7 +172,7 @@ export default function AuthMonitorPage() {
     }
   };
 
-  if (status === 'loading' || loading) {
+  if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -162,7 +188,8 @@ export default function AuthMonitorPage() {
             <Shield className="h-16 w-16 mx-auto mb-4 text-orange-500" />
             <h1 className="text-2xl font-bold mb-2">Toegang geweigerd</h1>
             <p className="text-muted-foreground mb-4">
-              Beheerderstoegang vereist. Alleen geautoriseerde beheerders kunnen authenticatielogs bekijken.
+              Beheerderstoegang vereist. Alleen geautoriseerde beheerders kunnen
+              authenticatielogs bekijken.
             </p>
           </div>
         </div>
@@ -176,7 +203,9 @@ export default function AuthMonitorPage() {
         <div className="flex flex-col items-center justify-center min-h-screen">
           <div className="text-center">
             <XCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
-            <h1 className="text-2xl font-bold mb-2">Fout bij laden authenticatiemonitor</h1>
+            <h1 className="text-2xl font-bold mb-2">
+              Fout bij laden authenticatiemonitor
+            </h1>
             <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={fetchLogs}>
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -218,7 +247,7 @@ export default function AuthMonitorPage() {
             onClick={() => {
               sessionStorage.removeItem("adminAuthenticated");
               sessionStorage.removeItem("adminEmail");
-              signOut({ callbackUrl: '/admin/login' });
+              signOut({ callbackUrl: "/admin/login" });
             }}
             variant="destructive"
           >
@@ -233,8 +262,12 @@ export default function AuthMonitorPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Mislukte inlogpogingen (1u)</p>
-              <p className="text-2xl font-bold">{data?.stats?.recentFailedLogins || 0}</p>
+              <p className="text-sm text-muted-foreground">
+                Mislukte inlogpogingen (1u)
+              </p>
+              <p className="text-2xl font-bold">
+                {data?.stats?.recentFailedLogins || 0}
+              </p>
             </div>
             <XCircle className="h-8 w-8 text-red-500" />
           </div>
@@ -243,8 +276,12 @@ export default function AuthMonitorPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Vergrendelde accounts</p>
-              <p className="text-2xl font-bold">{data?.stats?.currentlyLockedAccounts || 0}</p>
+              <p className="text-sm text-muted-foreground">
+                Vergrendelde accounts
+              </p>
+              <p className="text-2xl font-bold">
+                {data?.stats?.currentlyLockedAccounts || 0}
+              </p>
             </div>
             <AlertTriangle className="h-8 w-8 text-orange-500" />
           </div>
@@ -253,9 +290,14 @@ export default function AuthMonitorPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Totaal gebeurtenissen (24u)</p>
+              <p className="text-sm text-muted-foreground">
+                Totaal gebeurtenissen (24u)
+              </p>
               <p className="text-2xl font-bold">
-                {data?.stats?.last24Hours?.reduce((acc, item) => acc + item._count, 0) || 0}
+                {data?.stats?.last24Hours?.reduce(
+                  (acc, item) => acc + item._count,
+                  0,
+                ) || 0}
               </p>
             </div>
             <Shield className="h-8 w-8 text-blue-500" />
@@ -264,24 +306,32 @@ export default function AuthMonitorPage() {
       </div>
 
       {/* Event Type Summary */}
-      {data?.stats?.last24Hours && Array.isArray(data.stats.last24Hours) && data.stats.last24Hours.length > 0 && (
-        <Card className="p-4 mb-6">
-          <h2 className="text-lg font-semibold mb-3">Samenvatting laatste 24 uur</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {data.stats.last24Hours.map((stat) => (
-              <div
-                key={stat.eventType || 'unknown'}
-                className={`px-3 py-2 rounded-lg ${getEventTypeColor(stat.eventType || '')}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{(stat.eventType || 'UNKNOWN').replace(/_/g, " ")}</span>
-                  <span className="text-lg font-bold">{stat._count || 0}</span>
+      {data?.stats?.last24Hours &&
+        Array.isArray(data.stats.last24Hours) &&
+        data.stats.last24Hours.length > 0 && (
+          <Card className="p-4 mb-6">
+            <h2 className="text-lg font-semibold mb-3">
+              Samenvatting laatste 24 uur
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {data.stats.last24Hours.map((stat) => (
+                <div
+                  key={stat.eventType || "unknown"}
+                  className={`px-3 py-2 rounded-lg ${getEventTypeColor(stat.eventType || "")}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      {(stat.eventType || "UNKNOWN").replace(/_/g, " ")}
+                    </span>
+                    <span className="text-lg font-bold">
+                      {stat._count || 0}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
+              ))}
+            </div>
+          </Card>
+        )}
 
       {/* Recent Logs */}
       <Card className="p-4">
@@ -297,31 +347,40 @@ export default function AuthMonitorPage() {
               </tr>
             </thead>
             <tbody>
-              {data?.logs && Array.isArray(data.logs) && data.logs.map((log) => (
-                <tr key={log.id || Math.random()} className="border-b hover:bg-gray-50">
-                  <td className="p-2">
-                    <div className="flex items-center gap-2">
-                      {getEventTypeIcon(log.eventType || '')}
-                      <span className="text-sm">{(log.eventType || 'UNKNOWN').replace(/_/g, " ")}</span>
-                    </div>
-                  </td>
-                  <td className="p-2">
-                    <span className="text-sm text-muted-foreground">
-                      {log.email || log.userId || "Onbekend"}
-                    </span>
-                  </td>
-                  <td className="p-2">
-                    <span className="text-sm text-muted-foreground">
-                      {log.ipAddress || "N.v.t."}
-                    </span>
-                  </td>
-                  <td className="p-2">
-                    <span className="text-sm text-muted-foreground">
-                      {log.createdAt ? new Date(log.createdAt).toLocaleString("nl-NL") : "N.v.t."}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {data?.logs &&
+                Array.isArray(data.logs) &&
+                data.logs.map((log) => (
+                  <tr
+                    key={log.id || Math.random()}
+                    className="border-b hover:bg-gray-50"
+                  >
+                    <td className="p-2">
+                      <div className="flex items-center gap-2">
+                        {getEventTypeIcon(log.eventType || "")}
+                        <span className="text-sm">
+                          {(log.eventType || "UNKNOWN").replace(/_/g, " ")}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <span className="text-sm text-muted-foreground">
+                        {log.email || log.userId || "Onbekend"}
+                      </span>
+                    </td>
+                    <td className="p-2">
+                      <span className="text-sm text-muted-foreground">
+                        {log.ipAddress || "N.v.t."}
+                      </span>
+                    </td>
+                    <td className="p-2">
+                      <span className="text-sm text-muted-foreground">
+                        {log.createdAt
+                          ? new Date(log.createdAt).toLocaleString("nl-NL")
+                          : "N.v.t."}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
 

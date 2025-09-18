@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { calculateDistance } from "@/components/ui/gps-tracker";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { clockOutSchema } from "@/lib/validation/schemas";
-import { calculateDistance } from "@/components/ui/gps-tracker";
 
 interface RouteParams {
   params: Promise<{
@@ -24,7 +24,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -39,24 +39,25 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         {
           success: false,
           error: "Invalid request data",
-          details: validation.error.errors
+          details: validation.error.errors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { locatie, foto, pauzetijd, opmerkingen, incidenten } = validation.data;
+    const { locatie, foto, pauzetijd, opmerkingen, incidenten } =
+      validation.data;
 
     // Get ZZP profile
     const zzpProfile = await prisma.zZPProfile.findUnique({
       where: { userId: session.user.id },
-      include: { user: true }
+      include: { user: true },
     });
 
     if (!zzpProfile) {
       return NextResponse.json(
         { success: false, error: "ZZP profile not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -67,20 +68,20 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         opdracht: {
           include: {
             opdrachtgever: {
-              select: { bedrijfsnaam: true }
+              select: { bedrijfsnaam: true },
             },
             bedrijf: {
-              select: { bedrijfsnaam: true }
-            }
-          }
-        }
-      }
+              select: { bedrijfsnaam: true },
+            },
+          },
+        },
+      },
     });
 
     if (!werkuur) {
       return NextResponse.json(
         { success: false, error: "Work hour record not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -88,7 +89,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (werkuur.beveiligerId !== zzpProfile.id) {
       return NextResponse.json(
         { success: false, error: "Not authorized for this work hour record" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -96,7 +97,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (werkuur.eindTijd) {
       return NextResponse.json(
         { success: false, error: "Already clocked out" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -109,9 +110,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         {
           success: false,
           error: `Minimum work duration is 5 minutes. You've worked for ${Math.round(workDuration / 60000)} minutes.`,
-          code: "WORK_DURATION_TOO_SHORT"
+          code: "WORK_DURATION_TOO_SHORT",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -119,10 +120,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(
         {
           success: false,
-          error: "Maximum work duration exceeded (16 hours). Please contact support.",
-          code: "WORK_DURATION_TOO_LONG"
+          error:
+            "Maximum work duration exceeded (16 hours). Please contact support.",
+          code: "WORK_DURATION_TOO_LONG",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -134,20 +136,20 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         {
           success: false,
           error: `GPS accuracy insufficient (${Math.round(locatie.accuracy)}m). Required: <${MAX_ALLOWED_ACCURACY}m. Try moving outside for better signal.`,
-          code: "GPS_ACCURACY_LOW"
+          code: "GPS_ACCURACY_LOW",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // 2. Validate distance from clock-in location
-    if (werkuur.startLocatie && typeof werkuur.startLocatie === 'object') {
+    if (werkuur.startLocatie && typeof werkuur.startLocatie === "object") {
       const startLocation = werkuur.startLocatie as any;
       const distance = calculateDistance(
         locatie.lat,
         locatie.lng,
         startLocation.lat,
-        startLocation.lng
+        startLocation.lng,
       );
 
       if (distance > MAX_LOCATION_DISTANCE) {
@@ -159,10 +161,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             details: {
               currentDistance: Math.round(distance),
               maxDistance: MAX_LOCATION_DISTANCE,
-              suggestion: "Move closer to your work area to clock out"
-            }
+              suggestion: "Move closer to your work area to clock out",
+            },
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -179,9 +181,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         {
           success: false,
           error: "Break time cannot exceed total work time",
-          code: "INVALID_BREAK_TIME"
+          code: "INVALID_BREAK_TIME",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -198,19 +200,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       lng: locatie.lng,
       accuracy: locatie.accuracy,
       timestamp: now_date.toISOString(),
-      distanceFromClockIn: werkuur.startLocatie ? Math.round(calculateDistance(
-        locatie.lat,
-        locatie.lng,
-        (werkuur.startLocatie as any).lat,
-        (werkuur.startLocatie as any).lng
-      )) : null
+      distanceFromClockIn: werkuur.startLocatie
+        ? Math.round(
+            calculateDistance(
+              locatie.lat,
+              locatie.lng,
+              (werkuur.startLocatie as any).lat,
+              (werkuur.startLocatie as any).lng,
+            ),
+          )
+        : null,
     };
 
     // Prepare incidents data
-    const incidentsData = incidenten?.map(incident => ({
+    const incidentsData = incidenten?.map((incident) => ({
       ...incident,
       reportedAt: now_date.toISOString(),
-      reportedBy: zzpProfile.id
+      reportedBy: zzpProfile.id,
     }));
 
     // Update work hour record
@@ -224,11 +230,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         brutoBedrag: Number(grossEarnings.toFixed(2)),
         platformKosten: Number(totalPlatformFee.toFixed(2)),
         nettoBedrag: Number(netEarnings.toFixed(2)),
-        status: incidentsData && incidentsData.length > 0 ? "UNDER_REVIEW" : "COMPLETED",
-        opmerkingen: [
-          werkuur.opmerkingen,
-          opmerkingen
-        ].filter(Boolean).join('\n\n---\n\n'),
+        status:
+          incidentsData && incidentsData.length > 0
+            ? "UNDER_REVIEW"
+            : "COMPLETED",
+        opmerkingen: [werkuur.opmerkingen, opmerkingen]
+          .filter(Boolean)
+          .join("\n\n---\n\n"),
         metadata: {
           ...((werkuur.metadata as any) || {}),
           clockOutPhoto: foto,
@@ -241,10 +249,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             workedHours: Number(workedHours.toFixed(2)),
             grossEarnings: Number(grossEarnings.toFixed(2)),
             platformFee: Number(totalPlatformFee.toFixed(2)),
-            netEarnings: Number(netEarnings.toFixed(2))
-          }
-        }
-      }
+            netEarnings: Number(netEarnings.toFixed(2)),
+          },
+        },
+      },
     });
 
     // Create payment record
@@ -267,8 +275,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       platformFee: Number(totalPlatformFee.toFixed(2)),
       netEarnings: Number(netEarnings.toFixed(2)),
       jobTitle: werkuur.opdracht.titel,
-      company: werkuur.opdracht.opdrachtgever?.bedrijfsnaam || werkuur.opdracht.bedrijf?.bedrijfsnaam,
-      incidents: incidentsData?.length || 0
+      company:
+        werkuur.opdracht.opdrachtgever?.bedrijfsnaam ||
+        werkuur.opdracht.bedrijf?.bedrijfsnaam,
+      incidents: incidentsData?.length || 0,
     };
 
     return NextResponse.json({
@@ -281,16 +291,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         nextSteps: {
           paymentProcessing: updatedWerkuur.status === "COMPLETED",
           reviewRequired: updatedWerkuur.status === "UNDER_REVIEW",
-          estimatedPaymentDate: getEstimatedPaymentDate()
-        }
-      }
+          estimatedPaymentDate: getEstimatedPaymentDate(),
+        },
+      },
     });
-
   } catch (error) {
     console.error("Clock-out error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error during clock-out" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -309,10 +318,10 @@ async function createPaymentRecord(werkuur: any, beveiliger: any) {
           beveiligerId: beveiliger.id,
           grossAmount: werkuur.brutoBedrag,
           platformFee: werkuur.platformKosten,
-          hoursWorked: werkuur.totaleUren
-        }
+          hoursWorked: werkuur.totaleUren,
+        },
         // Note: Add recipient/sender IDs based on your payment model
-      }
+      },
     });
   } catch (error) {
     console.error("Failed to create payment record:", error);
@@ -320,14 +329,22 @@ async function createPaymentRecord(werkuur: any, beveiliger: any) {
 }
 
 // Send clock-out notifications
-async function sendClockOutNotifications(werkuur: any, beveiliger: any, incidents: any[]) {
+async function sendClockOutNotifications(
+  werkuur: any,
+  beveiliger: any,
+  incidents: any[],
+) {
   try {
     // Notify job owner
-    console.log(`Clock-out notification: ${beveiliger.user.name} clocked out for ${werkuur.opdracht.titel}`);
+    console.log(
+      `Clock-out notification: ${beveiliger.user.name} clocked out for ${werkuur.opdracht.titel}`,
+    );
 
     // If incidents reported, notify support team
     if (incidents && incidents.length > 0) {
-      console.log(`Incident alert: ${incidents.length} incidents reported during shift ${werkuur.id}`);
+      console.log(
+        `Incident alert: ${incidents.length} incidents reported during shift ${werkuur.id}`,
+      );
 
       // In production, send urgent notifications for incidents
       // Could integrate with:
@@ -337,8 +354,9 @@ async function sendClockOutNotifications(werkuur: any, beveiliger: any, incident
     }
 
     // Send payment confirmation to beveiliger
-    console.log(`Payment notification: €${werkuur.nettoBedrag} payment initiated for ${beveiliger.user.name}`);
-
+    console.log(
+      `Payment notification: €${werkuur.nettoBedrag} payment initiated for ${beveiliger.user.name}`,
+    );
   } catch (error) {
     console.error("Failed to send clock-out notifications:", error);
   }

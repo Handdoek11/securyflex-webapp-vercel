@@ -1,15 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Calendar, Clock, Euro, TrendingUp, MapPin, Star, Users, Briefcase, AlertCircle, Loader2, Shield, ChevronRight, X, Percent } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  Briefcase,
+  Calendar,
+  ChevronRight,
+  Clock,
+  Euro,
+  MapPin,
+  Percent,
+  Shield,
+  Star,
+  Users,
+  X,
+} from "lucide-react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { toast } from "@/components/ui/toast";
-import { useSession } from "next-auth/react";
-import Link from "next/link";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -17,7 +29,7 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [upcomingShifts, setUpcomingShifts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [showInsurancePromo, setShowInsurancePromo] = useState(true);
 
@@ -25,7 +37,7 @@ export default function DashboardPage() {
     if (session) {
       fetchDashboardData();
     }
-  }, [session]);
+  }, [session, fetchDashboardData]);
 
   const fetchDashboardData = async () => {
     if (!session) return;
@@ -35,24 +47,26 @@ export default function DashboardPage() {
     try {
       // Fetch all dashboard data in parallel
       const [statsRes, shiftsRes, hoursRes] = await Promise.all([
-        fetch('/api/dashboard/stats'),
-        fetch('/api/shifts?status=aankomend&limit=3'),
-        fetch('/api/hours')
+        fetch("/api/dashboard/stats"),
+        fetch("/api/shifts?status=aankomend&limit=3"),
+        fetch("/api/hours"),
       ]);
 
       const [statsData, shiftsData, hoursData] = await Promise.all([
         statsRes.json(),
         shiftsRes.json(),
-        hoursRes.json()
+        hoursRes.json(),
       ]);
 
       if (statsData.success) {
         setStats(statsData.data);
         // Check subscription status for insurance promo
-        setHasActiveSubscription(statsData.data?.subscription?.status === "active");
+        setHasActiveSubscription(
+          statsData.data?.subscription?.status === "active",
+        );
 
         // Check if user has already dismissed the promo
-        const promoDismissed = localStorage.getItem('insurancePromoDismissed');
+        const promoDismissed = localStorage.getItem("insurancePromoDismissed");
         if (promoDismissed) {
           setShowInsurancePromo(false);
         }
@@ -75,15 +89,14 @@ export default function DashboardPage() {
             type: "WORK_LOGGED",
             title: `${entry.totalHours}u gewerkt bij ${entry.company}`,
             subtitle: entry.project,
-            time: new Date(entry.date).toLocaleDateString('nl-NL'),
+            time: new Date(entry.date).toLocaleDateString("nl-NL"),
             status: entry.status,
-            amount: entry.totalEarned
+            amount: entry.totalEarned,
           });
         });
       }
 
       setRecentActivity(activity);
-
     } catch (error) {
       console.error("Dashboard fetch error:", error);
       setError("Netwerkfout bij laden van dashboard");
@@ -91,9 +104,9 @@ export default function DashboardPage() {
 
       // Set mock data for development
       setStats({
-        thisWeek: { hours: 32.5, earnings: 780.50, shifts: 4 },
+        thisWeek: { hours: 32.5, earnings: 780.5, shifts: 4 },
         thisMonth: { hours: 124.5, earnings: 2985.75, shifts: 15 },
-        total: { hours: 890.5, earnings: 21456.25, shifts: 156, rating: 4.8 }
+        total: { hours: 890.5, earnings: 21456.25, shifts: 156, rating: 4.8 },
       });
 
       setUpcomingShifts([
@@ -104,11 +117,10 @@ export default function DashboardPage() {
           location: "Amsterdam",
           date: new Date("2025-09-20T18:00:00Z"),
           startTime: "18:00",
-          hourlyRate: 28.50,
-          estimatedEarnings: 228
-        }
+          hourlyRate: 28.5,
+          estimatedEarnings: 228,
+        },
       ]);
-
     } finally {
       setLoading(false);
     }
@@ -116,7 +128,7 @@ export default function DashboardPage() {
 
   const dismissInsurancePromo = () => {
     setShowInsurancePromo(false);
-    localStorage.setItem('insurancePromoDismissed', 'true');
+    localStorage.setItem("insurancePromoDismissed", "true");
   };
 
   if (loading) {
@@ -208,13 +220,17 @@ export default function DashboardPage() {
                   </h2>
 
                   <p className="text-white/90 mb-4 max-w-2xl">
-                    Als SecuryFlex lid krijg je exclusieve kortingen op verzekeringen en pensioenregelingen.
-                    Tot 25% korting op beroepsaansprakelijkheid en meer!
+                    Als SecuryFlex lid krijg je exclusieve kortingen op
+                    verzekeringen en pensioenregelingen. Tot 25% korting op
+                    beroepsaansprakelijkheid en meer!
                   </p>
 
                   <div className="flex flex-wrap items-center gap-3">
                     <Link href="/dashboard/verzekeringen">
-                      <Button size="lg" className="bg-white text-blue-600 hover:bg-white/90">
+                      <Button
+                        size="lg"
+                        className="bg-white text-blue-600 hover:bg-white/90"
+                      >
                         Bekijk verzekeringen
                         <ChevronRight className="h-4 w-4 ml-2" />
                       </Button>
@@ -222,7 +238,9 @@ export default function DashboardPage() {
 
                     <div className="flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-lg">
                       <Percent className="h-4 w-4" />
-                      <span className="text-sm font-semibold">Code: SECURYFLEX25</span>
+                      <span className="text-sm font-semibold">
+                        Code: SECURYFLEX25
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -237,8 +255,12 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Deze week</p>
-                <p className="text-2xl font-bold">{stats?.thisWeek?.hours || 0}u</p>
-                <p className="text-xs text-green-600">€{stats?.thisWeek?.earnings?.toFixed(2) || '0.00'}</p>
+                <p className="text-2xl font-bold">
+                  {stats?.thisWeek?.hours || 0}u
+                </p>
+                <p className="text-xs text-green-600">
+                  €{stats?.thisWeek?.earnings?.toFixed(2) || "0.00"}
+                </p>
               </div>
               <Clock className="h-8 w-8 text-blue-500" />
             </div>
@@ -248,8 +270,12 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Deze maand</p>
-                <p className="text-2xl font-bold">€{stats?.thisMonth?.earnings?.toFixed(0) || '0'}</p>
-                <p className="text-xs text-blue-600">{stats?.thisMonth?.hours || 0} uren</p>
+                <p className="text-2xl font-bold">
+                  €{stats?.thisMonth?.earnings?.toFixed(0) || "0"}
+                </p>
+                <p className="text-xs text-blue-600">
+                  {stats?.thisMonth?.hours || 0} uren
+                </p>
               </div>
               <Euro className="h-8 w-8 text-green-500" />
             </div>
@@ -259,8 +285,12 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Totaal shifts</p>
-                <p className="text-2xl font-bold">{stats?.total?.shifts || 0}</p>
-                <p className="text-xs text-purple-600">{stats?.total?.hours || 0} uren</p>
+                <p className="text-2xl font-bold">
+                  {stats?.total?.shifts || 0}
+                </p>
+                <p className="text-xs text-purple-600">
+                  {stats?.total?.hours || 0} uren
+                </p>
               </div>
               <Briefcase className="h-8 w-8 text-purple-500" />
             </div>
@@ -270,7 +300,9 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Beoordeling</p>
-                <p className="text-2xl font-bold">{stats?.total?.rating || '4.8'}</p>
+                <p className="text-2xl font-bold">
+                  {stats?.total?.rating || "4.8"}
+                </p>
                 <p className="text-xs text-yellow-600">Gemiddeld</p>
               </div>
               <Star className="h-8 w-8 text-yellow-500" />
@@ -284,26 +316,38 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">Recente activiteit</h3>
               <Link href="/dashboard/hours">
-                <Button variant="outline" size="sm">Bekijk alles</Button>
+                <Button variant="outline" size="sm">
+                  Bekijk alles
+                </Button>
               </Link>
             </div>
 
             <div className="space-y-3">
               {recentActivity.length > 0 ? (
                 recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div
+                    key={activity.id}
+                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                  >
                     <div className="flex-1">
                       <p className="text-sm font-medium">{activity.title}</p>
-                      <p className="text-xs text-muted-foreground">{activity.subtitle}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.subtitle}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.time}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-green-600">
-                        €{activity.amount?.toFixed(2) || '0.00'}
+                        €{activity.amount?.toFixed(2) || "0.00"}
                       </p>
                       <Badge variant="secondary" className="text-xs">
-                        {activity.status === "PENDING" ? "Wachtend" :
-                         activity.status === "COMPLETED" ? "Voltooid" : activity.status}
+                        {activity.status === "PENDING"
+                          ? "Wachtend"
+                          : activity.status === "COMPLETED"
+                            ? "Voltooid"
+                            : activity.status}
                       </Badge>
                     </div>
                   </div>
@@ -312,7 +356,9 @@ export default function DashboardPage() {
                 <div className="text-center py-6 text-muted-foreground">
                   <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Nog geen recente activiteit</p>
-                  <p className="text-xs">Start je eerste shift om activiteit te zien</p>
+                  <p className="text-xs">
+                    Start je eerste shift om activiteit te zien
+                  </p>
                 </div>
               )}
             </div>
@@ -323,7 +369,9 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">Aankomende shifts</h3>
               <Link href="/dashboard/shifts">
-                <Button variant="outline" size="sm">Bekijk alles</Button>
+                <Button variant="outline" size="sm">
+                  Bekijk alles
+                </Button>
               </Link>
             </div>
 
@@ -334,7 +382,9 @@ export default function DashboardPage() {
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
                         <h4 className="font-medium text-sm">{shift.title}</h4>
-                        <p className="text-xs text-muted-foreground">{shift.company}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {shift.company}
+                        </p>
                       </div>
                       <Badge variant="secondary" className="text-xs">
                         €{shift.estimatedEarnings}
@@ -343,7 +393,9 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        <span>{new Date(shift.date).toLocaleDateString('nl-NL')}</span>
+                        <span>
+                          {new Date(shift.date).toLocaleDateString("nl-NL")}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />

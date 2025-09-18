@@ -41,7 +41,7 @@ export const SecurityConfig = {
       points: 5,
       duration: 60,
       blockDuration: 900, // 15 minutes
-    }
+    },
   },
 
   // Input Validation Settings
@@ -50,11 +50,11 @@ export const SecurityConfig = {
     maxArrayLength: 100, // Maximum array size
     maxObjectDepth: 10, // Maximum nested object depth
     allowedFileTypes: [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'application/pdf',
-      'text/csv'
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+      "text/csv",
     ],
     maxFileSize: 10 * 1024 * 1024, // 10MB
   },
@@ -62,17 +62,17 @@ export const SecurityConfig = {
   // CSRF Protection
   csrf: {
     enabled: true,
-    cookieName: '__Host-csrf-token',
-    headerName: 'x-csrf-token',
+    cookieName: "__Host-csrf-token",
+    headerName: "x-csrf-token",
     tokenLength: 32,
   },
 
   // Session Security
   session: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === "production",
     httpOnly: true,
-    sameSite: 'strict' as const,
+    sameSite: "strict" as const,
   },
 
   // Password Requirements
@@ -87,8 +87,8 @@ export const SecurityConfig = {
 
   // Encryption Settings
   encryption: {
-    algorithm: 'aes-256-gcm',
-    keyDerivation: 'pbkdf2',
+    algorithm: "aes-256-gcm",
+    keyDerivation: "pbkdf2",
     iterations: 100000,
     saltLength: 32,
     ivLength: 16,
@@ -98,7 +98,12 @@ export const SecurityConfig = {
   headers: {
     contentSecurityPolicy: {
       "default-src": ["'self'"],
-      "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net"],
+      "script-src": [
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'",
+        "https://cdn.jsdelivr.net",
+      ],
       "style-src": ["'self'", "'unsafe-inline'"],
       "img-src": ["'self'", "data:", "https:"],
       "connect-src": ["'self'", "https:", "wss:"],
@@ -112,8 +117,8 @@ export const SecurityConfig = {
       microphone: [],
       geolocation: ["'self'"],
       payment: ["'self'"],
-    }
-  }
+    },
+  },
 } as const;
 
 export const PerformanceConfig = {
@@ -130,16 +135,16 @@ export const PerformanceConfig = {
       maxSize: 1000, // maximum cached queries
       statsCache: {
         ttl: 120000, // 2 minutes
-        maxSize: 100
-      }
+        maxSize: 100,
+      },
     },
 
     // Pagination limits
     pagination: {
       defaultLimit: 20,
       maxLimit: 100,
-      maxOffset: 10000 // Prevent deep pagination
-    }
+      maxOffset: 10000, // Prevent deep pagination
+    },
   },
 
   // Response Compression
@@ -148,8 +153,8 @@ export const PerformanceConfig = {
     level: 6, // Compression level (1-9)
     filter: (req: any) => {
       // Don't compress responses for certain content types
-      return !req.headers['x-no-compression'];
-    }
+      return !req.headers["x-no-compression"];
+    },
   },
 
   // Memory Management
@@ -165,21 +170,21 @@ export const PerformanceConfig = {
     upload: 300000, // 5 minutes for file uploads
     reports: 120000, // 2 minutes for report generation
     payments: 60000, // 1 minute for payment operations
-  }
+  },
 } as const;
 
 // Environment-specific overrides
 export const getSecurityConfig = () => {
   const config = { ...SecurityConfig };
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     // Relax some restrictions for development
     config.rateLimiting.general.points = 1000;
     config.rateLimiting.write.points = 200;
     config.csrf.enabled = false; // Disable CSRF in development
   }
 
-  if (process.env.NODE_ENV === 'test') {
+  if (process.env.NODE_ENV === "test") {
     // Minimal restrictions for testing
     config.rateLimiting.general.points = 10000;
     config.rateLimiting.write.points = 1000;
@@ -192,7 +197,7 @@ export const getSecurityConfig = () => {
 export const getPerformanceConfig = () => {
   const config = { ...PerformanceConfig };
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     // Longer timeouts for development/debugging
     config.database.connectionTimeout = 60000;
     config.database.queryTimeout = 30000;
@@ -207,52 +212,52 @@ export const SecurityPresets = {
   // For public endpoints (no authentication required)
   public: {
     requireBedrijf: false,
-    allowedMethods: ['GET'],
-    rateLimiter: 'general' as const,
+    allowedMethods: ["GET"],
+    rateLimiter: "general" as const,
     requireCSRF: false,
     sanitizeInput: true,
-    logActivity: false
+    logActivity: false,
   },
 
   // For read-only authenticated endpoints
   readOnly: {
     requireBedrijf: true,
-    allowedMethods: ['GET'],
-    rateLimiter: 'general' as const,
+    allowedMethods: ["GET"],
+    rateLimiter: "general" as const,
     requireCSRF: false,
     sanitizeInput: true,
-    logActivity: true
+    logActivity: true,
   },
 
   // For standard write operations
   write: {
     requireBedrijf: true,
-    allowedMethods: ['POST', 'PUT', 'PATCH'],
-    rateLimiter: 'write' as const,
+    allowedMethods: ["POST", "PUT", "PATCH"],
+    rateLimiter: "write" as const,
     requireCSRF: true,
     sanitizeInput: true,
-    logActivity: true
+    logActivity: true,
   },
 
   // For sensitive operations (planning, payments)
   sensitive: {
     requireBedrijf: true,
-    allowedMethods: ['POST', 'PUT'],
-    rateLimiter: 'payment' as const,
+    allowedMethods: ["POST", "PUT"],
+    rateLimiter: "payment" as const,
     requireCSRF: true,
     sanitizeInput: true,
-    logActivity: true
+    logActivity: true,
   },
 
   // For delete operations
   delete: {
     requireBedrijf: true,
-    allowedMethods: ['DELETE'],
-    rateLimiter: 'write' as const,
+    allowedMethods: ["DELETE"],
+    rateLimiter: "write" as const,
     requireCSRF: true,
     sanitizeInput: true,
-    logActivity: true
-  }
+    logActivity: true,
+  },
 } as const;
 
 // Monitoring and alerting thresholds
@@ -273,29 +278,30 @@ export const MonitoringConfig = {
 
   business: {
     criticalEndpoints: [
-      '/api/bedrijf/opdrachten',
-      '/api/bedrijf/planning',
-      '/api/bedrijf/webhooks/finqle',
-      '/api/payments'
+      "/api/bedrijf/opdrachten",
+      "/api/bedrijf/planning",
+      "/api/bedrijf/webhooks/finqle",
+      "/api/payments",
     ],
     maxDowntime: 300000, // 5 minutes
     targetResponseTime: 1000, // 1 second
-  }
+  },
 } as const;
 
 // Feature flags for security features
 export const SecurityFeatures = {
-  enableRateLimiting: process.env.ENABLE_RATE_LIMITING !== 'false',
-  enableCSRF: process.env.NODE_ENV === 'production',
+  enableRateLimiting: process.env.ENABLE_RATE_LIMITING !== "false",
+  enableCSRF: process.env.NODE_ENV === "production",
   enableInputSanitization: true,
   enableSecurityHeaders: true,
   enableQueryOptimization: true,
-  enableCaching: process.env.DISABLE_CACHING !== 'true',
-  enableLogging: process.env.ENABLE_SECURITY_LOGGING !== 'false',
-  enableMonitoring: process.env.NODE_ENV === 'production'
+  enableCaching: process.env.DISABLE_CACHING !== "true",
+  enableLogging: process.env.ENABLE_SECURITY_LOGGING !== "false",
+  enableMonitoring: process.env.NODE_ENV === "production",
 } as const;
 
 // Export types for TypeScript
 export type SecurityConfigType = typeof SecurityConfig;
 export type PerformanceConfigType = typeof PerformanceConfig;
-export type SecurityPresetType = typeof SecurityPresets[keyof typeof SecurityPresets];
+export type SecurityPresetType =
+  (typeof SecurityPresets)[keyof typeof SecurityPresets];

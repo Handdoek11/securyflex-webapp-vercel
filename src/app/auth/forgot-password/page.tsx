@@ -1,16 +1,16 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft, CheckCircle, Mail } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, ArrowLeft, Mail } from "lucide-react";
-import Link from "next/link";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Voer een geldig emailadres in"),
@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
       } else {
         setError(result.error || "Er is iets misgegaan");
       }
-    } catch (err) {
+    } catch (_err) {
       setError("Er is een fout opgetreden. Probeer het opnieuw.");
     } finally {
       setIsLoading(false);
@@ -64,16 +64,14 @@ export default function ForgotPasswordPage() {
             <CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500" />
             <h1 className="text-2xl font-bold mb-2">Email Verzonden!</h1>
             <p className="text-muted-foreground mb-6">
-              We hebben een email gestuurd met instructies om je wachtwoord te resetten.
-              Check je inbox (en spam folder).
+              We hebben een email gestuurd met instructies om je wachtwoord te
+              resetten. Check je inbox (en spam folder).
             </p>
             <p className="text-sm text-muted-foreground mb-6">
               De link in de email is 1 uur geldig om veiligheidsredenen.
             </p>
             <Link href="/auth/login">
-              <Button className="w-full">
-                Terug naar Login
-              </Button>
+              <Button className="w-full">Terug naar Login</Button>
             </Link>
           </div>
         </Card>
@@ -100,7 +98,8 @@ export default function ForgotPasswordPage() {
           </div>
           <h1 className="text-2xl font-bold">Wachtwoord Vergeten?</h1>
           <p className="text-muted-foreground mt-2">
-            Geen probleem! Voer je emailadres in en we sturen je een link om je wachtwoord te resetten.
+            Geen probleem! Voer je emailadres in en we sturen je een link om je
+            wachtwoord te resetten.
           </p>
         </div>
 
@@ -121,15 +120,13 @@ export default function ForgotPasswordPage() {
               className={errors.email ? "border-red-500" : ""}
             />
             {errors.email && (
-              <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>
+              <p className="text-sm text-red-500 mt-1">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Versturen..." : "Stuur Reset Link"}
           </Button>
         </form>
@@ -137,10 +134,7 @@ export default function ForgotPasswordPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             Wachtwoord herinnerd?{" "}
-            <Link
-              href="/auth/login"
-              className="text-primary hover:underline"
-            >
+            <Link href="/auth/login" className="text-primary hover:underline">
               Log in
             </Link>
           </p>

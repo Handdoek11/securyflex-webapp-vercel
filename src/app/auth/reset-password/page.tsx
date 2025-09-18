@@ -1,36 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CheckCircle, Eye, EyeOff, Loader2, Lock, XCircle } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, XCircle, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
-import Link from "next/link";
 
-const resetPasswordSchema = z.object({
-  password: z
-    .string()
-    .min(8, "Wachtwoord moet minimaal 8 tekens bevatten")
-    .regex(/[A-Z]/, "Wachtwoord moet minimaal één hoofdletter bevatten")
-    .regex(/[a-z]/, "Wachtwoord moet minimaal één kleine letter bevatten")
-    .regex(/[0-9]/, "Wachtwoord moet minimaal één cijfer bevatten"),
-  confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Wachtwoorden komen niet overeen",
-  path: ["confirmPassword"],
-});
+const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, "Wachtwoord moet minimaal 8 tekens bevatten")
+      .regex(/[A-Z]/, "Wachtwoord moet minimaal één hoofdletter bevatten")
+      .regex(/[a-z]/, "Wachtwoord moet minimaal één kleine letter bevatten")
+      .regex(/[0-9]/, "Wachtwoord moet minimaal één cijfer bevatten"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Wachtwoorden komen niet overeen",
+    path: ["confirmPassword"],
+  });
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const _router = useRouter();
   const token = searchParams.get("token");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +59,7 @@ export default function ResetPasswordPage() {
     }
 
     validateToken(token);
-  }, [token]);
+  }, [token, validateToken]);
 
   const validateToken = async (token: string) => {
     try {
@@ -70,7 +72,7 @@ export default function ResetPasswordPage() {
         setError(data.error || "Ongeldige of verlopen token");
         setIsTokenValid(false);
       }
-    } catch (err) {
+    } catch (_err) {
       setError("Er is een fout opgetreden bij het valideren van de token");
       setIsTokenValid(false);
     } finally {
@@ -101,7 +103,7 @@ export default function ResetPasswordPage() {
       } else {
         setError(result.error || "Er is iets misgegaan");
       }
-    } catch (err) {
+    } catch (_err) {
       setError("Er is een fout opgetreden. Probeer het opnieuw.");
     } finally {
       setIsLoading(false);
@@ -138,9 +140,7 @@ export default function ResetPasswordPage() {
               Reset links zijn slechts 1 uur geldig om veiligheidsredenen.
             </p>
             <Link href="/auth/forgot-password">
-              <Button className="w-full">
-                Nieuwe Reset Link Aanvragen
-              </Button>
+              <Button className="w-full">Nieuwe Reset Link Aanvragen</Button>
             </Link>
           </div>
         </Card>
@@ -156,12 +156,11 @@ export default function ResetPasswordPage() {
             <CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500" />
             <h1 className="text-2xl font-bold mb-2">Wachtwoord Gereset!</h1>
             <p className="text-muted-foreground mb-6">
-              Je wachtwoord is succesvol gereset. Je kunt nu inloggen met je nieuwe wachtwoord.
+              Je wachtwoord is succesvol gereset. Je kunt nu inloggen met je
+              nieuwe wachtwoord.
             </p>
             <Link href="/auth/login">
-              <Button className="w-full">
-                Ga naar Login
-              </Button>
+              <Button className="w-full">Ga naar Login</Button>
             </Link>
           </div>
         </Card>
@@ -212,7 +211,9 @@ export default function ResetPasswordPage() {
               </button>
             </div>
             {errors.password && (
-              <p className="text-sm text-red-500 mt-1">{errors.password.message}</p>
+              <p className="text-sm text-red-500 mt-1">
+                {errors.password.message}
+              </p>
             )}
             <div className="mt-2 space-y-1">
               <p className="text-xs text-muted-foreground">
@@ -235,7 +236,9 @@ export default function ResetPasswordPage() {
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="••••••••"
                 {...register("confirmPassword")}
-                className={errors.confirmPassword ? "border-red-500 pr-10" : "pr-10"}
+                className={
+                  errors.confirmPassword ? "border-red-500 pr-10" : "pr-10"
+                }
               />
               <button
                 type="button"
@@ -250,15 +253,13 @@ export default function ResetPasswordPage() {
               </button>
             </div>
             {errors.confirmPassword && (
-              <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message}</p>
+              <p className="text-sm text-red-500 mt-1">
+                {errors.confirmPassword.message}
+              </p>
             )}
           </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

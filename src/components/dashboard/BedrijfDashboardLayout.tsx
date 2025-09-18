@@ -1,27 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
+import {
+  Bell,
+  Briefcase,
+  Building2,
+  Calendar,
+  ChevronDown,
+  CreditCard,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Settings,
+  Users,
+  X,
+} from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import Image from "next/image";
-import {
-  LayoutDashboard,
-  Calendar,
-  Users,
-  Building2,
-  Settings,
-  Bell,
-  ChevronDown,
-  Menu,
-  X,
-  LogOut,
-  CreditCard,
-  ArrowRightLeft,
-  FileText,
-  Shield,
-  Briefcase
-} from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -31,9 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { signOut } from "next-auth/react";
 
 type BedrijfRole = "opdrachtgever" | "leverancier";
 
@@ -80,9 +77,10 @@ export function BedrijfDashboardLayout({
     },
     {
       name: "Opdrachten",
-      href: currentRole === "opdrachtgever"
-        ? "/dashboard/bedrijf/opdrachten/plaatsen"
-        : "/dashboard/bedrijf/opdrachten/solliciteren",
+      href:
+        currentRole === "opdrachtgever"
+          ? "/dashboard/bedrijf/opdrachten/plaatsen"
+          : "/dashboard/bedrijf/opdrachten/solliciteren",
       icon: FileText,
       active: pathname?.startsWith("/dashboard/bedrijf/opdrachten"),
     },
@@ -178,7 +176,9 @@ export function BedrijfDashboardLayout({
                   <div className="flex flex-col items-end text-sm">
                     <span className="font-medium">{companyName}</span>
                     <span className="text-xs text-muted-foreground">
-                      {currentRole === "opdrachtgever" ? "Opdrachtgever" : "Leverancier"}
+                      {currentRole === "opdrachtgever"
+                        ? "Opdrachtgever"
+                        : "Leverancier"}
                     </span>
                   </div>
                   <ChevronDown className="h-4 w-4" />
@@ -214,7 +214,11 @@ export function BedrijfDashboardLayout({
               className="md:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </Button>
           </div>
         </div>
@@ -231,7 +235,7 @@ export function BedrijfDashboardLayout({
                     "flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     item.active
                       ? "bg-primary text-primary-foreground"
-                      : "hover:bg-accent hover:text-accent-foreground"
+                      : "hover:bg-accent hover:text-accent-foreground",
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -268,7 +272,7 @@ export function BedrijfDashboardLayout({
                     "flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     item.active
                       ? "bg-primary text-primary-foreground"
-                      : "hover:bg-accent hover:text-accent-foreground"
+                      : "hover:bg-accent hover:text-accent-foreground",
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -311,7 +315,9 @@ export function BedrijfDashboardLayout({
                 <div>
                   {title && <h1 className="text-2xl font-semibold">{title}</h1>}
                   {subtitle && (
-                    <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {subtitle}
+                    </p>
                   )}
                 </div>
                 {headerActions && <div>{headerActions}</div>}

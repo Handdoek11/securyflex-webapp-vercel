@@ -1,7 +1,7 @@
 "use client";
 
+import { AlertTriangle, Home, RefreshCw, Shield } from "lucide-react";
 import React from "react";
-import { AlertTriangle, RefreshCw, Shield, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -41,7 +41,8 @@ function DefaultErrorFallback({ error, resetError }: ErrorFallbackProps) {
             Er is iets misgegaan
           </h2>
           <p className="text-sm text-muted-foreground">
-            Er is een onverwachte fout opgetreden. Probeer de pagina te vernieuwen of neem contact op met de support.
+            Er is een onverwachte fout opgetreden. Probeer de pagina te
+            vernieuwen of neem contact op met de support.
           </p>
         </div>
 
@@ -54,12 +55,16 @@ function DefaultErrorFallback({ error, resetError }: ErrorFallbackProps) {
         )}
 
         <div className="flex flex-col sm:flex-row gap-2 justify-center">
-          <Button onClick={resetError} variant="default" className="flex items-center gap-2">
+          <Button
+            onClick={resetError}
+            variant="default"
+            className="flex items-center gap-2"
+          >
             <RefreshCw className="w-4 h-4" />
             Probeer opnieuw
           </Button>
           <Button
-            onClick={() => window.location.href = "/dashboard"}
+            onClick={() => (window.location.href = "/dashboard")}
             variant="outline"
             className="flex items-center gap-2"
           >
@@ -110,7 +115,8 @@ function GPSErrorFallback({ error, resetError }: ErrorFallbackProps) {
         GPS Service Fout
       </h3>
       <p className="text-sm text-orange-700 dark:text-orange-300 mb-4 text-center">
-        Kan je locatie niet bepalen. Controleer je GPS instellingen en probeer opnieuw.
+        Kan je locatie niet bepalen. Controleer je GPS instellingen en probeer
+        opnieuw.
       </p>
       <div className="flex gap-2">
         <Button onClick={resetError} size="sm" variant="outline">
@@ -118,7 +124,12 @@ function GPSErrorFallback({ error, resetError }: ErrorFallbackProps) {
           Probeer opnieuw
         </Button>
         <Button
-          onClick={() => window.open("https://support.google.com/chrome/answer/142065", "_blank")}
+          onClick={() =>
+            window.open(
+              "https://support.google.com/chrome/answer/142065",
+              "_blank",
+            )
+          }
           size="sm"
           variant="ghost"
         >
@@ -130,7 +141,10 @@ function GPSErrorFallback({ error, resetError }: ErrorFallbackProps) {
 }
 
 // Main error boundary class component
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -204,14 +218,14 @@ export function useAsyncError() {
     (error: Error) => {
       handleError(error);
     },
-    [handleError]
+    [handleError],
   );
 }
 
 // Higher-order component wrapper
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  fallback?: React.ComponentType<ErrorFallbackProps>
+  fallback?: React.ComponentType<ErrorFallbackProps>,
 ) {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary fallback={fallback}>
@@ -224,30 +238,26 @@ export function withErrorBoundary<P extends object>(
 }
 
 // Specific error boundaries for different contexts
-export const PageErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ErrorBoundary fallback={DefaultErrorFallback}>
-    {children}
-  </ErrorBoundary>
+export const PageErrorBoundary: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => <ErrorBoundary fallback={DefaultErrorFallback}>{children}</ErrorBoundary>;
+
+export const ComponentErrorBoundary: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => (
+  <ErrorBoundary fallback={MinimalErrorFallback}>{children}</ErrorBoundary>
 );
 
-export const ComponentErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ErrorBoundary fallback={MinimalErrorFallback}>
-    {children}
-  </ErrorBoundary>
-);
-
-export const GPSErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ErrorBoundary fallback={GPSErrorFallback}>
-    {children}
-  </ErrorBoundary>
-);
+export const GPSErrorBoundary: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => <ErrorBoundary fallback={GPSErrorFallback}>{children}</ErrorBoundary>;
 
 // Error types for better error handling
 export class APIError extends Error {
   constructor(
     message: string,
     public status?: number,
-    public code?: string
+    public code?: string,
   ) {
     super(message);
     this.name = "APIError";
@@ -257,7 +267,7 @@ export class APIError extends Error {
 export class ValidationError extends Error {
   constructor(
     message: string,
-    public field?: string
+    public field?: string,
   ) {
     super(message);
     this.name = "ValidationError";
@@ -267,7 +277,7 @@ export class ValidationError extends Error {
 export class GPSError extends Error {
   constructor(
     message: string,
-    public code?: string
+    public code?: string,
   ) {
     super(message);
     this.name = "GPSError";
@@ -356,7 +366,9 @@ export function handleNetworkError(error: any): string {
   }
 
   // Generic error message
-  return error.message || "Er is een onverwachte fout opgetreden. Probeer opnieuw.";
+  return (
+    error.message || "Er is een onverwachte fout opgetreden. Probeer opnieuw."
+  );
 }
 
 // Retry mechanism with exponential backoff
@@ -367,13 +379,13 @@ export async function retryWithBackoff<T>(
     baseDelay?: number;
     maxDelay?: number;
     backoffFactor?: number;
-  } = {}
+  } = {},
 ): Promise<T> {
   const {
     maxRetries = 3,
     baseDelay = 1000,
     maxDelay = 10000,
-    backoffFactor = 2
+    backoffFactor = 2,
   } = options;
 
   let lastError: Error;
@@ -385,14 +397,21 @@ export async function retryWithBackoff<T>(
       lastError = error as Error;
 
       // Don't retry on certain errors
-      if (error instanceof AuthenticationError ||
-          error instanceof PermissionError ||
-          error instanceof ValidationError) {
+      if (
+        error instanceof AuthenticationError ||
+        error instanceof PermissionError ||
+        error instanceof ValidationError
+      ) {
         throw lastError;
       }
 
       // Don't retry on client errors (4xx)
-      if (error instanceof APIError && error.status && error.status >= 400 && error.status < 500) {
+      if (
+        error instanceof APIError &&
+        error.status &&
+        error.status >= 400 &&
+        error.status < 500
+      ) {
         throw lastError;
       }
 
@@ -401,10 +420,12 @@ export async function retryWithBackoff<T>(
       }
 
       // Calculate delay with exponential backoff
-      const delay = Math.min(baseDelay * Math.pow(backoffFactor, attempt), maxDelay);
+      const delay = Math.min(baseDelay * backoffFactor ** attempt, maxDelay);
 
-      console.log(`Retry attempt ${attempt + 1}/${maxRetries + 1} after ${delay}ms`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      console.log(
+        `Retry attempt ${attempt + 1}/${maxRetries + 1} after ${delay}ms`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
@@ -414,15 +435,15 @@ export async function retryWithBackoff<T>(
 // API request wrapper with error handling
 export async function apiRequest<T>(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   try {
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      }
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
     });
 
     if (!response.ok) {
@@ -430,7 +451,7 @@ export async function apiRequest<T>(
       throw new APIError(
         errorData.error || `HTTP ${response.status}`,
         response.status,
-        errorData.code
+        errorData.code,
       );
     }
 
@@ -456,16 +477,16 @@ export async function apiRequest<T>(
 }
 
 // Safe async wrapper that catches errors
-export function safeAsync<T extends any[], R>(
-  fn: (...args: T) => Promise<R>
-) {
+export function safeAsync<T extends any[], R>(fn: (...args: T) => Promise<R>) {
   return async (...args: T): Promise<{ data?: R; error?: Error }> => {
     try {
       const data = await fn(...args);
       return { data };
     } catch (error) {
       console.error("Safe async error:", error);
-      return { error: error instanceof Error ? error : new Error(String(error)) };
+      return {
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
     }
   };
 }

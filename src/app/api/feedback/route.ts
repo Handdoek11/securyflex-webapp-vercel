@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { z } from "zod";
 
 // GET /api/feedback - Get feedback for opdrachten
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
         OR: [
           { opdracht: { opdrachtgeverId: session.user.id } },
           { opdracht: { bedrijf: { userId: session.user.id } } },
-          { authorId: session.user.id }
-        ]
+          { authorId: session.user.id },
+        ],
       },
       include: {
         opdracht: {
@@ -36,21 +36,21 @@ export async function GET(request: NextRequest) {
             titel: true,
             status: true,
             startDatum: true,
-            eindDatum: true
-          }
+            eindDatum: true,
+          },
         },
         author: {
           select: {
             id: true,
             name: true,
             role: true,
-            image: true
-          }
-        }
+            image: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "desc"
-      }
+        createdAt: "desc",
+      },
     });
 
     // Calculate statistics
@@ -59,32 +59,44 @@ export async function GET(request: NextRequest) {
       averageQuality: 0,
       averageCommunication: 0,
       averageValue: 0,
-      requiresAction: feedback.filter(f => f.requiresAction).length
+      requiresAction: feedback.filter((f) => f.requiresAction).length,
     };
 
     if (feedback.length > 0) {
-      const qualitySum = feedback.reduce((sum, f) => sum + (f.qualityScore || 0), 0);
-      const communicationSum = feedback.reduce((sum, f) => sum + (f.communicationScore || 0), 0);
-      const valueSum = feedback.reduce((sum, f) => sum + (f.valueScore || 0), 0);
+      const qualitySum = feedback.reduce(
+        (sum, f) => sum + (f.qualityScore || 0),
+        0,
+      );
+      const communicationSum = feedback.reduce(
+        (sum, f) => sum + (f.communicationScore || 0),
+        0,
+      );
+      const valueSum = feedback.reduce(
+        (sum, f) => sum + (f.valueScore || 0),
+        0,
+      );
 
-      stats.averageQuality = qualitySum / feedback.filter(f => f.qualityScore).length || 0;
-      stats.averageCommunication = communicationSum / feedback.filter(f => f.communicationScore).length || 0;
-      stats.averageValue = valueSum / feedback.filter(f => f.valueScore).length || 0;
+      stats.averageQuality =
+        qualitySum / feedback.filter((f) => f.qualityScore).length || 0;
+      stats.averageCommunication =
+        communicationSum /
+          feedback.filter((f) => f.communicationScore).length || 0;
+      stats.averageValue =
+        valueSum / feedback.filter((f) => f.valueScore).length || 0;
     }
 
     return NextResponse.json({
       success: true,
       data: {
         feedback,
-        stats
-      }
+        stats,
+      },
     });
-
   } catch (error) {
     console.error("Error fetching feedback:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch feedback" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -97,7 +109,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -108,7 +120,7 @@ export async function POST(request: NextRequest) {
         "BEDRIJF_TO_OPDRACHTGEVER",
         "BEDRIJF_TO_ZZP",
         "ZZP_TO_BEDRIJF",
-        "PLATFORM_QUALITY_CHECK"
+        "PLATFORM_QUALITY_CHECK",
       ]),
       rating: z.number().min(1).max(5).optional(),
       qualityScore: z.number().min(1).max(5).optional(),
@@ -117,7 +129,7 @@ export async function POST(request: NextRequest) {
       positives: z.array(z.string()),
       improvements: z.array(z.string()),
       comment: z.string().optional(),
-      requiresAction: z.boolean().default(false)
+      requiresAction: z.boolean().default(false),
     });
 
     const body = await request.json();
@@ -133,35 +145,42 @@ export async function POST(request: NextRequest) {
           include: {
             teamLid: {
               include: {
-                zzp: true
-              }
-            }
-          }
-        }
-      }
+                zzp: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!opdracht) {
       return NextResponse.json(
         { success: false, error: "Opdracht not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (opdracht.status !== "AFGEROND") {
       return NextResponse.json(
-        { success: false, error: "Opdracht must be completed to provide feedback" },
-        { status: 400 }
+        {
+          success: false,
+          error: "Opdracht must be completed to provide feedback",
+        },
+        { status: 400 },
       );
     }
 
     // Validate feedback type based on user role
-    const isValidFeedbackType = validateFeedbackType(session.user, opdracht, validatedData.type);
+    const isValidFeedbackType = validateFeedbackType(
+      session.user,
+      opdracht,
+      validatedData.type,
+    );
 
     if (!isValidFeedbackType) {
       return NextResponse.json(
         { success: false, error: "Invalid feedback type for your role" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -170,14 +189,17 @@ export async function POST(request: NextRequest) {
       where: {
         opdrachtId: validatedData.opdrachtId,
         authorId: session.user.id,
-        type: validatedData.type
-      }
+        type: validatedData.type,
+      },
     });
 
     if (existingFeedback) {
       return NextResponse.json(
-        { success: false, error: "You have already provided feedback for this opdracht" },
-        { status: 409 }
+        {
+          success: false,
+          error: "You have already provided feedback for this opdracht",
+        },
+        { status: 409 },
       );
     }
 
@@ -194,16 +216,16 @@ export async function POST(request: NextRequest) {
         positives: validatedData.positives,
         improvements: validatedData.improvements,
         comment: validatedData.comment,
-        requiresAction: validatedData.requiresAction
+        requiresAction: validatedData.requiresAction,
       },
       include: {
         author: {
           select: {
             name: true,
-            role: true
-          }
-        }
-      }
+            role: true,
+          },
+        },
+      },
     });
 
     // Determine recipient for notification
@@ -228,9 +250,9 @@ export async function POST(request: NextRequest) {
           metadata: {
             feedbackId: feedback.id,
             opdrachtId: opdracht.id,
-            requiresAction: validatedData.requiresAction
-          }
-        }
+            requiresAction: validatedData.requiresAction,
+          },
+        },
       });
     }
 
@@ -243,20 +265,23 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: feedback
+      data: feedback,
     });
-
   } catch (error) {
     console.error("Error creating feedback:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid feedback data", details: error.errors },
-        { status: 400 }
+        {
+          success: false,
+          error: "Invalid feedback data",
+          details: error.errors,
+        },
+        { status: 400 },
       );
     }
     return NextResponse.json(
       { success: false, error: "Failed to create feedback" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -269,14 +294,14 @@ export async function PATCH(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const updateFeedbackSchema = z.object({
       feedbackId: z.string(),
       actionTaken: z.string(),
-      requiresAction: z.boolean().default(false)
+      requiresAction: z.boolean().default(false),
     });
 
     const body = await request.json();
@@ -288,15 +313,18 @@ export async function PATCH(request: NextRequest) {
         id: validatedData.feedbackId,
         OR: [
           { opdracht: { opdrachtgeverId: session.user.id } },
-          { opdracht: { bedrijf: { userId: session.user.id } } }
-        ]
-      }
+          { opdracht: { bedrijf: { userId: session.user.id } } },
+        ],
+      },
     });
 
     if (!feedback) {
       return NextResponse.json(
-        { success: false, error: "Feedback not found or you don't have permission" },
-        { status: 404 }
+        {
+          success: false,
+          error: "Feedback not found or you don't have permission",
+        },
+        { status: 404 },
       );
     }
 
@@ -307,8 +335,8 @@ export async function PATCH(request: NextRequest) {
         actionTaken: validatedData.actionTaken,
         actionBy: session.user.id,
         actionAt: new Date(),
-        requiresAction: validatedData.requiresAction
-      }
+        requiresAction: validatedData.requiresAction,
+      },
     });
 
     // Send notification to original author
@@ -320,27 +348,26 @@ export async function PATCH(request: NextRequest) {
           category: "OPDRACHT",
           title: "Actie ondernomen op feedback",
           message: `Er is actie ondernomen op je feedback voor opdracht`,
-          actionUrl: `/dashboard/feedback/${feedback.id}`
-        }
+          actionUrl: `/dashboard/feedback/${feedback.id}`,
+        },
       });
     }
 
     return NextResponse.json({
       success: true,
-      data: updatedFeedback
+      data: updatedFeedback,
     });
-
   } catch (error) {
     console.error("Error updating feedback:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Invalid update data", details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return NextResponse.json(
       { success: false, error: "Failed to update feedback" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -351,7 +378,9 @@ function validateFeedbackType(user: any, opdracht: any, type: string): boolean {
 
   switch (type) {
     case "OPDRACHTGEVER_TO_BEDRIJF":
-      return userRole === "OPDRACHTGEVER" && user.id === opdracht.opdrachtgeverId;
+      return (
+        userRole === "OPDRACHTGEVER" && user.id === opdracht.opdrachtgeverId
+      );
 
     case "BEDRIJF_TO_OPDRACHTGEVER":
       return userRole === "BEDRIJF" && opdracht.bedrijf?.userId === user.id;
@@ -359,12 +388,13 @@ function validateFeedbackType(user: any, opdracht: any, type: string): boolean {
     case "BEDRIJF_TO_ZZP":
       return userRole === "BEDRIJF" && opdracht.bedrijf?.userId === user.id;
 
-    case "ZZP_TO_BEDRIJF":
+    case "ZZP_TO_BEDRIJF": {
       // Check if ZZP was assigned to this opdracht
-      const assignment = opdracht.assignments.find((a: any) =>
-        a.teamLid.zzp?.userId === user.id
+      const assignment = opdracht.assignments.find(
+        (a: any) => a.teamLid.zzp?.userId === user.id,
       );
       return userRole === "ZZP_BEVEILIGER" && !!assignment;
+    }
 
     case "PLATFORM_QUALITY_CHECK":
       // Only admin users can create platform quality checks

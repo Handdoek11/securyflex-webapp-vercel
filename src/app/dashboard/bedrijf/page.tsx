@@ -1,40 +1,37 @@
 "use client";
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
 import {
-  Users,
-  Building2,
-  Calendar,
-  Clock,
-  AlertTriangle,
-  TrendingUp,
-  CreditCard,
-  FileText,
-  Shield,
-  Briefcase,
-  ArrowRight,
-  CheckCircle,
-  XCircle,
-  UserCheck,
-  MapPin,
-  Star,
   Activity,
+  AlertTriangle,
+  ArrowRight,
+  Briefcase,
+  Calendar,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  Eye,
+  FileText,
+  MapPin,
   Plus,
-  Eye
+  Star,
+  TrendingUp,
+  UserCheck,
+  Users,
 } from "lucide-react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useState } from "react";
+import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
-import Link from "next/link";
 
 type BedrijfRole = "opdrachtgever" | "leverancier";
 
 export default function BedrijfDashboardPage() {
   const { data: session } = useSession();
-  const [currentRole, setCurrentRole] = useState<BedrijfRole>("leverancier");
+  const [currentRole, _setCurrentRole] = useState<BedrijfRole>("leverancier");
 
   const companyName = session?.user?.name || "Guardian Security B.V.";
 
@@ -49,7 +46,7 @@ export default function BedrijfDashboardPage() {
     finqleKrediet: 125000,
     finqleGebruikt: 45000,
     teamBezetting: 87,
-    klanttevredenheid: 4.6
+    klanttevredenheid: 4.6,
   };
 
   // Mock active shifts - combined view
@@ -64,7 +61,7 @@ export default function BedrijfDashboardPage() {
       startTime: "14:00",
       endTime: "22:00",
       status: "partial",
-      location: "Schiphol"
+      location: "Schiphol",
     },
     {
       id: 2,
@@ -76,7 +73,7 @@ export default function BedrijfDashboardPage() {
       startTime: "18:00",
       endTime: "02:00",
       status: "full",
-      location: "Amsterdam RAI"
+      location: "Amsterdam RAI",
     },
     {
       id: 3,
@@ -88,23 +85,73 @@ export default function BedrijfDashboardPage() {
       startTime: "08:00",
       endTime: "16:00",
       status: "urgent",
-      location: "Amsterdam"
-    }
+      location: "Amsterdam",
+    },
   ];
 
   // Mock team availability
   const teamAvailability = [
-    { id: 1, name: "Jan de Vries", status: "available", rating: 4.8, location: "Amsterdam", skills: ["Evenement", "VIP"] },
-    { id: 2, name: "Maria Jansen", status: "available", rating: 4.9, location: "Schiphol", skills: ["Airport", "Engels"] },
-    { id: 3, name: "Ahmed Hassan", status: "busy", until: "16:00", rating: 4.7, location: "Utrecht", skills: ["Crowd Control"] },
-    { id: 4, name: "Lisa van Berg", status: "available", rating: 4.6, location: "Amsterdam", skills: ["Receptie", "VIP"] },
+    {
+      id: 1,
+      name: "Jan de Vries",
+      status: "available",
+      rating: 4.8,
+      location: "Amsterdam",
+      skills: ["Evenement", "VIP"],
+    },
+    {
+      id: 2,
+      name: "Maria Jansen",
+      status: "available",
+      rating: 4.9,
+      location: "Schiphol",
+      skills: ["Airport", "Engels"],
+    },
+    {
+      id: 3,
+      name: "Ahmed Hassan",
+      status: "busy",
+      until: "16:00",
+      rating: 4.7,
+      location: "Utrecht",
+      skills: ["Crowd Control"],
+    },
+    {
+      id: 4,
+      name: "Lisa van Berg",
+      status: "available",
+      rating: 4.6,
+      location: "Amsterdam",
+      skills: ["Receptie", "VIP"],
+    },
   ];
 
   // Mock Finqle transactions
   const recentTransactions = [
-    { id: 1, type: "payment", description: "Uitbetaling Jan de Vries - Week 37", amount: 1250, status: "completed", time: "2 uur geleden" },
-    { id: 2, type: "invoice", description: "Factuur Schiphol Security", amount: 15892, status: "pending", time: "5 uur geleden" },
-    { id: 3, type: "margin", description: "Platform marge Week 37", amount: 487, status: "completed", time: "1 dag geleden" },
+    {
+      id: 1,
+      type: "payment",
+      description: "Uitbetaling Jan de Vries - Week 37",
+      amount: 1250,
+      status: "completed",
+      time: "2 uur geleden",
+    },
+    {
+      id: 2,
+      type: "invoice",
+      description: "Factuur Schiphol Security",
+      amount: 15892,
+      status: "pending",
+      time: "5 uur geleden",
+    },
+    {
+      id: 3,
+      type: "margin",
+      description: "Platform marge Week 37",
+      amount: 487,
+      status: "completed",
+      time: "1 dag geleden",
+    },
   ];
 
   return (
@@ -137,7 +184,8 @@ export default function BedrijfDashboardPage() {
                 3 shifts voor morgen nog niet volledig gevuld
               </p>
               <p className="text-sm text-amber-700 dark:text-amber-200 mt-1">
-                Ajax Training Complex heeft nog 1 beveiliger nodig voor de ochtendshift.
+                Ajax Training Complex heeft nog 1 beveiliger nodig voor de
+                ochtendshift.
               </p>
             </div>
             <Button size="sm" variant="outline" className="text-amber-700">
@@ -154,7 +202,8 @@ export default function BedrijfDashboardPage() {
                 <p className="text-sm text-muted-foreground">Team Bezetting</p>
                 <p className="text-2xl font-bold">{stats.teamBezetting}%</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {stats.beschikbaarVandaag}/{stats.activeBeveiligers} beschikbaar
+                  {stats.beschikbaarVandaag}/{stats.activeBeveiligers}{" "}
+                  beschikbaar
                 </p>
               </div>
               <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
@@ -167,7 +216,9 @@ export default function BedrijfDashboardPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active Opdrachten</p>
+                <p className="text-sm text-muted-foreground">
+                  Active Opdrachten
+                </p>
                 <p className="text-2xl font-bold">{stats.activeOpdrachten}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {stats.openstaandeShifts} shifts open
@@ -178,8 +229,12 @@ export default function BedrijfDashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-1 mt-3">
-              <Badge variant="outline" className="text-xs">8 extern</Badge>
-              <Badge variant="outline" className="text-xs">4 intern</Badge>
+              <Badge variant="outline" className="text-xs">
+                8 extern
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                4 intern
+              </Badge>
             </div>
           </Card>
 
@@ -187,7 +242,14 @@ export default function BedrijfDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Finqle Krediet</p>
-                <p className="text-2xl font-bold">€{((stats.finqleKrediet - stats.finqleGebruikt) / 1000).toFixed(0)}k</p>
+                <p className="text-2xl font-bold">
+                  €
+                  {(
+                    (stats.finqleKrediet - stats.finqleGebruikt) /
+                    1000
+                  ).toFixed(0)}
+                  k
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Van €{(stats.finqleKrediet / 1000).toFixed(0)}k beschikbaar
                 </p>
@@ -206,7 +268,9 @@ export default function BedrijfDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Maand Omzet</p>
-                <p className="text-2xl font-bold">€{(stats.maandOmzet / 1000).toFixed(0)}k</p>
+                <p className="text-2xl font-bold">
+                  €{(stats.maandOmzet / 1000).toFixed(0)}k
+                </p>
                 <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
                   <TrendingUp className="h-3 w-3" />
                   {stats.maandMarge}% marge
@@ -251,7 +315,9 @@ export default function BedrijfDashboardPage() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{shift.client}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {shift.client}
+                        </p>
                         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
@@ -326,11 +392,18 @@ export default function BedrijfDashboardPage() {
 
               <div className="space-y-2">
                 {teamAvailability.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-accent">
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-accent"
+                  >
                     <div className="flex items-center gap-3">
-                      <div className={`h-2 w-2 rounded-full ${
-                        member.status === "available" ? "bg-green-500" : "bg-amber-500"
-                      }`} />
+                      <div
+                        className={`h-2 w-2 rounded-full ${
+                          member.status === "available"
+                            ? "bg-green-500"
+                            : "bg-amber-500"
+                        }`}
+                      />
                       <div>
                         <p className="font-medium text-sm">{member.name}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -351,7 +424,11 @@ export default function BedrijfDashboardPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       {member.skills.slice(0, 2).map((skill) => (
-                        <Badge key={skill} variant="outline" className="text-xs">
+                        <Badge
+                          key={skill}
+                          variant="outline"
+                          className="text-xs"
+                        >
                           {skill}
                         </Badge>
                       ))}
@@ -385,7 +462,9 @@ export default function BedrijfDashboardPage() {
                   </div>
                   <div className="flex justify-between items-center mt-2">
                     <span className="text-sm">Gebruikt</span>
-                    <span className="font-semibold text-purple-600">€45.000</span>
+                    <span className="font-semibold text-purple-600">
+                      €45.000
+                    </span>
                   </div>
                   <Progress
                     value={(45000 / 125000) * 100}
@@ -396,20 +475,31 @@ export default function BedrijfDashboardPage() {
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Recente Transacties</p>
                   {recentTransactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between text-sm">
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between text-sm"
+                    >
                       <div className="flex-1">
                         <p className="font-medium">{transaction.description}</p>
-                        <p className="text-xs text-muted-foreground">{transaction.time}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {transaction.time}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">
                           €{transaction.amount.toLocaleString("nl-NL")}
                         </p>
                         <Badge
-                          variant={transaction.status === "completed" ? "success" : "secondary"}
+                          variant={
+                            transaction.status === "completed"
+                              ? "success"
+                              : "secondary"
+                          }
                           className="text-xs"
                         >
-                          {transaction.status === "completed" ? "Voltooid" : "In behandeling"}
+                          {transaction.status === "completed"
+                            ? "Voltooid"
+                            : "In behandeling"}
                         </Badge>
                       </div>
                     </div>
@@ -429,25 +519,41 @@ export default function BedrijfDashboardPage() {
             <Card className="p-4">
               <h3 className="font-semibold mb-3">Snelle Acties</h3>
               <div className="space-y-2">
-                <Button variant="outline" className="w-full justify-start" asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  asChild
+                >
                   <Link href="/dashboard/bedrijf/opdrachten/plaatsen">
                     <Plus className="h-4 w-4 mr-2" />
                     Nieuwe opdracht plaatsen
                   </Link>
                 </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  asChild
+                >
                   <Link href="/dashboard/bedrijf/opdrachten/solliciteren">
                     <Eye className="h-4 w-4 mr-2" />
                     Beschikbare opdrachten
                   </Link>
                 </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  asChild
+                >
                   <Link href="/dashboard/bedrijf/team">
                     <UserCheck className="h-4 w-4 mr-2" />
                     Team beheren
                   </Link>
                 </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  asChild
+                >
                   <Link href="/dashboard/bedrijf/planning">
                     <Calendar className="h-4 w-4 mr-2" />
                     Planning bekijken
@@ -461,7 +567,9 @@ export default function BedrijfDashboardPage() {
               <h3 className="font-semibold mb-3">Performance</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Fill Rate</span>
+                  <span className="text-sm text-muted-foreground">
+                    Fill Rate
+                  </span>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">96.2%</span>
                     <Badge variant="success" className="text-xs">
@@ -470,21 +578,29 @@ export default function BedrijfDashboardPage() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Klanttevredenheid</span>
+                  <span className="text-sm text-muted-foreground">
+                    Klanttevredenheid
+                  </span>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">4.6/5</span>
                     <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">No-show Rate</span>
+                  <span className="text-sm text-muted-foreground">
+                    No-show Rate
+                  </span>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">0.8%</span>
-                    <Badge variant="success" className="text-xs">Laag</Badge>
+                    <Badge variant="success" className="text-xs">
+                      Laag
+                    </Badge>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Gem. Response</span>
+                  <span className="text-sm text-muted-foreground">
+                    Gem. Response
+                  </span>
                   <span className="font-semibold">1.2 uur</span>
                 </div>
               </div>

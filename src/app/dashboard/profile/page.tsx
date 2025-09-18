@@ -1,20 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Camera, Upload, FileText, Award, MapPin, Phone, Mail, Edit, Check, X, Star, Calendar, Euro, Loader2, Shield, ChevronRight, Percent, Gift } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { toast } from "@/components/ui/toast";
-import { useSession } from "next-auth/react";
+import {
+  Award,
+  Camera,
+  ChevronRight,
+  Edit,
+  FileText,
+  Gift,
+  Mail,
+  MapPin,
+  Percent,
+  Phone,
+  Shield,
+  Star,
+  Upload,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "@/components/ui/toast";
 
 // Mock data - will be replaced with real API calls
 const mockProfile = {
@@ -27,14 +39,15 @@ const mockProfile = {
   rating: 4.8,
   totalReviews: 47,
   completedShifts: 156,
-  totalEarnings: 18750.00,
+  totalEarnings: 18750.0,
   joinDate: "2024-03-15",
   profileCompletion: 85,
   specialisaties: ["Evenementen", "Objectbeveiliging", "Mobiel Toezicht"],
   werkgebied: ["Amsterdam", "Haarlem", "Zaandam"],
-  uurtarief: 28.50,
+  uurtarief: 28.5,
   ervaring: 5,
-  beschrijving: "Ervaren beveiliger met specialisatie in evenementen en objectbeveiliging. Flexibel inzetbaar en klantgericht.",
+  beschrijving:
+    "Ervaren beveiliger met specialisatie in evenementen en objectbeveiliging. Flexibel inzetbaar en klantgericht.",
 
   certificaten: [
     {
@@ -45,7 +58,7 @@ const mockProfile = {
       behaaldOp: "2023-06-15",
       verlooptOp: "2028-06-15",
       status: "VERIFIED",
-      documentUrl: "/docs/boa-certificate.pdf"
+      documentUrl: "/docs/boa-certificate.pdf",
     },
     {
       id: "2",
@@ -55,7 +68,7 @@ const mockProfile = {
       behaaldOp: "2024-01-10",
       verlooptOp: "2027-01-10",
       status: "VERIFIED",
-      documentUrl: "/docs/bhv-certificate.pdf"
+      documentUrl: "/docs/bhv-certificate.pdf",
     },
     {
       id: "3",
@@ -65,8 +78,8 @@ const mockProfile = {
       behaaldOp: "2023-12-20",
       verlooptOp: null,
       status: "PENDING",
-      documentUrl: "/docs/wpbr-certificate.pdf"
-    }
+      documentUrl: "/docs/wpbr-certificate.pdf",
+    },
   ],
 
   documenten: [
@@ -90,7 +103,7 @@ const mockProfile = {
       naam: "Bankafschrift",
       status: "PENDING",
       uploadedAt: "2024-09-01",
-    }
+    },
   ],
 
   reviews: [
@@ -107,38 +120,54 @@ const mockProfile = {
       comment: "Goed werk tijdens het evenement, communicatie kan beter.",
       client: "SecureGuard Rotterdam",
       date: "2024-09-05",
-    }
-  ]
+    },
+  ],
 };
 
 function getStatusBadge(status: string) {
   switch (status) {
     case "VERIFIED":
-      return <Badge className="bg-green-500 hover:bg-green-600 text-xs">Geverifieerd</Badge>;
+      return (
+        <Badge className="bg-green-500 hover:bg-green-600 text-xs">
+          Geverifieerd
+        </Badge>
+      );
     case "PENDING":
-      return <Badge variant="secondary" className="text-xs">Wachten</Badge>;
+      return (
+        <Badge variant="secondary" className="text-xs">
+          Wachten
+        </Badge>
+      );
     case "REJECTED":
-      return <Badge variant="destructive" className="text-xs">Afgewezen</Badge>;
+      return (
+        <Badge variant="destructive" className="text-xs">
+          Afgewezen
+        </Badge>
+      );
     default:
-      return <Badge variant="outline" className="text-xs">{status}</Badge>;
+      return (
+        <Badge variant="outline" className="text-xs">
+          {status}
+        </Badge>
+      );
   }
 }
 
 export default function ProfilePage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [editingField, setEditingField] = useState<string | null>(null);
+  const [_editingField, _setEditingField] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overzicht");
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   useEffect(() => {
     if (session) {
       fetchProfile();
     }
-  }, [session]);
+  }, [session, fetchProfile]);
 
   const fetchProfile = async () => {
     if (!session) return;
@@ -146,7 +175,7 @@ export default function ProfilePage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/profile');
+      const response = await fetch("/api/profile");
       const data = await response.json();
 
       if (data.success) {
@@ -171,10 +200,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <DashboardLayout
-        title="Mijn Profiel"
-        subtitle="Laden..."
-      >
+      <DashboardLayout title="Mijn Profiel" subtitle="Laden...">
         <div className="p-4 space-y-6">
           <Card className="p-4">
             <div className="flex items-start gap-4">
@@ -227,7 +253,9 @@ export default function ProfilePage() {
             <Card className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold">Profiel voltooiing</h3>
-                <span className="text-sm text-muted-foreground">{displayProfile.profileCompletion}%</span>
+                <span className="text-sm text-muted-foreground">
+                  {displayProfile.profileCompletion}%
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
@@ -247,7 +275,10 @@ export default function ProfilePage() {
                   <Avatar className="w-20 h-20">
                     <AvatarImage src={displayProfile.avatar} />
                     <AvatarFallback className="text-lg">
-                      {displayProfile.name.split(' ').map(n => n[0]).join('')}
+                      {displayProfile.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </AvatarFallback>
                   </Avatar>
                   <Button
@@ -260,7 +291,9 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold mb-2">{displayProfile.name}</h2>
+                  <h2 className="text-xl font-bold mb-2">
+                    {displayProfile.name}
+                  </h2>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                     <div className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
@@ -275,15 +308,21 @@ export default function ProfilePage() {
 
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <p className="font-semibold text-green-600">{displayProfile.completedShifts}</p>
+                      <p className="font-semibold text-green-600">
+                        {displayProfile.completedShifts}
+                      </p>
                       <p className="text-muted-foreground">Shifts voltooid</p>
                     </div>
                     <div>
-                      <p className="font-semibold text-blue-600">€{displayProfile.totalEarnings.toLocaleString()}</p>
+                      <p className="font-semibold text-blue-600">
+                        €{displayProfile.totalEarnings.toLocaleString()}
+                      </p>
                       <p className="text-muted-foreground">Totaal verdient</p>
                     </div>
                     <div>
-                      <p className="font-semibold">€{displayProfile.uurtarief}/uur</p>
+                      <p className="font-semibold">
+                        €{displayProfile.uurtarief}/uur
+                      </p>
                       <p className="text-muted-foreground">Uurtarief</p>
                     </div>
                   </div>
@@ -373,7 +412,10 @@ export default function ProfilePage() {
                     <h3 className="font-semibold flex items-center gap-2">
                       Verzekeringen & Kortingen
                       {hasActiveSubscription && (
-                        <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                        <Badge
+                          variant="default"
+                          className="bg-green-500 hover:bg-green-600"
+                        >
                           EXCLUSIEF
                         </Badge>
                       )}
@@ -395,14 +437,18 @@ export default function ProfilePage() {
                       <Percent className="h-4 w-4 text-green-600" />
                       <div className="text-xs">
                         <p className="font-semibold">15% korting</p>
-                        <p className="text-muted-foreground">Beroepsaansprakelijkheid</p>
+                        <p className="text-muted-foreground">
+                          Beroepsaansprakelijkheid
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 p-2 bg-background rounded-lg">
                       <Gift className="h-4 w-4 text-blue-600" />
                       <div className="text-xs">
                         <p className="font-semibold">Eerste maand gratis</p>
-                        <p className="text-muted-foreground">Pensioenregeling</p>
+                        <p className="text-muted-foreground">
+                          Pensioenregeling
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -421,7 +467,9 @@ export default function ProfilePage() {
                       💡 Speciale aanbieding
                     </p>
                     <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                      Gebruik code <span className="font-mono font-bold">SECURYFLEX25</span> voor extra 25% korting op je eerste verzekering!
+                      Gebruik code{" "}
+                      <span className="font-mono font-bold">SECURYFLEX25</span>{" "}
+                      voor extra 25% korting op je eerste verzekering!
                     </p>
                   </div>
                 </div>
@@ -429,10 +477,17 @@ export default function ProfilePage() {
                 <div className="space-y-3">
                   <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="text-sm text-center text-muted-foreground">
-                      Upgrade naar een SecuryFlex abonnement voor exclusieve verzekeringskortingen
+                      Upgrade naar een SecuryFlex abonnement voor exclusieve
+                      verzekeringskortingen
                     </p>
                   </div>
-                  <Button className="w-full" variant="outline" onClick={() => router.push('/dashboard/settings#subscription')}>
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    onClick={() =>
+                      router.push("/dashboard/settings#subscription")
+                    }
+                  >
                     Bekijk abonnementen
                     <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
@@ -460,21 +515,33 @@ export default function ProfilePage() {
                       <h4 className="font-semibold break-words">{cert.naam}</h4>
                       {getStatusBadge(cert.status)}
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">{cert.uitgever}</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {cert.uitgever}
+                    </p>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Behaald op</p>
-                        <p>{new Date(cert.behaaldOp).toLocaleDateString('nl-NL')}</p>
+                        <p>
+                          {new Date(cert.behaaldOp).toLocaleDateString("nl-NL")}
+                        </p>
                       </div>
                       {cert.verlooptOp && (
                         <div>
                           <p className="text-muted-foreground">Verloopt op</p>
-                          <p>{new Date(cert.verlooptOp).toLocaleDateString('nl-NL')}</p>
+                          <p>
+                            {new Date(cert.verlooptOp).toLocaleDateString(
+                              "nl-NL",
+                            )}
+                          </p>
                         </div>
                       )}
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="flex-shrink-0 self-start">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-shrink-0 self-start"
+                  >
                     <FileText className="h-4 w-4 mr-2" />
                     Bekijk
                   </Button>
@@ -485,13 +552,13 @@ export default function ProfilePage() {
             <Card className="p-4 border-dashed border-2 border-muted-foreground/25">
               <div className="text-center py-6">
                 <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h4 className="font-semibold mb-2">Nieuw certificaat toevoegen</h4>
+                <h4 className="font-semibold mb-2">
+                  Nieuw certificaat toevoegen
+                </h4>
                 <p className="text-sm text-muted-foreground mb-4">
                   Sleep je certificaat hier naartoe of klik om te uploaden
                 </p>
-                <Button variant="outline">
-                  Bestand selecteren
-                </Button>
+                <Button variant="outline">Bestand selecteren</Button>
               </div>
             </Card>
           </TabsContent>
@@ -514,7 +581,8 @@ export default function ProfilePage() {
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold break-words">{doc.naam}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Geüpload op {new Date(doc.uploadedAt).toLocaleDateString('nl-NL')}
+                        Geüpload op{" "}
+                        {new Date(doc.uploadedAt).toLocaleDateString("nl-NL")}
                       </p>
                     </div>
                   </div>
@@ -535,7 +603,9 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2">
                 <Star className="h-5 w-5 text-yellow-500" />
                 <span className="font-semibold">{displayProfile.rating}</span>
-                <span className="text-muted-foreground">({displayProfile.totalReviews} reviews)</span>
+                <span className="text-muted-foreground">
+                  ({displayProfile.totalReviews} reviews)
+                </span>
               </div>
             </div>
 
@@ -545,7 +615,7 @@ export default function ProfilePage() {
                   <div>
                     <h4 className="font-semibold">{review.client}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(review.date).toLocaleDateString('nl-NL')}
+                      {new Date(review.date).toLocaleDateString("nl-NL")}
                     </p>
                   </div>
                   <div className="flex gap-1">

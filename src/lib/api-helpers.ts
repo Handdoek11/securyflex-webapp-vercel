@@ -1,75 +1,83 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { checkRateLimit, getRateLimiter, checkUserActionLimit } from './rate-limiting'
-import { auth } from './auth'
+import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "./auth";
+import {
+  checkRateLimit,
+  checkUserActionLimit,
+  getRateLimiter,
+} from "./rate-limiting";
 
 /**
  * Wrapper for API routes with rate limiting and error handling
  */
-export function withRateLimit(handler: (req: NextRequest) => Promise<NextResponse>) {
+export function withRateLimit(
+  handler: (req: NextRequest) => Promise<NextResponse>,
+) {
   return async (req: NextRequest): Promise<NextResponse> => {
     try {
       // Apply rate limiting
-      const limiter = getRateLimiter(req.nextUrl.pathname)
-      const rateLimitResponse = await checkRateLimit(req, limiter)
+      const limiter = getRateLimiter(req.nextUrl.pathname);
+      const rateLimitResponse = await checkRateLimit(req, limiter);
 
       if (rateLimitResponse) {
-        return rateLimitResponse
+        return rateLimitResponse;
       }
 
       // Execute the actual handler
-      return await handler(req)
+      return await handler(req);
     } catch (error) {
-      console.error('API Route Error:', error)
+      console.error("API Route Error:", error);
       return NextResponse.json(
         {
           success: false,
-          error: 'Internal server error'
+          error: "Internal server error",
         },
-        { status: 500 }
-      )
+        { status: 500 },
+      );
     }
-  }
+  };
 }
 
 /**
  * Wrapper for API routes with authentication and rate limiting
  */
-export function withAuthAndRateLimit(handler: (req: NextRequest, user: any) => Promise<NextResponse>) {
+export function withAuthAndRateLimit(
+  handler: (req: NextRequest, user: any) => Promise<NextResponse>,
+) {
   return async (req: NextRequest): Promise<NextResponse> => {
     try {
       // Apply rate limiting first
-      const limiter = getRateLimiter(req.nextUrl.pathname)
-      const rateLimitResponse = await checkRateLimit(req, limiter)
+      const limiter = getRateLimiter(req.nextUrl.pathname);
+      const rateLimitResponse = await checkRateLimit(req, limiter);
 
       if (rateLimitResponse) {
-        return rateLimitResponse
+        return rateLimitResponse;
       }
 
       // Check authentication
-      const session = await auth()
+      const session = await auth();
       if (!session?.user) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Authentication required'
+            error: "Authentication required",
           },
-          { status: 401 }
-        )
+          { status: 401 },
+        );
       }
 
       // Execute the actual handler with user context
-      return await handler(req, session.user)
+      return await handler(req, session.user);
     } catch (error) {
-      console.error('API Route Error:', error)
+      console.error("API Route Error:", error);
       return NextResponse.json(
         {
           success: false,
-          error: 'Internal server error'
+          error: "Internal server error",
         },
-        { status: 500 }
-      )
+        { status: 500 },
+      );
     }
-  }
+  };
 }
 
 /**
@@ -78,28 +86,28 @@ export function withAuthAndRateLimit(handler: (req: NextRequest, user: any) => P
 export function withUserActionLimit(
   action: string,
   options: { points: number; duration: number; blockDuration?: number },
-  handler: (req: NextRequest, user: any) => Promise<NextResponse>
+  handler: (req: NextRequest, user: any) => Promise<NextResponse>,
 ) {
   return async (req: NextRequest): Promise<NextResponse> => {
     try {
       // Check authentication first
-      const session = await auth()
+      const session = await auth();
       if (!session?.user) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Authentication required'
+            error: "Authentication required",
           },
-          { status: 401 }
-        )
+          { status: 401 },
+        );
       }
 
       // Apply general rate limiting
-      const limiter = getRateLimiter(req.nextUrl.pathname)
-      const rateLimitResponse = await checkRateLimit(req, limiter)
+      const limiter = getRateLimiter(req.nextUrl.pathname);
+      const rateLimitResponse = await checkRateLimit(req, limiter);
 
       if (rateLimitResponse) {
-        return rateLimitResponse
+        return rateLimitResponse;
       }
 
       // Apply user-specific action rate limiting
@@ -107,50 +115,56 @@ export function withUserActionLimit(
         req,
         session.user.id,
         action,
-        options
-      )
+        options,
+      );
 
       if (userActionResponse) {
-        return userActionResponse
+        return userActionResponse;
       }
 
       // Execute the actual handler
-      return await handler(req, session.user)
+      return await handler(req, session.user);
     } catch (error) {
-      console.error('API Route Error:', error)
+      console.error("API Route Error:", error);
       return NextResponse.json(
         {
           success: false,
-          error: 'Internal server error'
+          error: "Internal server error",
         },
-        { status: 500 }
-      )
+        { status: 500 },
+      );
     }
-  }
+  };
 }
 
 /**
  * Standard error response
  */
-export function errorResponse(message: string, status: number = 400): NextResponse {
+export function errorResponse(
+  message: string,
+  status: number = 400,
+): NextResponse {
   return NextResponse.json(
     {
       success: false,
-      error: message
+      error: message,
     },
-    { status }
-  )
+    { status },
+  );
 }
 
 /**
  * Standard success response
  */
-export function successResponse(data: any = null, message?: string): NextResponse {
+export function successResponse(
+  data: any = null,
+  message?: string,
+): NextResponse {
   return NextResponse.json({
     success: true,
     data,
-    ...(message && { message })
-  })
+    ...(message && { message }),
+  });
 }
 
 /**
@@ -160,25 +174,27 @@ export function validationError(errors: string[]): NextResponse {
   return NextResponse.json(
     {
       success: false,
-      error: 'Validation failed',
-      errors
+      error: "Validation failed",
+      errors,
     },
-    { status: 422 }
-  )
+    { status: 422 },
+  );
 }
 
 /**
  * Helper to parse JSON body safely
  */
-export async function parseJsonBody(req: NextRequest): Promise<{ data: any; error?: NextResponse }> {
+export async function parseJsonBody(
+  req: NextRequest,
+): Promise<{ data: any; error?: NextResponse }> {
   try {
-    const body = await req.json()
-    return { data: body }
-  } catch (error) {
+    const body = await req.json();
+    return { data: body };
+  } catch (_error) {
     return {
       data: null,
-      error: errorResponse('Invalid JSON in request body', 400)
-    }
+      error: errorResponse("Invalid JSON in request body", 400),
+    };
   }
 }
 
@@ -186,35 +202,38 @@ export async function parseJsonBody(req: NextRequest): Promise<{ data: any; erro
  * Helper to get query parameters
  */
 export function getQueryParams(req: NextRequest): Record<string, string> {
-  const params: Record<string, string> = {}
-  const url = new URL(req.url)
+  const params: Record<string, string> = {};
+  const url = new URL(req.url);
 
   url.searchParams.forEach((value, key) => {
-    params[key] = value
-  })
+    params[key] = value;
+  });
 
-  return params
+  return params;
 }
 
 /**
  * Helper to check if method is allowed
  */
-export function checkMethod(req: NextRequest, allowedMethods: string[]): NextResponse | null {
+export function checkMethod(
+  req: NextRequest,
+  allowedMethods: string[],
+): NextResponse | null {
   if (!allowedMethods.includes(req.method)) {
     return NextResponse.json(
       {
         success: false,
-        error: `Method ${req.method} not allowed`
+        error: `Method ${req.method} not allowed`,
       },
       {
         status: 405,
         headers: {
-          Allow: allowedMethods.join(', ')
-        }
-      }
-    )
+          Allow: allowedMethods.join(", "),
+        },
+      },
+    );
   }
-  return null
+  return null;
 }
 
 /**

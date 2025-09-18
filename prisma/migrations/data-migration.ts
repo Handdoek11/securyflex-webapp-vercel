@@ -7,16 +7,16 @@
  * Usage: npx ts-node prisma/migrations/data-migration.ts
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function migrateLocationData() {
-  console.log('🔄 Starting location data migration...');
+  console.log("🔄 Starting location data migration...");
 
   try {
     // Get all Opdrachten with old location string format
-    const opdrachten = await prisma.$queryRaw`
+    const opdrachten = (await prisma.$queryRaw`
       SELECT id, locatie
       FROM "Opdracht"
       WHERE locatie IS NOT NULL
@@ -24,22 +24,26 @@ async function migrateLocationData() {
         SELECT 1 FROM "OpdrachtLocatie"
         WHERE "opdrachtId" = "Opdracht".id
       )
-    ` as any[];
+    `) as { id: string; locatie: string }[];
 
     console.log(`Found ${opdrachten.length} opdrachten to migrate`);
 
     for (const opdracht of opdrachten) {
       try {
         // Parse location string (expecting format: "Street, PostalCode City")
-        const locationParts = opdracht.locatie.split(',').map((s: string) => s.trim());
+        const locationParts = opdracht.locatie
+          .split(",")
+          .map((s: string) => s.trim());
 
-        let adres = locationParts[0] || 'Onbekend';
-        let postcodeAndCity = locationParts[1] || '';
+        const adres = locationParts[0] || "Onbekend";
+        const postcodeAndCity = locationParts[1] || "";
 
         // Extract postcode and city from second part
         const postcodeMatch = postcodeAndCity.match(/(\d{4}\s?[A-Z]{2})/i);
-        const postcode = postcodeMatch ? postcodeMatch[1] : '1000AA';
-        const plaats = postcodeAndCity.replace(postcodeMatch?.[0] || '', '').trim() || 'Onbekend';
+        const postcode = postcodeMatch ? postcodeMatch[1] : "1000AA";
+        const plaats =
+          postcodeAndCity.replace(postcodeMatch?.[0] || "", "").trim() ||
+          "Onbekend";
 
         // Create new OpdrachtLocatie record
         await prisma.opdrachtLocatie.create({
@@ -48,37 +52,40 @@ async function migrateLocationData() {
             adres,
             postcode,
             plaats,
-          }
+          },
         });
 
         console.log(`✅ Migrated location for opdracht ${opdracht.id}`);
       } catch (error) {
-        console.error(`❌ Failed to migrate location for opdracht ${opdracht.id}:`, error);
+        console.error(
+          `❌ Failed to migrate location for opdracht ${opdracht.id}:`,
+          error,
+        );
       }
     }
 
-    console.log('✅ Location migration completed');
+    console.log("✅ Location migration completed");
   } catch (error) {
-    console.error('❌ Location migration failed:', error);
+    console.error("❌ Location migration failed:", error);
     throw error;
   }
 }
 
 async function migrateCertificateData() {
-  console.log('🔄 Starting certificate data migration...');
+  console.log("🔄 Starting certificate data migration...");
 
   try {
     // Get all ZZPProfiles with legacy certificate strings
     const profiles = await prisma.zZPProfile.findMany({
       where: {
         certificatenLegacy: {
-          isEmpty: false
-        }
+          isEmpty: false,
+        },
       },
       select: {
         id: true,
-        certificatenLegacy: true
-      }
+        certificatenLegacy: true,
+      },
     });
 
     console.log(`Found ${profiles.length} profiles with legacy certificates`);
@@ -91,28 +98,33 @@ async function migrateCertificateData() {
             data: {
               zzpId: profile.id,
               naam: certName,
-              uitgever: 'Onbekend', // Will need manual update
-              status: 'PENDING',
-              beschrijving: 'Gemigreerd uit legacy systeem'
-            }
+              uitgever: "Onbekend", // Will need manual update
+              status: "PENDING",
+              beschrijving: "Gemigreerd uit legacy systeem",
+            },
           });
 
-          console.log(`✅ Created certificate "${certName}" for profile ${profile.id}`);
+          console.log(
+            `✅ Created certificate "${certName}" for profile ${profile.id}`,
+          );
         } catch (error) {
-          console.error(`❌ Failed to create certificate for profile ${profile.id}:`, error);
+          console.error(
+            `❌ Failed to create certificate for profile ${profile.id}:`,
+            error,
+          );
         }
       }
     }
 
-    console.log('✅ Certificate migration completed');
+    console.log("✅ Certificate migration completed");
   } catch (error) {
-    console.error('❌ Certificate migration failed:', error);
+    console.error("❌ Certificate migration failed:", error);
     throw error;
   }
 }
 
 async function updateFieldNames() {
-  console.log('🔄 Updating field names in existing data...');
+  console.log("🔄 Updating field names in existing data...");
 
   try {
     // This would be done via Prisma migrations, but documenting the SQL here:
@@ -128,26 +140,26 @@ async function updateFieldNames() {
     -- Note: These renames might not be needed if fields don't exist yet
     `);
 
-    console.log('✅ Field name update documentation created');
+    console.log("✅ Field name update documentation created");
   } catch (error) {
-    console.error('❌ Field name update failed:', error);
+    console.error("❌ Field name update failed:", error);
     throw error;
   }
 }
 
 async function addMissingDefaults() {
-  console.log('🔄 Adding missing default values...');
+  console.log("🔄 Adding missing default values...");
 
   try {
     // Update ZZPProfiles with missing new required fields
     await prisma.zZPProfile.updateMany({
       where: {
-        voornaam: null
+        voornaam: null,
       },
       data: {
-        voornaam: 'Onbekend',
-        achternaam: 'Onbekend'
-      }
+        voornaam: "Onbekend",
+        achternaam: "Onbekend",
+      },
     });
 
     // Update BedrijfProfiles with missing arrays
@@ -163,15 +175,15 @@ async function addMissingDefaults() {
         OR certificeringen IS NULL
     `;
 
-    console.log('✅ Missing defaults added');
+    console.log("✅ Missing defaults added");
   } catch (error) {
-    console.error('❌ Adding defaults failed:', error);
+    console.error("❌ Adding defaults failed:", error);
     throw error;
   }
 }
 
 async function main() {
-  console.log('🚀 Starting SecuryFlex data migration...\n');
+  console.log("🚀 Starting SecuryFlex data migration...\n");
 
   try {
     // Run migrations in sequence
@@ -180,9 +192,9 @@ async function main() {
     await updateFieldNames();
     await addMissingDefaults();
 
-    console.log('\n✅ All migrations completed successfully!');
+    console.log("\n✅ All migrations completed successfully!");
   } catch (error) {
-    console.error('\n❌ Migration failed:', error);
+    console.error("\n❌ Migration failed:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
@@ -198,5 +210,5 @@ export {
   migrateLocationData,
   migrateCertificateData,
   updateFieldNames,
-  addMissingDefaults
+  addMissingDefaults,
 };

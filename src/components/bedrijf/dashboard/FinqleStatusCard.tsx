@@ -1,21 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
-  CreditCard,
-  TrendingUp,
-  Clock,
-  CheckCircle,
+  Activity,
   AlertCircle,
   ArrowRight,
+  CheckCircle,
+  Clock,
+  CreditCard,
   Euro,
-  Activity
+  TrendingUp,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 interface FinqleTransaction {
   id: string;
@@ -32,13 +32,16 @@ interface FinqleStatusCardProps {
   compact?: boolean;
 }
 
-export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCardProps) {
-  const [isConnected, setIsConnected] = useState(true);
-  const [creditLimit, setCreditLimit] = useState(125000);
-  const [creditUsed, setCreditUsed] = useState(45000);
+export function FinqleStatusCard({
+  bedrijfId,
+  compact = false,
+}: FinqleStatusCardProps) {
+  const [isConnected, _setIsConnected] = useState(true);
+  const [creditLimit, _setCreditLimit] = useState(125000);
+  const [creditUsed, _setCreditUsed] = useState(45000);
   const [transactions, setTransactions] = useState<FinqleTransaction[]>([]);
-  const [weeklyVolume, setWeeklyVolume] = useState(22500);
-  const [directPaymentEnabled, setDirectPaymentEnabled] = useState(true);
+  const [weeklyVolume, _setWeeklyVolume] = useState(22500);
+  const [directPaymentEnabled, _setDirectPaymentEnabled] = useState(true);
 
   // Mock data - will be replaced with real Finqle API
   useEffect(() => {
@@ -51,7 +54,7 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
         amount: 450,
         status: "completed",
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        reference: "FNQ-2024-0912"
+        reference: "FNQ-2024-0912",
       },
       {
         id: "2",
@@ -60,7 +63,7 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
         amount: 15892,
         status: "pending",
         timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-        reference: "INV-2024-3701"
+        reference: "INV-2024-3701",
       },
       {
         id: "3",
@@ -69,7 +72,7 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
         amount: 487,
         status: "completed",
         timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        reference: "MARGE-2024-37"
+        reference: "MARGE-2024-37",
       },
       {
         id: "4",
@@ -78,10 +81,10 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
         amount: 380,
         status: "completed",
         timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
-        reference: "DP-2024-1823"
-      }
+        reference: "DP-2024-1823",
+      },
     ]);
-  }, [bedrijfId]);
+  }, []);
 
   const creditPercentage = (creditUsed / creditLimit) * 100;
   const creditAvailable = creditLimit - creditUsed;
@@ -124,7 +127,9 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Beschikbaar</span>
-            <span className="font-semibold">€{(creditAvailable / 1000).toFixed(0)}k</span>
+            <span className="font-semibold">
+              €{(creditAvailable / 1000).toFixed(0)}k
+            </span>
           </div>
           <Progress value={creditPercentage} className="h-2" />
           <p className="text-xs text-muted-foreground">
@@ -169,7 +174,9 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">Kredietlimiet</span>
-            <span className="text-lg font-bold">€{creditLimit.toLocaleString("nl-NL")}</span>
+            <span className="text-lg font-bold">
+              €{creditLimit.toLocaleString("nl-NL")}
+            </span>
           </div>
 
           <div>
@@ -183,7 +190,9 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
           </div>
 
           <div className="flex justify-between items-center pt-2 border-t">
-            <span className="text-sm font-medium">Beschikbaar voor direct payment</span>
+            <span className="text-sm font-medium">
+              Beschikbaar voor direct payment
+            </span>
             <span className="text-lg font-bold text-green-600">
               €{creditAvailable.toLocaleString("nl-NL")}
             </span>
@@ -198,7 +207,9 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
             <Activity className="h-4 w-4 text-blue-500" />
             <span className="text-xs text-muted-foreground">Week volume</span>
           </div>
-          <p className="text-lg font-bold">€{(weeklyVolume / 1000).toFixed(0)}k</p>
+          <p className="text-lg font-bold">
+            €{(weeklyVolume / 1000).toFixed(0)}k
+          </p>
           <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
             <TrendingUp className="h-3 w-3" />
             +12% vs vorige week
@@ -208,7 +219,9 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
         <div className="p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle className="h-4 w-4 text-green-500" />
-            <span className="text-xs text-muted-foreground">Direct payments</span>
+            <span className="text-xs text-muted-foreground">
+              Direct payments
+            </span>
           </div>
           <p className="text-lg font-bold">68%</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -229,7 +242,9 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
               <div className="flex items-start gap-2">
                 {getTransactionIcon(transaction.type)}
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{transaction.description}</p>
+                  <p className="text-sm font-medium">
+                    {transaction.description}
+                  </p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{formatTimeAgo(transaction.timestamp)}</span>
                     {transaction.reference && (
@@ -250,8 +265,8 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
                     transaction.status === "completed"
                       ? "success"
                       : transaction.status === "pending"
-                      ? "secondary"
-                      : "destructive"
+                        ? "secondary"
+                        : "destructive"
                   }
                   className="text-xs mt-1"
                 >
@@ -274,9 +289,7 @@ export function FinqleStatusCard({ bedrijfId, compact = false }: FinqleStatusCar
           </Link>
         </Button>
         <Button variant="outline" className="flex-1" asChild>
-          <Link href="/dashboard/bedrijf/finqle/rapporten">
-            Rapporten
-          </Link>
+          <Link href="/dashboard/bedrijf/finqle/rapporten">Rapporten</Link>
         </Button>
       </div>
 

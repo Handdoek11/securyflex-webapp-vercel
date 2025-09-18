@@ -1,21 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import {
+  AlertTriangle,
+  ArrowRight,
+  Briefcase,
   Calendar,
+  CheckCircle,
   Clock,
   MapPin,
-  Users,
-  AlertTriangle,
-  CheckCircle,
-  Briefcase,
   Shield,
-  ArrowRight,
-  Filter
+  Users,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -50,7 +49,10 @@ interface ActiveShiftsOverviewProps {
   showFilters?: boolean;
 }
 
-export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveShiftsOverviewProps) {
+export function ActiveShiftsOverview({
+  bedrijfId,
+  showFilters = true,
+}: ActiveShiftsOverviewProps) {
   const [filterType, setFilterType] = useState<ShiftType>("all");
   const [filterStatus, setFilterStatus] = useState<ShiftStatus>("all");
 
@@ -70,7 +72,7 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
       status: "partial",
       hourlyRate: 28,
       totalValue: 896,
-      finqleStatus: "direct_payment_available"
+      finqleStatus: "direct_payment_available",
     },
     {
       id: "2",
@@ -86,7 +88,7 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
       status: "full",
       hourlyRate: 25,
       totalValue: 1200,
-      finqleStatus: "regular_payment"
+      finqleStatus: "regular_payment",
     },
     {
       id: "3",
@@ -102,7 +104,7 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
       status: "urgent",
       hourlyRate: 30,
       totalValue: 480,
-      finqleStatus: "direct_payment_available"
+      finqleStatus: "direct_payment_available",
     },
     {
       id: "4",
@@ -118,17 +120,21 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
       status: "partial",
       hourlyRate: 26,
       totalValue: 936,
-      finqleStatus: "regular_payment"
-    }
+      finqleStatus: "regular_payment",
+    },
   ]);
 
-  const filteredShifts = shifts.filter(shift => {
+  const filteredShifts = shifts.filter((shift) => {
     if (filterType !== "all" && shift.type !== filterType) return false;
     if (filterStatus !== "all" && shift.status !== filterStatus) return false;
     return true;
   });
 
-  const getStatusBadge = (status: Shift["status"], assigned: number, required: number) => {
+  const getStatusBadge = (
+    status: Shift["status"],
+    assigned: number,
+    required: number,
+  ) => {
     switch (status) {
       case "full":
         return (
@@ -164,10 +170,10 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
 
   const stats = {
     total: shifts.length,
-    internal: shifts.filter(s => s.type === "internal").length,
-    external: shifts.filter(s => s.type === "external").length,
-    urgent: shifts.filter(s => s.status === "urgent").length,
-    totalValue: shifts.reduce((sum, s) => sum + (s.totalValue || 0), 0)
+    internal: shifts.filter((s) => s.type === "internal").length,
+    external: shifts.filter((s) => s.type === "external").length,
+    urgent: shifts.filter((s) => s.status === "urgent").length,
+    totalValue: shifts.reduce((sum, s) => sum + (s.totalValue || 0), 0),
   };
 
   return (
@@ -181,13 +187,17 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
               Actieve Shifts
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              {stats.total} shifts • {stats.internal} intern • {stats.external} extern
+              {stats.total} shifts • {stats.internal} intern • {stats.external}{" "}
+              extern
             </p>
           </div>
 
           {showFilters && (
             <div className="flex items-center gap-2">
-              <Select value={filterType} onValueChange={(value) => setFilterType(value as ShiftType)}>
+              <Select
+                value={filterType}
+                onValueChange={(value) => setFilterType(value as ShiftType)}
+              >
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
@@ -198,7 +208,10 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
                 </SelectContent>
               </Select>
 
-              <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as ShiftStatus)}>
+              <Select
+                value={filterStatus}
+                onValueChange={(value) => setFilterStatus(value as ShiftStatus)}
+              >
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
@@ -220,7 +233,8 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-red-500" />
                 <span className="text-sm font-medium text-red-700 dark:text-red-300">
-                  {stats.urgent} urgente shift{stats.urgent > 1 ? "s" : ""} vereisen directe actie
+                  {stats.urgent} urgente shift{stats.urgent > 1 ? "s" : ""}{" "}
+                  vereisen directe actie
                 </span>
               </div>
               <Button size="sm" variant="destructive">
@@ -244,7 +258,9 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
                     {getTypeIcon(shift.type)}
                     <div>
                       <h4 className="font-medium">{shift.title}</h4>
-                      <p className="text-sm text-muted-foreground">{shift.client}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {shift.client}
+                      </p>
                     </div>
                     {shift.type === "internal" ? (
                       <Badge variant="outline" className="ml-auto">
@@ -269,7 +285,8 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
                     </span>
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      {shift.assignedBeveiligers}/{shift.requiredBeveiligers} beveiligers
+                      {shift.assignedBeveiligers}/{shift.requiredBeveiligers}{" "}
+                      beveiligers
                     </span>
                     {shift.hourlyRate && (
                       <span className="font-medium text-foreground">
@@ -281,7 +298,11 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
                   {/* Progress Bar */}
                   <div className="mt-3">
                     <Progress
-                      value={(shift.assignedBeveiligers / shift.requiredBeveiligers) * 100}
+                      value={
+                        (shift.assignedBeveiligers /
+                          shift.requiredBeveiligers) *
+                        100
+                      }
                       className="h-2"
                     />
                   </div>
@@ -302,7 +323,11 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
 
                 {/* Status and Actions */}
                 <div className="ml-4 text-right space-y-2">
-                  {getStatusBadge(shift.status, shift.assignedBeveiligers, shift.requiredBeveiligers)}
+                  {getStatusBadge(
+                    shift.status,
+                    shift.assignedBeveiligers,
+                    shift.requiredBeveiligers,
+                  )}
 
                   {shift.totalValue && (
                     <p className="text-sm font-semibold">
@@ -332,7 +357,8 @@ export function ActiveShiftsOverview({ bedrijfId, showFilters = true }: ActiveSh
         {/* Footer Actions */}
         <div className="flex items-center justify-between pt-4 border-t">
           <p className="text-sm text-muted-foreground">
-            Totale waarde: <span className="font-semibold text-foreground">
+            Totale waarde:{" "}
+            <span className="font-semibold text-foreground">
               €{stats.totalValue.toLocaleString("nl-NL")}
             </span>
           </p>

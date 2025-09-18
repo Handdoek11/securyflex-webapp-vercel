@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Play, X } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Play, X } from "lucide-react";
 
 interface VideoDemoProps {
   title?: string;
@@ -70,23 +70,23 @@ export function VideoDemo({
   }
 
   return (
-    <Card className={`cursor-pointer transition-all hover:shadow-md ${className}`} onClick={handlePlay}>
+    <Card
+      className={`cursor-pointer transition-all hover:shadow-md ${className}`}
+      onClick={handlePlay}
+    >
       <CardContent className="p-4">
         <div className="relative aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg overflow-hidden mb-4">
           {thumbnail ? (
-            <Image
-              src={thumbnail}
-              alt={title}
-              fill
-              className="object-cover"
-            />
+            <Image src={thumbnail} alt={title} fill className="object-cover" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-2">
                   <span className="text-2xl">📱</span>
                 </div>
-                <p className="text-sm text-muted-foreground">Beveiliger met app</p>
+                <p className="text-sm text-muted-foreground">
+                  Beveiliger met app
+                </p>
               </div>
             </div>
           )}

@@ -1,9 +1,9 @@
 "use client";
 
+import { Building2, Factory, Shield } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useRole } from "@/contexts/RoleContext";
 import { cn } from "@/lib/utils";
-import { Shield, Building2, Factory } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface RoleSwitcherProps {
   variant?: "default" | "mobile";
@@ -14,14 +14,20 @@ export function RoleSwitcher({ variant = "default" }: RoleSwitcherProps) {
   const router = useRouter();
 
   // Handle role change with URL update
-  const handleRoleChange = (roleId: "ZZP_BEVEILIGER" | "BEDRIJF" | "OPDRACHTGEVER") => {
+  const handleRoleChange = (
+    roleId: "ZZP_BEVEILIGER" | "BEDRIJF" | "OPDRACHTGEVER",
+  ) => {
     setActiveRole(roleId);
 
     // Update URL with appropriate parameter
     const roleParam =
-      roleId === "ZZP_BEVEILIGER" ? "beveiligers" :
-      roleId === "BEDRIJF" ? "beveiligingsbedrijven" :
-      roleId === "OPDRACHTGEVER" ? "opdrachtgevers" : "";
+      roleId === "ZZP_BEVEILIGER"
+        ? "beveiligers"
+        : roleId === "BEDRIJF"
+          ? "beveiligingsbedrijven"
+          : roleId === "OPDRACHTGEVER"
+            ? "opdrachtgevers"
+            : "";
 
     if (roleParam) {
       router.push(`/?role=${roleParam}`);
@@ -34,21 +40,21 @@ export function RoleSwitcher({ variant = "default" }: RoleSwitcherProps) {
       label: "Beveiliger",
       shortLabel: "Beveiliger",
       icon: Shield,
-      description: "Vind shifts en werk flexibel"
+      description: "Vind shifts en werk flexibel",
     },
     {
       id: "BEDRIJF" as const,
       label: "Beveiligingsbedrijf",
       shortLabel: "Bedrijf",
       icon: Building2,
-      description: "Manage je team"
+      description: "Manage je team",
     },
     {
       id: "OPDRACHTGEVER" as const,
       label: "Opdrachtgever",
       shortLabel: "Klant",
       icon: Factory,
-      description: "Boek beveiliging"
+      description: "Boek beveiliging",
     },
   ];
 
@@ -68,7 +74,7 @@ export function RoleSwitcher({ variant = "default" }: RoleSwitcherProps) {
                 "text-xs font-medium",
                 isActive
                   ? "bg-white dark:bg-gray-900 text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {role.shortLabel}
@@ -95,7 +101,7 @@ export function RoleSwitcher({ variant = "default" }: RoleSwitcherProps) {
               "text-sm font-medium",
               isActive
                 ? "bg-white dark:bg-gray-900 text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-4 w-4" />

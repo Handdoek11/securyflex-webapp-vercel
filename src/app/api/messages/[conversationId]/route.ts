@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 interface RouteParams {
@@ -18,13 +18,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const { conversationId } = await params;
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
     const cursor = searchParams.get("cursor");
 
     // Check if user is participant
@@ -32,15 +32,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       where: {
         conversationId_userId: {
           conversationId,
-          userId: session.user.id
-        }
-      }
+          userId: session.user.id,
+        },
+      },
     });
 
     if (!participant || !participant.isActive) {
       return NextResponse.json(
         { success: false, error: "Not a participant in this conversation" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -51,9 +51,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         isDeleted: false,
         ...(cursor && {
           createdAt: {
-            lt: new Date(cursor)
-          }
-        })
+            lt: new Date(cursor),
+          },
+        }),
       },
       include: {
         sender: {
@@ -61,25 +61,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             id: true,
             name: true,
             image: true,
-            role: true
-          }
-        }
+            role: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "desc"
+        createdAt: "desc",
       },
-      take: limit
+      take: limit,
     });
 
     // Mark messages as read
     await prisma.conversationParticipant.update({
       where: {
-        id: participant.id
+        id: participant.id,
       },
       data: {
         unreadCount: 0,
-        lastReadAt: new Date()
-      }
+        lastReadAt: new Date(),
+      },
     });
 
     return NextResponse.json({
@@ -87,15 +87,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       data: {
         messages: messages.reverse(),
         hasMore: messages.length === limit,
-        nextCursor: messages.length > 0 ? messages[0].createdAt.toISOString() : null
-      }
+        nextCursor:
+          messages.length > 0 ? messages[0].createdAt.toISOString() : null,
+      },
     });
-
   } catch (error) {
     console.error("Error fetching messages:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch messages" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -116,14 +116,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const sendMessageSchema = z.object({
       content: z.string().min(1),
-      type: z.enum(["TEXT", "IMAGE", "FILE", "LOCATION", "SYSTEM", "ASSIGNMENT"]).default("TEXT"),
-      attachments: z.array(z.object({
-        url: z.string(),
-        name: z.string(),
-        type: z.string(),
-        size: z.number()
-      })).optional(),
-      metadata: z.any().optional()
+      type: z
+        .enum(["TEXT", "IMAGE", "FILE", "LOCATION", "SYSTEM", "ASSIGNMENT"])
+        .default("TEXT"),
+      attachments: z
+        .array(
+          z.object({
+            url: z.string(),
+            name: z.string(),
+            type: z.string(),
+            size: z.number(),
+          }),
+        )
+        .optional(),
+      metadata: z.any().optional(),
     });
 
     const body = await request.json();
@@ -134,15 +140,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       where: {
         conversationId_userId: {
           conversationId,
-          userId: session.user.id
-        }
-      }
+          userId: session.user.id,
+        },
+      },
     });
 
     if (!participant || !participant.isActive) {
       return NextResponse.json(
         { success: false, error: "Not a participant in this conversation" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -154,7 +160,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         content: validatedData.content,
         type: validatedData.type,
         attachments: validatedData.attachments,
-        metadata: validatedData.metadata
+        metadata: validatedData.metadata,
       },
       include: {
         sender: {
@@ -162,16 +168,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             id: true,
             name: true,
             image: true,
-            role: true
-          }
-        }
-      }
+            role: true,
+          },
+        },
+      },
     });
 
     // Update conversation lastMessageAt
     await prisma.conversation.update({
       where: { id: conversationId },
-      data: { lastMessageAt: new Date() }
+      data: { lastMessageAt: new Date() },
     });
 
     // Update unread counts for other participants
@@ -179,11 +185,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       where: {
         conversationId,
         userId: { not: session.user.id },
-        isActive: true
+        isActive: true,
       },
       data: {
-        unreadCount: { increment: 1 }
-      }
+        unreadCount: { increment: 1 },
+      },
     });
 
     // Get other participants for notifications
@@ -191,20 +197,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       where: {
         conversationId,
         userId: { not: session.user.id },
-        isActive: true
+        isActive: true,
       },
       include: {
         user: {
           select: {
             id: true,
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
 
     // Send notifications
-    const notificationPromises = otherParticipants.map(participant =>
+    const notificationPromises = otherParticipants.map((participant) =>
       prisma.notification.create({
         data: {
           userId: participant.userId,
@@ -212,9 +218,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           category: "MESSAGE",
           title: `Nieuw bericht van ${session.user.name}`,
           message: validatedData.content.substring(0, 100),
-          actionUrl: `/dashboard/messages/${conversationId}`
-        }
-      })
+          actionUrl: `/dashboard/messages/${conversationId}`,
+        },
+      }),
     );
 
     await Promise.all(notificationPromises);
@@ -224,25 +230,28 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     await supabase.channel(`conversation:${conversationId}`).send({
       type: "broadcast",
       event: "new_message",
-      payload: message
+      payload: message,
     });
 
     return NextResponse.json({
       success: true,
-      data: message
+      data: message,
     });
-
   } catch (error) {
     console.error("Error sending message:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid message data", details: error.errors },
-        { status: 400 }
+        {
+          success: false,
+          error: "Invalid message data",
+          details: error.errors,
+        },
+        { status: 400 },
       );
     }
     return NextResponse.json(
       { success: false, error: "Failed to send message" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -255,14 +264,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const updateMessageSchema = z.object({
       messageId: z.string(),
       action: z.enum(["edit", "delete"]),
-      content: z.string().optional()
+      content: z.string().optional(),
     });
 
     const body = await request.json();
@@ -272,14 +281,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const message = await prisma.message.findFirst({
       where: {
         id: validatedData.messageId,
-        senderId: session.user.id
-      }
+        senderId: session.user.id,
+      },
     });
 
     if (!message) {
       return NextResponse.json(
         { success: false, error: "Message not found or you're not the sender" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -291,16 +300,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         data: {
           content: validatedData.content,
           isEdited: true,
-          editedAt: new Date()
-        }
+          editedAt: new Date(),
+        },
       });
     } else if (validatedData.action === "delete") {
       updatedMessage = await prisma.message.update({
         where: { id: validatedData.messageId },
         data: {
           isDeleted: true,
-          deletedAt: new Date()
-        }
+          deletedAt: new Date(),
+        },
       });
     }
 
@@ -308,26 +317,28 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const supabase = createSupabaseServerClient();
     await supabase.channel(`conversation:${conversationId}`).send({
       type: "broadcast",
-      event: validatedData.action === "delete" ? "message_deleted" : "message_edited",
-      payload: updatedMessage
+      event:
+        validatedData.action === "delete"
+          ? "message_deleted"
+          : "message_edited",
+      payload: updatedMessage,
     });
 
     return NextResponse.json({
       success: true,
-      data: updatedMessage
+      data: updatedMessage,
     });
-
   } catch (error) {
     console.error("Error updating message:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Invalid update data", details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return NextResponse.json(
       { success: false, error: "Failed to update message" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

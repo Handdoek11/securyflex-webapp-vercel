@@ -1,27 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import type {
+  BedrijfProfile,
+  BedrijfTeamAssignment,
+  Opdracht,
+  Opdrachtgever,
+  OpdrachtSollicitatie,
+  Werkuur,
+} from "@prisma/client";
 import {
-  CheckCircle,
-  Circle,
-  Clock,
-  Users,
-  Shield,
-  Euro,
-  MapPin,
   AlertCircle,
   ArrowRight,
-  Calendar,
+  Building2,
+  CheckCircle,
+  Clock,
   CreditCard,
   FileCheck,
+  Shield,
   UserCheck,
-  Building2
+  Users,
 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeOpdrachten } from "@/hooks/useRealtimeOpdrachten";
 import { cn } from "@/lib/utils";
 
@@ -41,23 +45,38 @@ interface OpdrachtFlowStatusProps {
   onActionRequired?: (action: string) => void;
 }
 
+interface OpdrachtWithRelations extends Opdracht {
+  bedrijf?: BedrijfProfile | null;
+  opdrachtgever?: Opdrachtgever | null;
+  sollicitaties?: OpdrachtSollicitatie[];
+  assignments?: BedrijfTeamAssignment[];
+  werkuren?: Werkuur[];
+  beveiligers?: unknown[];
+}
+
+interface FinqleStatusData {
+  paymentStatus?: string;
+  totalAmount?: number;
+  paidAmount?: number;
+  lastUpdate?: Date;
+}
+
 export function OpdrachtFlowStatus({
   opdrachtId,
   userRole,
-  onActionRequired
+  onActionRequired,
 }: OpdrachtFlowStatusProps) {
-  const [opdracht, setOpdracht] = useState<any>(null);
+  const [_opdracht, setOpdracht] = useState<OpdrachtWithRelations | null>(null);
   const [flowSteps, setFlowSteps] = useState<FlowStep[]>([]);
-  const [finqleStatus, setFinqleStatus] = useState<any>(null);
+  const [finqleStatus, setFinqleStatus] = useState<FinqleStatusData | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
-  const { opdrachten, lastUpdate } = useRealtimeOpdrachten({ status: opdrachtId });
+  const { opdrachten, lastUpdate } = useRealtimeOpdrachten({
+    status: opdrachtId,
+  });
 
-  useEffect(() => {
-    fetchOpdrachtDetails();
-    fetchFinqleStatus();
-  }, [opdrachtId, lastUpdate]);
-
-  const fetchOpdrachtDetails = async () => {
+  const fetchOpdrachtDetails = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/opdrachten/${opdrachtId}`);
@@ -72,9 +91,9 @@ export function OpdrachtFlowStatus({
     } finally {
       setLoading(false);
     }
-  };
+  }, [opdrachtId, updateFlowSteps]);
 
-  const fetchFinqleStatus = async () => {
+  const fetchFinqleStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/opdrachten/${opdrachtId}/finqle`);
       const data = await response.json();
@@ -85,143 +104,194 @@ export function OpdrachtFlowStatus({
     } catch (error) {
       console.error("Error fetching Finqle status:", error);
     }
-  };
+  }, [opdrachtId]);
 
-  const updateFlowSteps = (opdrachtData: any) => {
-    const steps: FlowStep[] = [
-      {
-        id: "created",
-        label: "Opdracht Aangemaakt",
-        description: "Opdrachtgever heeft de opdracht geplaatst",
-        icon: FileCheck,
-        status: "completed",
-        timestamp: new Date(opdrachtData.createdAt),
-        details: `${opdrachtData.aantalBeveiligers} beveiligers nodig`
-      },
-      {
-        id: "matching",
-        label: "Matching & Sollicitaties",
-        description: "Bedrijven en ZZP'ers kunnen solliciteren",
-        icon: Users,
-        status: getMatchingStatus(opdrachtData),
-        details: `${opdrachtData.beveiligers?.length || 0} sollicitaties`
-      },
-      {
-        id: "acceptance",
-        label: "Bedrijf Accepteert",
-        description: "Een bedrijf accepteert de opdracht",
-        icon: Building2,
-        status: opdrachtData.bedrijfId ? "completed" :
-                opdrachtData.status === "OPEN" ? "active" : "pending",
-        timestamp: opdrachtData.bedrijfId ? new Date(opdrachtData.updatedAt) : undefined,
-        details: opdrachtData.bedrijf?.bedrijfsnaam
-      },
-      {
-        id: "assignment",
-        label: "Team Toewijzing",
-        description: "Bedrijf wijst teamleden toe",
-        icon: UserCheck,
-        status: getAssignmentStatus(opdrachtData),
-        details: `${opdrachtData.assignments?.filter((a: any) => a.status === "CONFIRMED").length || 0}/${opdrachtData.aantalBeveiligers} bevestigd`
-      },
-      {
-        id: "execution",
-        label: "Uitvoering",
-        description: "Beveiligers voeren opdracht uit",
-        icon: Shield,
-        status: getExecutionStatus(opdrachtData),
-        timestamp: opdrachtData.status === "BEZIG" ? new Date(opdrachtData.startDatum) : undefined,
-        details: formatExecutionTime(opdrachtData)
-      },
-      {
-        id: "verification",
-        label: "Werkuren Verificatie",
-        description: "GPS clock-in/out en goedkeuring",
-        icon: Clock,
-        status: getVerificationStatus(opdrachtData),
-        details: `${opdrachtData.werkuren?.filter((w: any) => w.status === "APPROVED").length || 0} uren goedgekeurd`
-      },
-      {
-        id: "payment",
-        label: "Finqle Betaling",
-        description: "Automatische facturatie en betaling",
-        icon: CreditCard,
-        status: getPaymentStatus(opdrachtData, finqleStatus),
-        details: finqleStatus ? formatPaymentDetails(finqleStatus) : undefined
-      },
-      {
-        id: "completed",
-        label: "Afgerond",
-        description: "Opdracht volledig afgerond",
-        icon: CheckCircle,
-        status: opdrachtData.status === "AFGEROND" ? "completed" : "pending",
-        timestamp: opdrachtData.status === "AFGEROND" ? new Date(opdrachtData.updatedAt) : undefined
-      }
-    ];
+  useEffect(() => {
+    fetchOpdrachtDetails();
+    fetchFinqleStatus();
+  }, [fetchOpdrachtDetails, fetchFinqleStatus]);
 
-    setFlowSteps(steps);
-  };
+  const updateFlowSteps = useCallback(
+    (opdrachtData: OpdrachtWithRelations) => {
+      const steps: FlowStep[] = [
+        {
+          id: "created",
+          label: "Opdracht Aangemaakt",
+          description: "Opdrachtgever heeft de opdracht geplaatst",
+          icon: FileCheck,
+          status: "completed",
+          timestamp: new Date(opdrachtData.createdAt),
+          details: `${opdrachtData.aantalBeveiligers} beveiligers nodig`,
+        },
+        {
+          id: "matching",
+          label: "Matching & Sollicitaties",
+          description: "Bedrijven en ZZP'ers kunnen solliciteren",
+          icon: Users,
+          status: getMatchingStatus(opdrachtData),
+          details: `${opdrachtData.beveiligers?.length || 0} sollicitaties`,
+        },
+        {
+          id: "acceptance",
+          label: "Bedrijf Accepteert",
+          description: "Een bedrijf accepteert de opdracht",
+          icon: Building2,
+          status: opdrachtData.bedrijfId
+            ? "completed"
+            : opdrachtData.status === "OPEN"
+              ? "active"
+              : "pending",
+          timestamp: opdrachtData.bedrijfId
+            ? new Date(opdrachtData.updatedAt)
+            : undefined,
+          details: opdrachtData.bedrijf?.bedrijfsnaam,
+        },
+        {
+          id: "assignment",
+          label: "Team Toewijzing",
+          description: "Bedrijf wijst teamleden toe",
+          icon: UserCheck,
+          status: getAssignmentStatus(opdrachtData),
+          details: `${opdrachtData.assignments?.filter((a) => a.status === "CONFIRMED").length || 0}/${opdrachtData.aantalBeveiligers} bevestigd`,
+        },
+        {
+          id: "execution",
+          label: "Uitvoering",
+          description: "Beveiligers voeren opdracht uit",
+          icon: Shield,
+          status: getExecutionStatus(opdrachtData),
+          timestamp:
+            opdrachtData.status === "BEZIG"
+              ? new Date(opdrachtData.startDatum)
+              : undefined,
+          details: formatExecutionTime(opdrachtData),
+        },
+        {
+          id: "verification",
+          label: "Werkuren Verificatie",
+          description: "GPS clock-in/out en goedkeuring",
+          icon: Clock,
+          status: getVerificationStatus(opdrachtData),
+          details: `${opdrachtData.werkuren?.filter((w) => w.status === "APPROVED").length || 0} uren goedgekeurd`,
+        },
+        {
+          id: "payment",
+          label: "Finqle Betaling",
+          description: "Automatische facturatie en betaling",
+          icon: CreditCard,
+          status: getPaymentStatus(opdrachtData, finqleStatus),
+          details: finqleStatus
+            ? formatPaymentDetails(finqleStatus)
+            : undefined,
+        },
+        {
+          id: "completed",
+          label: "Afgerond",
+          description: "Opdracht volledig afgerond",
+          icon: CheckCircle,
+          status: opdrachtData.status === "AFGEROND" ? "completed" : "pending",
+          timestamp:
+            opdrachtData.status === "AFGEROND"
+              ? new Date(opdrachtData.updatedAt)
+              : undefined,
+        },
+      ];
 
-  const getMatchingStatus = (data: any): FlowStep["status"] => {
+      setFlowSteps(steps);
+    },
+    [
+      finqleStatus,
+      formatExecutionTime,
+      formatPaymentDetails,
+      getAssignmentStatus,
+      getExecutionStatus,
+      getMatchingStatus,
+      getPaymentStatus,
+      getVerificationStatus,
+    ],
+  );
+
+  const getMatchingStatus = (
+    data: OpdrachtWithRelations,
+  ): FlowStep["status"] => {
     if (data.bedrijfId) return "completed";
     if (data.beveiligers?.length > 0) return "active";
     return "pending";
   };
 
-  const getAssignmentStatus = (data: any): FlowStep["status"] => {
+  const getAssignmentStatus = (
+    data: OpdrachtWithRelations,
+  ): FlowStep["status"] => {
     if (!data.bedrijfId) return "pending";
-    const confirmedCount = data.assignments?.filter((a: any) => a.status === "CONFIRMED").length || 0;
+    const confirmedCount =
+      data.assignments?.filter((a) => a.status === "CONFIRMED").length || 0;
     if (confirmedCount === data.aantalBeveiligers) return "completed";
     if (confirmedCount > 0) return "active";
     return "pending";
   };
 
-  const getExecutionStatus = (data: any): FlowStep["status"] => {
+  const getExecutionStatus = (
+    data: OpdrachtWithRelations,
+  ): FlowStep["status"] => {
     if (data.status === "AFGEROND") return "completed";
     if (data.status === "BEZIG") return "active";
     return "pending";
   };
 
-  const getVerificationStatus = (data: any): FlowStep["status"] => {
-    const approvedCount = data.werkuren?.filter((w: any) => w.status === "APPROVED").length || 0;
+  const getVerificationStatus = (
+    data: OpdrachtWithRelations,
+  ): FlowStep["status"] => {
+    const approvedCount =
+      data.werkuren?.filter((w) => w.status === "APPROVED").length || 0;
     const totalHours = data.werkuren?.length || 0;
     if (totalHours === 0) return "pending";
     if (approvedCount === totalHours) return "completed";
     return "active";
   };
 
-  const getPaymentStatus = (data: any, finqle: any): FlowStep["status"] => {
+  const getPaymentStatus = (
+    _data: OpdrachtWithRelations,
+    finqle: FinqleStatusData | null,
+  ): FlowStep["status"] => {
     if (!finqle) return "pending";
-    if (finqle.stats?.paid === finqle.stats?.totalTransactions) return "completed";
-    if (finqle.stats?.paid > 0) return "active";
+    if (
+      (finqle as any).stats?.paid === (finqle as any).stats?.totalTransactions
+    )
+      return "completed";
+    if ((finqle as any).stats?.paid > 0) return "active";
     return "pending";
   };
 
-  const formatExecutionTime = (data: any) => {
+  const formatExecutionTime = (data: OpdrachtWithRelations) => {
     if (data.status !== "BEZIG") return undefined;
     const start = new Date(data.startDatum);
     const end = new Date(data.eindDatum);
     const now = new Date();
     if (now < start) return "Start binnenkort";
     if (now > end) return "Wacht op afronden";
-    const progress = ((now.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100;
+    const progress =
+      ((now.getTime() - start.getTime()) / (end.getTime() - start.getTime())) *
+      100;
     return `${Math.round(progress)}% voltooid`;
   };
 
-  const formatPaymentDetails = (finqle: any) => {
-    if (!finqle.stats) return undefined;
-    const total = finqle.stats.totalAmount;
-    const paid = finqle.stats.paid || 0;
-    const directPayments = finqle.stats.directPayments || 0;
+  const formatPaymentDetails = (finqle: FinqleStatusData) => {
+    const stats = (finqle as any).stats;
+    if (!stats) return undefined;
+    const total = stats.totalAmount;
+    const _paid = stats.paid || 0;
+    const directPayments = stats.directPayments || 0;
     return `€${total.toFixed(2)} (${directPayments} direct)`;
   };
 
-  const getActiveStepIndex = () => {
-    return flowSteps.findIndex(step => step.status === "active");
+  const _getActiveStepIndex = () => {
+    return flowSteps.findIndex((step) => step.status === "active");
   };
 
   const getCompletedPercentage = () => {
-    const completed = flowSteps.filter(step => step.status === "completed").length;
+    const completed = flowSteps.filter(
+      (step) => step.status === "completed",
+    ).length;
     return (completed / flowSteps.length) * 100;
   };
 
@@ -231,7 +301,7 @@ export function OpdrachtFlowStatus({
         <Skeleton className="h-8 w-48 mb-4" />
         <Skeleton className="h-2 w-full mb-6" />
         <div className="space-y-4">
-          {[1, 2, 3].map(i => (
+          {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-20 w-full" />
           ))}
         </div>
@@ -247,7 +317,8 @@ export function OpdrachtFlowStatus({
           <h3 className="text-lg font-semibold mb-2">Opdracht Status Flow</h3>
           <Progress value={getCompletedPercentage()} className="h-2" />
           <p className="text-sm text-muted-foreground mt-2">
-            {flowSteps.filter(s => s.status === "completed").length} van {flowSteps.length} stappen voltooid
+            {flowSteps.filter((s) => s.status === "completed").length} van{" "}
+            {flowSteps.length} stappen voltooid
           </p>
         </div>
 
@@ -266,7 +337,7 @@ export function OpdrachtFlowStatus({
                   <div
                     className={cn(
                       "absolute left-6 top-12 w-0.5 h-16",
-                      isCompleted ? "bg-green-500" : "bg-muted"
+                      isCompleted ? "bg-green-500" : "bg-muted",
                     )}
                   />
                 )}
@@ -277,7 +348,7 @@ export function OpdrachtFlowStatus({
                     "flex gap-4 p-4 rounded-lg transition-colors",
                     isActive && "bg-primary/5 border border-primary",
                     isCompleted && "bg-green-50 dark:bg-green-950/20",
-                    isFailed && "bg-red-50 dark:bg-red-950/20"
+                    isFailed && "bg-red-50 dark:bg-red-950/20",
                   )}
                 >
                   {/* Icon */}
@@ -285,9 +356,10 @@ export function OpdrachtFlowStatus({
                     className={cn(
                       "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center",
                       isCompleted && "bg-green-500 text-white",
-                      isActive && "bg-primary text-primary-foreground animate-pulse",
+                      isActive &&
+                        "bg-primary text-primary-foreground animate-pulse",
                       isFailed && "bg-red-500 text-white",
-                      !isCompleted && !isActive && !isFailed && "bg-muted"
+                      !isCompleted && !isActive && !isFailed && "bg-muted",
                     )}
                   >
                     <Icon className="h-6 w-6" />
@@ -331,27 +403,31 @@ export function OpdrachtFlowStatus({
                     )}
 
                     {/* Action Buttons for Active Steps */}
-                    {isActive && userRole === "BEDRIJF" && step.id === "assignment" && (
-                      <Button
-                        size="sm"
-                        className="mt-3"
-                        onClick={() => onActionRequired?.("assign-team")}
-                      >
-                        Team Toewijzen
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    )}
+                    {isActive &&
+                      userRole === "BEDRIJF" &&
+                      step.id === "assignment" && (
+                        <Button
+                          size="sm"
+                          className="mt-3"
+                          onClick={() => onActionRequired?.("assign-team")}
+                        >
+                          Team Toewijzen
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      )}
 
-                    {isActive && userRole === "OPDRACHTGEVER" && step.id === "verification" && (
-                      <Button
-                        size="sm"
-                        className="mt-3"
-                        onClick={() => onActionRequired?.("approve-hours")}
-                      >
-                        Uren Goedkeuren
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    )}
+                    {isActive &&
+                      userRole === "OPDRACHTGEVER" &&
+                      step.id === "verification" && (
+                        <Button
+                          size="sm"
+                          className="mt-3"
+                          onClick={() => onActionRequired?.("approve-hours")}
+                        >
+                          Uren Goedkeuren
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      )}
                   </div>
                 </div>
               </div>
@@ -360,7 +436,7 @@ export function OpdrachtFlowStatus({
         </div>
 
         {/* Finqle Status Card */}
-        {finqleStatus && finqleStatus.stats && (
+        {finqleStatus?.stats && (
           <Card className="p-4 bg-primary/5 border-primary/20">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -375,17 +451,22 @@ export function OpdrachtFlowStatus({
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Totaal</p>
-                <p className="font-semibold">€{finqleStatus.stats.totalAmount.toFixed(2)}</p>
+                <p className="font-semibold">
+                  €{finqleStatus.stats.totalAmount.toFixed(2)}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Betaald</p>
                 <p className="font-semibold text-green-600">
-                  {finqleStatus.stats.paid} / {finqleStatus.stats.totalTransactions}
+                  {finqleStatus.stats.paid} /{" "}
+                  {finqleStatus.stats.totalTransactions}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">In behandeling</p>
-                <p className="font-semibold text-orange-600">{finqleStatus.stats.pending}</p>
+                <p className="font-semibold text-orange-600">
+                  {finqleStatus.stats.pending}
+                </p>
               </div>
             </div>
           </Card>

@@ -1,54 +1,46 @@
 "use client";
 
-import React, { useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  User,
-  Bell,
-  Shield,
-  MapPin,
-  Smartphone,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  Save,
-  RefreshCw,
-  Trash2,
-  Download,
-  Upload,
-  Globe,
-  Moon,
-  Sun,
-  Monitor,
   AlertCircle,
-  CheckCircle,
-  Settings2,
+  Bell,
+  Download,
+  Lock,
+  Mail,
+  MapPin,
+  Monitor,
+  RefreshCw,
+  Save,
+  Shield,
+  Smartphone,
+  Trash2,
+  Upload,
+  User,
 } from "lucide-react";
+import React, { useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
-  FormSection,
   FormGrid,
+  FormSection,
   InputField,
   SelectField,
   SwitchField,
-  TextareaField,
 } from "@/components/forms/FormField";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  DeleteConfirm,
+  ResetFormConfirm,
+} from "@/components/ui/confirm-dialog";
 import { FileUpload } from "@/components/ui/file-upload";
 import { GPSTracker } from "@/components/ui/gps-tracker";
-import { DeleteConfirm, ResetFormConfirm } from "@/components/ui/confirm-dialog";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
-import { settingsSchema, type SettingsData } from "@/lib/validation/schemas";
-import { cn } from "@/lib/utils";
+import { type SettingsData, settingsSchema } from "@/lib/validation/schemas";
 
 // Mock settings data - would come from API
 const mockSettingsData: SettingsData = {
@@ -105,7 +97,12 @@ export default function SettingsPage() {
     mode: "onChange",
   });
 
-  const { handleSubmit, reset, watch, formState: { isDirty, isValid } } = methods;
+  const {
+    handleSubmit,
+    reset,
+    watch,
+    formState: { isDirty, isValid },
+  } = methods;
 
   // Watch for changes
   React.useEffect(() => {
@@ -116,12 +113,12 @@ export default function SettingsPage() {
     setIsLoading(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       console.log("Settings to save:", data);
       toast.success("Instellingen opgeslagen");
       setHasChanges(false);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Fout bij opslaan van instellingen");
     } finally {
       setIsLoading(false);
@@ -136,9 +133,9 @@ export default function SettingsPage() {
   const handleDeleteAccount = async () => {
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       toast.success("Account verwijdering aangevraagd");
-    } catch (error) {
+    } catch (_error) {
       toast.error("Fout bij account verwijdering");
     }
   };
@@ -191,17 +188,30 @@ export default function SettingsPage() {
       <div className="p-4">
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="account" className="flex items-center gap-2">
+                <TabsTrigger
+                  value="account"
+                  className="flex items-center gap-2"
+                >
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">Account</span>
                 </TabsTrigger>
-                <TabsTrigger value="notifications" className="flex items-center gap-2">
+                <TabsTrigger
+                  value="notifications"
+                  className="flex items-center gap-2"
+                >
                   <Bell className="h-4 w-4" />
                   <span className="hidden sm:inline">Meldingen</span>
                 </TabsTrigger>
-                <TabsTrigger value="privacy" className="flex items-center gap-2">
+                <TabsTrigger
+                  value="privacy"
+                  className="flex items-center gap-2"
+                >
                   <Shield className="h-4 w-4" />
                   <span className="hidden sm:inline">Privacy</span>
                 </TabsTrigger>
@@ -209,7 +219,10 @@ export default function SettingsPage() {
                   <MapPin className="h-4 w-4" />
                   <span className="hidden sm:inline">Werk</span>
                 </TabsTrigger>
-                <TabsTrigger value="security" className="flex items-center gap-2">
+                <TabsTrigger
+                  value="security"
+                  className="flex items-center gap-2"
+                >
                   <Lock className="h-4 w-4" />
                   <span className="hidden sm:inline">Beveiliging</span>
                 </TabsTrigger>
@@ -256,9 +269,11 @@ export default function SettingsPage() {
                       type="PROFILE_PHOTO"
                       variant="avatar"
                       maxFiles={1}
-                      onUpload={async (files) => {
+                      onUpload={async (_files) => {
                         // Simulate upload
-                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        await new Promise((resolve) =>
+                          setTimeout(resolve, 2000),
+                        );
                         return { success: true, urls: ["/avatar.jpg"] };
                       }}
                     />
@@ -394,9 +409,18 @@ export default function SettingsPage() {
                         name="profileVisibility"
                         label="Profiel zichtbaarheid"
                         options={[
-                          { value: "PUBLIC", label: "Openbaar - Iedereen kan mijn profiel zien" },
-                          { value: "VERIFIED_ONLY", label: "Alleen geverifieerde bedrijven" },
-                          { value: "PRIVATE", label: "Privé - Alleen ik kan mijn profiel zien" },
+                          {
+                            value: "PUBLIC",
+                            label: "Openbaar - Iedereen kan mijn profiel zien",
+                          },
+                          {
+                            value: "VERIFIED_ONLY",
+                            label: "Alleen geverifieerde bedrijven",
+                          },
+                          {
+                            value: "PRIVATE",
+                            label: "Privé - Alleen ik kan mijn profiel zien",
+                          },
                         ]}
                       />
                       <SwitchField
@@ -449,7 +473,8 @@ export default function SettingsPage() {
                           </h4>
                         </div>
                         <p className="text-sm text-red-700 dark:text-red-300 mb-4">
-                          Het verwijderen van je account kan niet ongedaan worden gemaakt.
+                          Het verwijderen van je account kan niet ongedaan
+                          worden gemaakt.
                         </p>
                         <DeleteConfirm
                           trigger={
@@ -531,9 +556,21 @@ export default function SettingsPage() {
                         name="gpsAccuracy"
                         label="GPS nauwkeurigheid"
                         options={[
-                          { value: "HIGH", label: "Hoog - Beste nauwkeurigheid (meer batterijverbruik)" },
-                          { value: "MEDIUM", label: "Gemiddeld - Balans tussen nauwkeurigheid en batterij" },
-                          { value: "LOW", label: "Laag - Bespaar batterij (minder nauwkeurig)" },
+                          {
+                            value: "HIGH",
+                            label:
+                              "Hoog - Beste nauwkeurigheid (meer batterijverbruik)",
+                          },
+                          {
+                            value: "MEDIUM",
+                            label:
+                              "Gemiddeld - Balans tussen nauwkeurigheid en batterij",
+                          },
+                          {
+                            value: "LOW",
+                            label:
+                              "Laag - Bespaar batterij (minder nauwkeurig)",
+                          },
                         ]}
                       />
                       <SwitchField
@@ -571,8 +608,12 @@ export default function SettingsPage() {
                             <div className="flex items-center gap-3">
                               <Smartphone className="h-5 w-5 text-muted-foreground" />
                               <div>
-                                <p className="text-sm font-medium">iPhone 15 Pro</p>
-                                <p className="text-xs text-muted-foreground">Huidige sessie - Amsterdam</p>
+                                <p className="text-sm font-medium">
+                                  iPhone 15 Pro
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Huidige sessie - Amsterdam
+                                </p>
                               </div>
                             </div>
                             <Badge variant="default">Actief</Badge>
@@ -581,8 +622,12 @@ export default function SettingsPage() {
                             <div className="flex items-center gap-3">
                               <Monitor className="h-5 w-5 text-muted-foreground" />
                               <div>
-                                <p className="text-sm font-medium">Chrome Browser</p>
-                                <p className="text-xs text-muted-foreground">2 dagen geleden - Rotterdam</p>
+                                <p className="text-sm font-medium">
+                                  Chrome Browser
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  2 dagen geleden - Rotterdam
+                                </p>
                               </div>
                             </div>
                             <Button variant="outline" size="sm">

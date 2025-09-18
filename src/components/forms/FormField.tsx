@@ -1,16 +1,22 @@
 "use client";
 
+import { AlertCircle, Eye, EyeOff, Info } from "lucide-react";
 import React from "react";
-import { useFormContext, RegisterOptions } from "react-hook-form";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
+import { type RegisterOptions, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Eye, EyeOff, AlertCircle, Info } from "lucide-react";
 
 // Base form field props
 interface BaseFormFieldProps {
@@ -50,7 +56,11 @@ export function InputField({
   max,
   step,
 }: InputFieldProps) {
-  const { register, formState: { errors }, watch } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+    watch,
+  } = useFormContext();
   const [showPassword, setShowPassword] = React.useState(false);
   const error = errors[name];
 
@@ -83,7 +93,7 @@ export function InputField({
           className={cn(
             leftIcon && "pl-10",
             (rightIcon || type === "password") && "pr-10",
-            error && "border-red-500 focus-visible:ring-red-500"
+            error && "border-red-500 focus-visible:ring-red-500",
           )}
           {...register(name, rules)}
         />
@@ -97,7 +107,11 @@ export function InputField({
             onClick={() => setShowPassword(!showPassword)}
             disabled={disabled}
           >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
           </Button>
         )}
 
@@ -144,7 +158,11 @@ export function TextareaField({
   rows = 3,
   maxLength,
 }: TextareaFieldProps) {
-  const { register, formState: { errors }, watch } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+    watch,
+  } = useFormContext();
   const error = errors[name];
   const value = watch(name) || "";
 
@@ -164,9 +182,7 @@ export function TextareaField({
           disabled={disabled}
           rows={rows}
           maxLength={maxLength}
-          className={cn(
-            error && "border-red-500 focus-visible:ring-red-500"
-          )}
+          className={cn(error && "border-red-500 focus-visible:ring-red-500")}
           {...register(name, rules)}
         />
 
@@ -211,7 +227,12 @@ export function SelectField({
   rules,
   options,
 }: SelectFieldProps) {
-  const { register, formState: { errors }, setValue, watch } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useFormContext();
   const error = errors[name];
   const value = watch(name);
 
@@ -229,7 +250,9 @@ export function SelectField({
         onValueChange={(value) => setValue(name, value)}
         disabled={disabled}
       >
-        <SelectTrigger className={cn(error && "border-red-500 focus:ring-red-500")}>
+        <SelectTrigger
+          className={cn(error && "border-red-500 focus:ring-red-500")}
+        >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
@@ -277,7 +300,12 @@ export function CheckboxField({
   className,
   rules,
 }: CheckboxFieldProps) {
-  const { register, formState: { errors }, setValue, watch } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useFormContext();
   const error = errors[name];
   const checked = watch(name) || false;
 
@@ -299,10 +327,7 @@ export function CheckboxField({
           className={cn(error && "border-red-500")}
         />
         {checkboxLabel && (
-          <Label
-            htmlFor={name}
-            className="text-sm font-normal cursor-pointer"
-          >
+          <Label htmlFor={name} className="text-sm font-normal cursor-pointer">
             {checkboxLabel}
           </Label>
         )}
@@ -340,7 +365,12 @@ export function SwitchField({
   className,
   rules,
 }: SwitchFieldProps) {
-  const { register, formState: { errors }, setValue, watch } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useFormContext();
   const error = errors[name];
   const checked = watch(name) || false;
 
@@ -361,9 +391,7 @@ export function SwitchField({
             </Label>
           )}
           {description && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {description}
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">{description}</p>
           )}
         </div>
         <Switch
@@ -401,7 +429,12 @@ export function MultiSelectField({
   rules,
   options,
 }: MultiSelectFieldProps) {
-  const { register, formState: { errors }, setValue, watch } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useFormContext();
   const error = errors[name];
   const selectedValues = watch(name) || [];
 
@@ -410,7 +443,10 @@ export function MultiSelectField({
     const isSelected = currentValues.includes(value);
 
     if (isSelected) {
-      setValue(name, currentValues.filter((v: string) => v !== value));
+      setValue(
+        name,
+        currentValues.filter((v: string) => v !== value),
+      );
     } else {
       setValue(name, [...currentValues, value]);
     }
@@ -483,9 +519,7 @@ export function FormSection({
           <p className="text-sm text-muted-foreground">{description}</p>
         )}
       </div>
-      <div className="space-y-4">
-        {children}
-      </div>
+      <div className="space-y-4">{children}</div>
     </div>
   );
 }
@@ -497,22 +531,20 @@ interface FormGridProps {
   className?: string;
 }
 
-export function FormGrid({
-  children,
-  columns = 2,
-  className,
-}: FormGridProps) {
+export function FormGrid({ children, columns = 2, className }: FormGridProps) {
   return (
-    <div className={cn(
-      "grid gap-4",
-      {
-        "grid-cols-1": columns === 1,
-        "grid-cols-1 md:grid-cols-2": columns === 2,
-        "grid-cols-1 md:grid-cols-2 lg:grid-cols-3": columns === 3,
-        "grid-cols-1 md:grid-cols-2 lg:grid-cols-4": columns === 4,
-      },
-      className
-    )}>
+    <div
+      className={cn(
+        "grid gap-4",
+        {
+          "grid-cols-1": columns === 1,
+          "grid-cols-1 md:grid-cols-2": columns === 2,
+          "grid-cols-1 md:grid-cols-2 lg:grid-cols-3": columns === 3,
+          "grid-cols-1 md:grid-cols-2 lg:grid-cols-4": columns === 4,
+        },
+        className,
+      )}
+    >
       {children}
     </div>
   );

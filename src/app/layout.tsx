@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Montserrat } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SessionProvider } from "@/components/providers/SessionProvider";
-import { RoleProvider } from "@/contexts/RoleContext";
-import { ToastProvider } from "@/components/ui/toast";
+import { ThemeProvider } from "@/components/theme-provider";
 import { PageErrorBoundary } from "@/components/ui/error-boundary";
+import { ToastProvider } from "@/components/ui/toast";
+import { RoleProvider } from "@/contexts/RoleContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,8 +27,10 @@ const montserratBlack = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "SecuryFlex - Van Shift tot Betaling in 24 Uur | ZZP Beveiligers Platform",
-  description: "🔥 Nederland's #1 beveiligingsplatform! WPBR geverifieerd, GPS check-in, 24u betaling. Verdien €28+/uur als ZZP beveiliger. Start vandaag!",
+  title:
+    "SecuryFlex - Van Shift tot Betaling in 24 Uur | ZZP Beveiligers Platform",
+  description:
+    "🔥 Nederland's #1 beveiligingsplatform! WPBR geverifieerd, GPS check-in, 24u betaling. Verdien €28+/uur als ZZP beveiliger. Start vandaag!",
   keywords: [
     "beveiliger worden",
     "zzp beveiliger",
@@ -43,7 +47,7 @@ export const metadata: Metadata = {
     "security werk nederland",
     "bijbaan beveiliger",
     "beveiliging inhuren",
-    "beveiligingsopdrachten"
+    "beveiligingsopdrachten",
   ],
   authors: [{ name: "SecuryFlex Team" }],
   creator: "SecuryFlex",
@@ -57,7 +61,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "SecuryFlex - Nederland's #1 Beveiligingsplatform | €28+/uur",
-    description: "🔥 WPBR geverifieerd platform voor beveiligers. GPS check-in, 24u betaling gegarandeerd. 2.847+ actieve beveiligers verdienen €28+/uur. Start vandaag!",
+    description:
+      "🔥 WPBR geverifieerd platform voor beveiligers. GPS check-in, 24u betaling gegarandeerd. 2.847+ actieve beveiligers verdienen €28+/uur. Start vandaag!",
     url: "https://securyflex.nl",
     siteName: "SecuryFlex",
     images: [
@@ -74,7 +79,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "SecuryFlex - Nederland's #1 Beveiligingsplatform | €28+/uur",
-    description: "🔥 WPBR geverifieerd platform. GPS check-in, 24u betaling. 2.847+ beveiligers verdienen €28+/uur. Start vandaag!",
+    description:
+      "🔥 WPBR geverifieerd platform. GPS check-in, 24u betaling. 2.847+ beveiligers verdienen €28+/uur. Start vandaag!",
     images: ["/og-image.png"],
     creator: "@securyflex",
   },
@@ -117,6 +123,8 @@ export default function RootLayout({
               <RoleProvider>
                 {children}
                 <ToastProvider />
+                <Analytics />
+                <SpeedInsights />
               </RoleProvider>
             </ThemeProvider>
           </SessionProvider>

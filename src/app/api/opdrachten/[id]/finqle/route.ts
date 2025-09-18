@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
 import { getFinqleClient } from "@/lib/finqle/client";
+import prisma from "@/lib/prisma";
 
 interface RouteParams {
   params: Promise<{
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -33,16 +33,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           werkuren: {
             where: {
               status: "APPROVED",
-              finqleTransaction: null
-            }
-          }
-        }
+              finqleTransaction: null,
+            },
+          },
+        },
       });
 
       if (!opdracht) {
         return NextResponse.json(
           { success: false, error: "Opdracht niet gevonden" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({
           success: false,
           error: "Opdrachtgever is niet geregistreerd bij Finqle",
-          requiresOnboarding: true
+          requiresOnboarding: true,
         });
       }
 
@@ -64,14 +64,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       const finqleClient = getFinqleClient();
       const creditCheck = await finqleClient.checkCredit(
         opdracht.opdrachtgever.finqleDebtorId,
-        totalAmount
+        totalAmount,
       );
 
       if (!creditCheck.success || !creditCheck.data) {
         return NextResponse.json({
           success: false,
           error: "Kon krediet niet controleren",
-          eligibleForDirectPayment: false
+          eligibleForDirectPayment: false,
         });
       }
 
@@ -82,10 +82,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           creditAvailable: creditCheck.data.creditAvailable,
           creditLimit: creditCheck.data.creditLimit,
           requestedAmount: totalAmount,
-          unpaidWerkuren: opdracht.werkuren.length
-        }
+          unpaidWerkuren: opdracht.werkuren.length,
+        },
       });
-
     } else if (action === "approve") {
       // Approve werkuren for payment
       const { werkuurIds, requestDirectPayment } = await request.json();
@@ -93,7 +92,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       if (!werkuurIds || !Array.isArray(werkuurIds)) {
         return NextResponse.json(
           { success: false, error: "Invalid werkuur IDs" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -102,7 +101,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         where: {
           id: { in: werkuurIds },
           opdrachtId,
-          status: "APPROVED"
+          status: "APPROVED",
         },
         include: {
           opdracht: {
@@ -112,20 +111,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
                 include: {
                   teamLid: {
                     include: {
-                      zzp: true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+                      zzp: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       if (werkuren.length !== werkuurIds.length) {
         return NextResponse.json(
-          { success: false, error: "Een of meer werkuren zijn niet beschikbaar voor betaling" },
-          { status: 400 }
+          {
+            success: false,
+            error: "Een of meer werkuren zijn niet beschikbaar voor betaling",
+          },
+          { status: 400 },
         );
       }
 
@@ -134,8 +136,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
       for (const werkuur of werkuren) {
         // Find the ZZP for this werkuur
-        const assignment = werkuur.opdracht.assignments.find(a =>
-          a.teamLid.zzpId === werkuur.beveiligerId
+        const assignment = werkuur.opdracht.assignments.find(
+          (a) => a.teamLid.zzpId === werkuur.beveiligerId,
         );
 
         if (!assignment) {
@@ -152,7 +154,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         }
 
         const amount = Number(werkuur.urenGewerkt) * Number(werkuur.uurtarief);
-        const platformFee = Number(werkuur.platformFee) * Number(werkuur.urenGewerkt);
+        const platformFee =
+          Number(werkuur.platformFee) * Number(werkuur.urenGewerkt);
 
         // Create billing request in Finqle
         const billingRequest = await finqleClient.createBillingRequest({
@@ -162,11 +165,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           hours: Number(werkuur.urenGewerkt),
           tariff: Number(werkuur.uurtarief),
           expenses: platformFee,
-          description: `Werkuren ${werkuur.startTijd.toISOString().split('T')[0]} - Opdracht: ${werkuur.opdracht.titel}`
+          description: `Werkuren ${werkuur.startTijd.toISOString().split("T")[0]} - Opdracht: ${werkuur.opdracht.titel}`,
         });
 
         if (!billingRequest.success || !billingRequest.data) {
-          console.error(`Failed to create billing request for werkuur ${werkuur.id}`);
+          console.error(
+            `Failed to create billing request for werkuur ${werkuur.id}`,
+          );
           continue;
         }
 
@@ -179,8 +184,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             amount,
             directPayment: requestDirectPayment || false,
             finqleRequestId: billingRequest.data.requestId,
-            status: "PENDING"
-          }
+            status: "PENDING",
+          },
         });
 
         finqleTransactions.push(finqleTransaction);
@@ -190,22 +195,25 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           const directPaymentResult = await finqleClient.requestDirectPayment(
             zzp.finqleMerchantId,
             amount,
-            billingRequest.data.requestId
+            billingRequest.data.requestId,
           );
 
-          if (directPaymentResult.success && directPaymentResult.data?.approved) {
+          if (
+            directPaymentResult.success &&
+            directPaymentResult.data?.approved
+          ) {
             await prisma.finqleTransaction.update({
               where: { id: finqleTransaction.id },
               data: {
                 status: "APPROVED",
-                directPayment: true
-              }
+                directPayment: true,
+              },
             });
 
             // Update werkuur status to PAID
             await prisma.werkuur.update({
               where: { id: werkuur.id },
-              data: { status: "PAID" }
+              data: { status: "PAID" },
             });
           }
         }
@@ -216,35 +224,37 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         message: `${finqleTransactions.length} werkuren verwerkt voor betaling`,
         data: {
           processedCount: finqleTransactions.length,
-          totalAmount: finqleTransactions.reduce((sum, t) => sum + Number(t.amount), 0),
-          directPaymentRequested: requestDirectPayment
-        }
+          totalAmount: finqleTransactions.reduce(
+            (sum, t) => sum + Number(t.amount),
+            0,
+          ),
+          directPaymentRequested: requestDirectPayment,
+        },
       });
     }
 
     return NextResponse.json(
       { success: false, error: "Invalid action" },
-      { status: 400 }
+      { status: 400 },
     );
-
   } catch (error) {
     console.error("Error processing Finqle request:", error);
     return NextResponse.json(
       { success: false, error: "Failed to process Finqle request" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // GET /api/opdrachten/[id]/finqle - Get Finqle payment status
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth();
 
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -254,8 +264,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const transactions = await prisma.finqleTransaction.findMany({
       where: {
         werkuur: {
-          opdrachtId
-        }
+          opdrachtId,
+        },
       },
       include: {
         werkuur: {
@@ -265,30 +275,30 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             eindTijd: true,
             urenGewerkt: true,
             uurtarief: true,
-            status: true
-          }
-        }
+            status: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "desc"
-      }
+        createdAt: "desc",
+      },
     });
 
     // Calculate statistics
     const stats = {
       totalTransactions: transactions.length,
       totalAmount: transactions.reduce((sum, t) => sum + Number(t.amount), 0),
-      pending: transactions.filter(t => t.status === "PENDING").length,
-      approved: transactions.filter(t => t.status === "APPROVED").length,
-      paid: transactions.filter(t => t.status === "PAID").length,
-      failed: transactions.filter(t => t.status === "FAILED").length,
-      directPayments: transactions.filter(t => t.directPayment).length
+      pending: transactions.filter((t) => t.status === "PENDING").length,
+      approved: transactions.filter((t) => t.status === "APPROVED").length,
+      paid: transactions.filter((t) => t.status === "PAID").length,
+      failed: transactions.filter((t) => t.status === "FAILED").length,
+      directPayments: transactions.filter((t) => t.directPayment).length,
     };
 
     return NextResponse.json({
       success: true,
       data: {
-        transactions: transactions.map(t => ({
+        transactions: transactions.map((t) => ({
           id: t.id,
           werkuurId: t.werkuurId,
           amount: t.amount,
@@ -297,17 +307,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           finqleRequestId: t.finqleRequestId,
           finqleInvoiceId: t.finqleInvoiceId,
           createdAt: t.createdAt,
-          werkuur: t.werkuur
+          werkuur: t.werkuur,
         })),
-        stats
-      }
+        stats,
+      },
     });
-
   } catch (error) {
     console.error("Error fetching Finqle payment status:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch payment status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

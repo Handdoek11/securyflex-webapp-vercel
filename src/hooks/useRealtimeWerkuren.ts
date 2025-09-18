@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { subscribeToWerkuurUpdates } from "@/lib/supabase";
 import type { Werkuur } from "@prisma/client";
+import { useCallback, useEffect, useState } from "react";
+import { subscribeToWerkuurUpdates } from "@/lib/supabase";
 
 interface GPSLocation {
   lat: number;
@@ -28,7 +28,7 @@ export function useRealtimeWerkuren(opdrachtId: string | undefined) {
       console.log("Werkuur update:", payload);
 
       switch (payload.eventType) {
-        case "INSERT":
+        case "INSERT": {
           const newWerkuur = payload.new as Werkuur;
           setWerkuren((prev) => [...prev, newWerkuur]);
 
@@ -37,13 +37,12 @@ export function useRealtimeWerkuren(opdrachtId: string | undefined) {
             setActiveWerkuur(newWerkuur);
           }
           break;
+        }
 
-        case "UPDATE":
+        case "UPDATE": {
           const updatedWerkuur = payload.new as Werkuur;
           setWerkuren((prev) =>
-            prev.map((w) =>
-              w.id === updatedWerkuur.id ? updatedWerkuur : w
-            )
+            prev.map((w) => (w.id === updatedWerkuur.id ? updatedWerkuur : w)),
           );
 
           // Update active werkuur if it's the one being updated
@@ -64,11 +63,10 @@ export function useRealtimeWerkuren(opdrachtId: string | undefined) {
             });
           }
           break;
+        }
 
         case "DELETE":
-          setWerkuren((prev) =>
-            prev.filter((w) => w.id !== payload.old.id)
-          );
+          setWerkuren((prev) => prev.filter((w) => w.id !== payload.old.id));
           if (activeWerkuur?.id === payload.old.id) {
             setActiveWerkuur(null);
           }
@@ -84,61 +82,67 @@ export function useRealtimeWerkuren(opdrachtId: string | undefined) {
   /**
    * Clock in with GPS location
    */
-  const clockIn = useCallback(async (location: GPSLocation) => {
-    if (!opdrachtId) return;
+  const clockIn = useCallback(
+    async (location: GPSLocation) => {
+      if (!opdrachtId) return;
 
-    try {
-      const response = await fetch("/api/werkuren/clock-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          opdrachtId,
-          startLocatie: {
-            lat: location.lat,
-            lng: location.lng,
-            accuracy: location.accuracy,
-          },
-        }),
-      });
+      try {
+        const response = await fetch("/api/werkuren/clock-in", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            opdrachtId,
+            startLocatie: {
+              lat: location.lat,
+              lng: location.lng,
+              accuracy: location.accuracy,
+            },
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to clock in");
+        if (!response.ok) {
+          throw new Error("Failed to clock in");
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error("Clock in error:", error);
+        throw error;
       }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Clock in error:", error);
-      throw error;
-    }
-  }, [opdrachtId]);
+    },
+    [opdrachtId],
+  );
 
   /**
    * Clock out with GPS location
    */
-  const clockOut = useCallback(async (werkuurId: string, location: GPSLocation) => {
-    try {
-      const response = await fetch(`/api/werkuren/${werkuurId}/clock-out`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eindLocatie: {
-            lat: location.lat,
-            lng: location.lng,
-            accuracy: location.accuracy,
-          },
-        }),
-      });
+  const clockOut = useCallback(
+    async (werkuurId: string, location: GPSLocation) => {
+      try {
+        const response = await fetch(`/api/werkuren/${werkuurId}/clock-out`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            eindLocatie: {
+              lat: location.lat,
+              lng: location.lng,
+              accuracy: location.accuracy,
+            },
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to clock out");
+        if (!response.ok) {
+          throw new Error("Failed to clock out");
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error("Clock out error:", error);
+        throw error;
       }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Clock out error:", error);
-      throw error;
-    }
-  }, []);
+    },
+    [],
+  );
 
   /**
    * Get current GPS location
@@ -166,7 +170,7 @@ export function useRealtimeWerkuren(opdrachtId: string | undefined) {
           enableHighAccuracy: true,
           timeout: 10000,
           maximumAge: 0,
-        }
+        },
       );
     });
   }, []);

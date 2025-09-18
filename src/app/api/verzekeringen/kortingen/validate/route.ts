@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "Niet ingelogd" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     if (!code || !productId) {
       return NextResponse.json(
         { success: false, error: "Code en product ID zijn vereist" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -31,10 +31,10 @@ export async function POST(request: NextRequest) {
         subscription: true,
         verzekeringAanvragen: {
           where: {
-            kortingCode: code.toUpperCase()
-          }
-        }
-      }
+            kortingCode: code.toUpperCase(),
+          },
+        },
+      },
     });
 
     if (!zzpProfile || zzpProfile.subscription?.status !== "active") {
@@ -42,30 +42,30 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "Actief abonnement vereist",
-          requiresSubscription: true
+          requiresSubscription: true,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Find discount code
     const korting = await prisma.verzekeringKorting.findUnique({
       where: {
-        code: code.toUpperCase()
+        code: code.toUpperCase(),
       },
       include: {
         producten: {
           where: {
-            productId: productId
-          }
-        }
-      }
+            productId: productId,
+          },
+        },
+      },
     });
 
     if (!korting) {
       return NextResponse.json(
         { success: false, error: "Ongeldige kortingscode" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -94,11 +94,13 @@ export async function POST(request: NextRequest) {
 
     // Check if user already used this code
     const userUsageCount = zzpProfile.verzekeringAanvragen.filter(
-      aanvraag => aanvraag.kortingCode === code.toUpperCase()
+      (aanvraag) => aanvraag.kortingCode === code.toUpperCase(),
     ).length;
 
     if (userUsageCount >= korting.maxPerGebruiker) {
-      validationErrors.push(`Je hebt deze code al ${userUsageCount} keer gebruikt`);
+      validationErrors.push(
+        `Je hebt deze code al ${userUsageCount} keer gebruikt`,
+      );
     }
 
     // Check if code applies to this product
@@ -113,19 +115,23 @@ export async function POST(request: NextRequest) {
         validationErrors.push("Abonnement informatie niet gevonden");
       } else {
         const monthsSubscribed = Math.floor(
-          (now.getTime() - new Date(subscriptionStartDate).getTime()) / (1000 * 60 * 60 * 24 * 30)
+          (now.getTime() - new Date(subscriptionStartDate).getTime()) /
+            (1000 * 60 * 60 * 24 * 30),
         );
 
         if (monthsSubscribed < korting.minAbonnementDuur) {
           validationErrors.push(
-            `Minimaal ${korting.minAbonnementDuur} maanden abonnement vereist (je hebt ${monthsSubscribed} maanden)`
+            `Minimaal ${korting.minAbonnementDuur} maanden abonnement vereist (je hebt ${monthsSubscribed} maanden)`,
           );
         }
       }
     }
 
     // Check new customer requirement
-    if (korting.nieuweKlantenOnly && zzpProfile.verzekeringAanvragen.length > 0) {
+    if (
+      korting.nieuweKlantenOnly &&
+      zzpProfile.verzekeringAanvragen.length > 0
+    ) {
       validationErrors.push("Deze code is alleen voor nieuwe klanten");
     }
 
@@ -134,19 +140,19 @@ export async function POST(request: NextRequest) {
         success: false,
         error: validationErrors[0],
         errors: validationErrors,
-        isValid: false
+        isValid: false,
       });
     }
 
     // Calculate discount value
     const product = await prisma.verzekeringProduct.findUnique({
-      where: { id: productId }
+      where: { id: productId },
     });
 
     if (!product) {
       return NextResponse.json(
         { success: false, error: "Product niet gevonden" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -156,12 +162,14 @@ export async function POST(request: NextRequest) {
     if (korting.kortingType === "PERCENTAGE") {
       discountPercentage = Number(korting.waarde);
       if (product.basispremie) {
-        discountAmount = Number(product.basispremie) * (discountPercentage / 100);
+        discountAmount =
+          Number(product.basispremie) * (discountPercentage / 100);
       }
     } else {
       discountAmount = Number(korting.waarde);
       if (product.basispremie && Number(product.basispremie) > 0) {
-        discountPercentage = (discountAmount / Number(product.basispremie)) * 100;
+        discountPercentage =
+          (discountAmount / Number(product.basispremie)) * 100;
       }
     }
 
@@ -176,17 +184,16 @@ export async function POST(request: NextRequest) {
         waarde: korting.waarde,
         calculatedDiscount: {
           amount: discountAmount,
-          percentage: discountPercentage
+          percentage: discountPercentage,
         },
-        message: `Kortingscode ${korting.naam} is geldig!`
-      }
+        message: `Kortingscode ${korting.naam} is geldig!`,
+      },
     });
-
   } catch (error) {
     console.error("Error validating discount code:", error);
     return NextResponse.json(
       { success: false, error: "Er ging iets mis bij het valideren" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

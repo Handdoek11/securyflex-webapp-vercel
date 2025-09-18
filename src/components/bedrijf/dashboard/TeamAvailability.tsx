@@ -1,24 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
-  Users,
-  MapPin,
-  Star,
-  Clock,
-  CheckCircle,
   AlertCircle,
-  Calendar,
-  Shield,
+  CheckCircle,
+  MapPin,
   Phone,
-  Filter,
-  UserCheck
+  Shield,
+  Star,
+  UserCheck,
+  Users,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -55,11 +51,17 @@ interface TeamAvailabilityProps {
   filterLocation?: string;
 }
 
-export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAvailabilityProps) {
+export function TeamAvailability({
+  bedrijfId,
+  onAssign,
+  filterLocation,
+}: TeamAvailabilityProps) {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [filterStatus, setFilterStatus] = useState<"all" | "available" | "busy" | "offline">("all");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "available" | "busy" | "offline"
+  >("all");
   const [filterSkill, setFilterSkill] = useState<string>("all");
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
 
   // Mock data - will be replaced with real API
   useEffect(() => {
@@ -78,7 +80,7 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
         finqleOnboarded: true,
         directPaymentOptIn: true,
         documentsValid: true,
-        phoneNumber: "06-12345678"
+        phoneNumber: "06-12345678",
       },
       {
         id: "2",
@@ -94,7 +96,7 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
         finqleOnboarded: true,
         directPaymentOptIn: true,
         documentsValid: true,
-        phoneNumber: "06-87654321"
+        phoneNumber: "06-87654321",
       },
       {
         id: "3",
@@ -103,7 +105,7 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
         currentShift: {
           location: "RAI Amsterdam",
           endTime: "16:00",
-          client: "RAI Events"
+          client: "RAI Events",
         },
         rating: 4.7,
         location: "Utrecht",
@@ -114,7 +116,7 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
         finqleOnboarded: true,
         directPaymentOptIn: false,
         documentsValid: true,
-        phoneNumber: "06-11223344"
+        phoneNumber: "06-11223344",
       },
       {
         id: "4",
@@ -129,7 +131,7 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
         finqleOnboarded: true,
         directPaymentOptIn: true,
         documentsValid: false, // Document expiry warning
-        phoneNumber: "06-99887766"
+        phoneNumber: "06-99887766",
       },
       {
         id: "5",
@@ -144,7 +146,7 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
         finqleOnboarded: false, // Not onboarded with Finqle
         directPaymentOptIn: false,
         documentsValid: true,
-        phoneNumber: "06-55443322"
+        phoneNumber: "06-55443322",
       },
       {
         id: "6",
@@ -159,28 +161,29 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
         finqleOnboarded: true,
         directPaymentOptIn: true,
         documentsValid: true,
-        phoneNumber: "06-77665544"
-      }
+        phoneNumber: "06-77665544",
+      },
     ]);
     setIsLoading(false);
-  }, [bedrijfId, filterLocation]);
+  }, []);
 
-  const filteredMembers = teamMembers.filter(member => {
+  const filteredMembers = teamMembers.filter((member) => {
     if (filterStatus !== "all" && member.status !== filterStatus) return false;
-    if (filterSkill !== "all" && !member.skills.includes(filterSkill)) return false;
+    if (filterSkill !== "all" && !member.skills.includes(filterSkill))
+      return false;
     return true;
   });
 
   const stats = {
     total: teamMembers.length,
-    available: teamMembers.filter(m => m.status === "available").length,
-    busy: teamMembers.filter(m => m.status === "busy").length,
-    offline: teamMembers.filter(m => m.status === "offline").length,
-    finqleOnboarded: teamMembers.filter(m => m.finqleOnboarded).length,
-    documentsExpiring: teamMembers.filter(m => !m.documentsValid).length
+    available: teamMembers.filter((m) => m.status === "available").length,
+    busy: teamMembers.filter((m) => m.status === "busy").length,
+    offline: teamMembers.filter((m) => m.status === "offline").length,
+    finqleOnboarded: teamMembers.filter((m) => m.finqleOnboarded).length,
+    documentsExpiring: teamMembers.filter((m) => !m.documentsValid).length,
   };
 
-  const allSkills = Array.from(new Set(teamMembers.flatMap(m => m.skills)));
+  const allSkills = Array.from(new Set(teamMembers.flatMap((m) => m.skills)));
 
   const getStatusColor = (status: TeamMember["status"]) => {
     switch (status) {
@@ -224,7 +227,10 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
           </div>
 
           <div className="flex items-center gap-2">
-            <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+            <Select
+              value={filterStatus}
+              onValueChange={(value: any) => setFilterStatus(value)}
+            >
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -242,8 +248,10 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle skills</SelectItem>
-                {allSkills.map(skill => (
-                  <SelectItem key={skill} value={skill}>{skill}</SelectItem>
+                {allSkills.map((skill) => (
+                  <SelectItem key={skill} value={skill}>
+                    {skill}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -255,7 +263,9 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
           <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium">{stats.available} Beschikbaar</span>
+              <span className="text-sm font-medium">
+                {stats.available} Beschikbaar
+              </span>
             </div>
           </div>
           <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
@@ -267,14 +277,18 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
           <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-purple-500" />
-              <span className="text-sm font-medium">{stats.finqleOnboarded} Finqle</span>
+              <span className="text-sm font-medium">
+                {stats.finqleOnboarded} Finqle
+              </span>
             </div>
           </div>
           {stats.documentsExpiring > 0 && (
             <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-red-500" />
-                <span className="text-sm font-medium">{stats.documentsExpiring} Docs</span>
+                <span className="text-sm font-medium">
+                  {stats.documentsExpiring} Docs
+                </span>
               </div>
             </div>
           )}
@@ -291,7 +305,10 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={member.photo} alt={member.name} />
                   <AvatarFallback>
-                    {member.name.split(" ").map(n => n[0]).join("")}
+                    {member.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
                   </AvatarFallback>
                 </Avatar>
 
@@ -300,7 +317,9 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
                     <div>
                       <h4 className="font-medium flex items-center gap-2">
                         {member.name}
-                        <div className={`h-2 w-2 rounded-full ${getStatusColor(member.status)}`} />
+                        <div
+                          className={`h-2 w-2 rounded-full ${getStatusColor(member.status)}`}
+                        />
                       </h4>
                       <p className="text-xs text-muted-foreground">
                         {getStatusLabel(member.status)}
@@ -312,7 +331,9 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
 
                     <div className="flex items-center gap-1">
                       <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                      <span className="text-sm font-medium">{member.rating}</span>
+                      <span className="text-sm font-medium">
+                        {member.rating}
+                      </span>
                     </div>
                   </div>
 
@@ -331,7 +352,7 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
 
                   {/* Skills */}
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {member.skills.slice(0, 3).map(skill => (
+                    {member.skills.slice(0, 3).map((skill) => (
                       <Badge key={skill} variant="outline" className="text-xs">
                         {skill}
                       </Badge>
@@ -393,7 +414,8 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
 
                   {member.currentShift && (
                     <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted rounded">
-                      Nu bij: {member.currentShift.client} - {member.currentShift.location}
+                      Nu bij: {member.currentShift.client} -{" "}
+                      {member.currentShift.location}
                     </div>
                   )}
                 </div>
@@ -405,13 +427,12 @@ export function TeamAvailability({ bedrijfId, onAssign, filterLocation }: TeamAv
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t">
           <p className="text-sm text-muted-foreground">
-            Gemiddelde beschikbaarheid: <span className="font-semibold">
+            Gemiddelde beschikbaarheid:{" "}
+            <span className="font-semibold">
               {Math.round((stats.available / stats.total) * 100)}%
             </span>
           </p>
-          <Button variant="outline">
-            Team beheren
-          </Button>
+          <Button variant="outline">Team beheren</Button>
         </div>
       </div>
     </Card>

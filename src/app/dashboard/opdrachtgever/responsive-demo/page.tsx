@@ -1,26 +1,26 @@
 "use client";
 
-import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
-import { useResponsive } from "@/hooks/useResponsive";
-import { useViewportSize } from "@/hooks/useViewportSize";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-  Monitor,
-  Tablet,
-  Smartphone,
-  Maximize,
-  Users,
-  Calendar,
-  FileText,
-  TrendingUp,
+  BarChart3,
   Bell,
-  Shield,
+  Calendar,
   CheckCircle,
   Clock,
-  BarChart3
+  FileText,
+  Maximize,
+  Monitor,
+  Shield,
+  Smartphone,
+  Tablet,
+  TrendingUp,
+  Users,
 } from "lucide-react";
+import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useResponsive } from "@/hooks/useResponsive";
+import { useViewportSize } from "@/hooks/useViewportSize";
 
 export default function OpdrachtgeverResponsiveDemoPage() {
   const responsive = useResponsive();
@@ -47,7 +47,7 @@ export default function OpdrachtgeverResponsiveDemoPage() {
       change: "+3 deze week",
       icon: Calendar,
       color: "text-blue-600",
-      bg: "bg-blue-50"
+      bg: "bg-blue-50",
     },
     {
       title: "Beveiligers Ingezet",
@@ -55,7 +55,7 @@ export default function OpdrachtgeverResponsiveDemoPage() {
       change: "96% aanwezig",
       icon: Users,
       color: "text-green-600",
-      bg: "bg-green-50"
+      bg: "bg-green-50",
     },
     {
       title: "Totale Kosten",
@@ -63,7 +63,7 @@ export default function OpdrachtgeverResponsiveDemoPage() {
       change: "-8% t.o.v. vorige maand",
       icon: TrendingUp,
       color: "text-purple-600",
-      bg: "bg-purple-50"
+      bg: "bg-purple-50",
     },
     {
       title: "Gemiddelde Score",
@@ -71,8 +71,8 @@ export default function OpdrachtgeverResponsiveDemoPage() {
       change: "Top 10% leveranciers",
       icon: BarChart3,
       color: "text-orange-600",
-      bg: "bg-orange-50"
-    }
+      bg: "bg-orange-50",
+    },
   ];
 
   return (
@@ -92,7 +92,9 @@ export default function OpdrachtgeverResponsiveDemoPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Device Type</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Device Type
+                </p>
                 <Badge variant="default" className="text-lg px-3 py-1">
                   {responsive.deviceType}
                 </Badge>
@@ -104,14 +106,23 @@ export default function OpdrachtgeverResponsiveDemoPage() {
                 </Badge>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Navigatie Type</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Navigatie Type
+                </p>
                 <Badge variant="secondary" className="text-lg px-3 py-1">
-                  {responsive.isMobileOrTablet && !responsive.isTabletOrDesktop ? "Bottom Nav" : "Sidebar"}
+                  {responsive.isMobileOrTablet && !responsive.isTabletOrDesktop
+                    ? "Bottom Nav"
+                    : "Sidebar"}
                 </Badge>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Touch Device</p>
-                <Badge variant={responsive.isTouch ? "success" : "secondary"} className="text-lg px-3 py-1">
+                <p className="text-sm text-muted-foreground mb-1">
+                  Touch Device
+                </p>
+                <Badge
+                  variant={responsive.isTouch ? "success" : "secondary"}
+                  className="text-lg px-3 py-1"
+                >
                   {responsive.isTouch ? "Ja" : "Nee"}
                 </Badge>
               </div>
@@ -153,7 +164,9 @@ export default function OpdrachtgeverResponsiveDemoPage() {
           <CardContent>
             <div className="space-y-4">
               {/* Mobile Features */}
-              <div className={`p-4 rounded-lg border ${!responsive.isTabletOrDesktop ? "border-primary bg-primary/5" : ""}`}>
+              <div
+                className={`p-4 rounded-lg border ${!responsive.isTabletOrDesktop ? "border-primary bg-primary/5" : ""}`}
+              >
                 <h3 className="font-semibold mb-2 flex items-center gap-2">
                   <Smartphone className="h-5 w-5" />
                   Mobile View ({"<"} 768px)
@@ -179,7 +192,9 @@ export default function OpdrachtgeverResponsiveDemoPage() {
               </div>
 
               {/* Tablet Features */}
-              <div className={`p-4 rounded-lg border ${responsive.isTablet ? "border-primary bg-primary/5" : ""}`}>
+              <div
+                className={`p-4 rounded-lg border ${responsive.isTablet ? "border-primary bg-primary/5" : ""}`}
+              >
                 <h3 className="font-semibold mb-2 flex items-center gap-2">
                   <Tablet className="h-5 w-5" />
                   Tablet View (768px - 1024px)
@@ -205,7 +220,9 @@ export default function OpdrachtgeverResponsiveDemoPage() {
               </div>
 
               {/* Desktop Features */}
-              <div className={`p-4 rounded-lg border ${responsive.isDesktop || responsive.isLargeDesktop ? "border-primary bg-primary/5" : ""}`}>
+              <div
+                className={`p-4 rounded-lg border ${responsive.isDesktop || responsive.isLargeDesktop ? "border-primary bg-primary/5" : ""}`}
+              >
                 <h3 className="font-semibold mb-2 flex items-center gap-2">
                   <Monitor className="h-5 w-5" />
                   Desktop View ({">"}= 1024px)
@@ -286,25 +303,33 @@ export default function OpdrachtgeverResponsiveDemoPage() {
               <div className="flex items-start gap-2">
                 <Badge className="mt-0.5">1</Badge>
                 <p className="text-sm">
-                  <strong>Mobile Test:</strong> Resize je browser naar {"<"}768px om de bottom navigation te zien met alle opdrachtgever functies.
+                  <strong>Mobile Test:</strong> Resize je browser naar {"<"}
+                  768px om de bottom navigation te zien met alle opdrachtgever
+                  functies.
                 </p>
               </div>
               <div className="flex items-start gap-2">
                 <Badge className="mt-0.5">2</Badge>
                 <p className="text-sm">
-                  <strong>Tablet Test:</strong> Test tussen 768px-1024px voor de collapsed sidebar met tooltips.
+                  <strong>Tablet Test:</strong> Test tussen 768px-1024px voor de
+                  collapsed sidebar met tooltips.
                 </p>
               </div>
               <div className="flex items-start gap-2">
                 <Badge className="mt-0.5">3</Badge>
                 <p className="text-sm">
-                  <strong>Desktop Test:</strong> Maximaliseer je browser ({">"}1024px) voor de volledige sidebar ervaring.
+                  <strong>Desktop Test:</strong> Maximaliseer je browser ({">"}
+                  1024px) voor de volledige sidebar ervaring.
                 </p>
               </div>
               <div className="flex items-start gap-2">
                 <Badge className="mt-0.5">4</Badge>
                 <p className="text-sm">
-                  <strong>Live Test:</strong> Navigeer naar <code className="bg-muted px-1 py-0.5 rounded">/dashboard/opdrachtgever</code> om het systeem in actie te zien.
+                  <strong>Live Test:</strong> Navigeer naar{" "}
+                  <code className="bg-muted px-1 py-0.5 rounded">
+                    /dashboard/opdrachtgever
+                  </code>{" "}
+                  om het systeem in actie te zien.
                 </p>
               </div>
             </div>

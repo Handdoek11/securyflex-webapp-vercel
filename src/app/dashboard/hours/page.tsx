@@ -1,51 +1,92 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Calendar, Clock, MapPin, Plus, Edit, Check, X, ChevronLeft, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { toast } from "@/components/ui/toast";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Edit,
+  Loader2,
+  MapPin,
+  Plus,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
-
+import { useEffect, useState } from "react";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/components/ui/toast";
 
 function getStatusBadge(status: string) {
   switch (status) {
     case "COMPLETED":
-      return <Badge className="bg-green-500 hover:bg-green-600 text-xs">Voltooid</Badge>;
+      return (
+        <Badge className="bg-green-500 hover:bg-green-600 text-xs">
+          Voltooid
+        </Badge>
+      );
     case "PENDING":
-      return <Badge variant="secondary" className="text-xs">In behandeling</Badge>;
+      return (
+        <Badge variant="secondary" className="text-xs">
+          In behandeling
+        </Badge>
+      );
     case "UNDER_REVIEW":
-      return <Badge variant="outline" className="text-xs">In review</Badge>;
+      return (
+        <Badge variant="outline" className="text-xs">
+          In review
+        </Badge>
+      );
     case "DISPUTED":
-      return <Badge variant="destructive" className="text-xs">Betwist</Badge>;
+      return (
+        <Badge variant="destructive" className="text-xs">
+          Betwist
+        </Badge>
+      );
     case "DRAFT":
-      return <Badge variant="outline" className="text-xs">Concept</Badge>;
+      return (
+        <Badge variant="outline" className="text-xs">
+          Concept
+        </Badge>
+      );
     default:
       return null;
   }
 }
 
+interface TimeEntry {
+  id: string;
+  date: Date;
+  startTime: string;
+  endTime: string;
+  hours: number;
+  status: string;
+  project: string;
+  description: string;
+}
+
 export default function HoursPage() {
   const { data: session } = useSession();
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [editingEntry, setEditingEntry] = useState<string | null>(null);
-  const [timeEntries, setTimeEntries] = useState<any[]>([]);
-  const [weeklyStats, setWeeklyStats] = useState({ totalHours: 0, totalEarnings: 0, approvedEarnings: 0, pendingEarnings: 0 });
+  const [_editingEntry, setEditingEntry] = useState<string | null>(null);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [weeklyStats, setWeeklyStats] = useState({
+    totalHours: 0,
+    totalEarnings: 0,
+    approvedEarnings: 0,
+    pendingEarnings: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [submittingWeek, setSubmittingWeek] = useState(false);
-  const [showAddHours, setShowAddHours] = useState(false);
+  const [_showAddHours, setShowAddHours] = useState(false);
 
   useEffect(() => {
     if (session) {
       fetchHours();
     }
-  }, [session, currentWeek]);
+  }, [session, fetchHours]);
 
   const getWeekBounds = (date: Date) => {
     const monday = new Date(date);
@@ -61,7 +102,7 @@ export default function HoursPage() {
 
   const formatWeekRange = (date: Date) => {
     const { monday, sunday } = getWeekBounds(date);
-    return `${monday.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} - ${sunday.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}`;
+    return `${monday.toLocaleDateString("nl-NL", { day: "numeric", month: "short" })} - ${sunday.toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}`;
   };
 
   const fetchHours = async () => {
@@ -73,7 +114,7 @@ export default function HoursPage() {
       const { monday, sunday } = getWeekBounds(currentWeek);
       const params = new URLSearchParams({
         weekStart: monday.toISOString(),
-        weekEnd: sunday.toISOString()
+        weekEnd: sunday.toISOString(),
       });
 
       const response = await fetch(`/api/hours?${params}`);
@@ -81,7 +122,14 @@ export default function HoursPage() {
 
       if (data.success) {
         setTimeEntries(data.data.timeEntries || []);
-        setWeeklyStats(data.data.weeklyStats || { totalHours: 0, totalEarnings: 0, approvedEarnings: 0, pendingEarnings: 0 });
+        setWeeklyStats(
+          data.data.weeklyStats || {
+            totalHours: 0,
+            totalEarnings: 0,
+            approvedEarnings: 0,
+            pendingEarnings: 0,
+          },
+        );
       } else {
         setError(data.error || "Failed to load hours");
         toast.error("Kon uren niet laden");
@@ -95,9 +143,9 @@ export default function HoursPage() {
     }
   };
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
+  const navigateWeek = (direction: "prev" | "next") => {
     const newDate = new Date(currentWeek);
-    newDate.setDate(currentWeek.getDate() + (direction === 'prev' ? -7 : 7));
+    newDate.setDate(currentWeek.getDate() + (direction === "prev" ? -7 : 7));
     setCurrentWeek(newDate);
   };
 
@@ -105,13 +153,13 @@ export default function HoursPage() {
     setSubmittingWeek(true);
     try {
       const { monday, sunday } = getWeekBounds(currentWeek);
-      const response = await fetch('/api/hours/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/hours/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           weekStart: monday.toISOString(),
-          weekEnd: sunday.toISOString()
-        })
+          weekEnd: sunday.toISOString(),
+        }),
       });
 
       const data = await response.json();
@@ -141,20 +189,18 @@ export default function HoursPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigateWeek('prev')}
+            onClick={() => navigateWeek("prev")}
           >
             <ChevronLeft className="h-4 w-4" />
             Vorige
           </Button>
 
-          <h2 className="font-semibold">
-            Week {formatWeekRange(currentWeek)}
-          </h2>
+          <h2 className="font-semibold">Week {formatWeekRange(currentWeek)}</h2>
 
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigateWeek('next')}
+            onClick={() => navigateWeek("next")}
           >
             Volgende
             <ChevronRight className="h-4 w-4" />
@@ -183,15 +229,23 @@ export default function HoursPage() {
           <Card className="p-4">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold text-foreground">{weeklyStats.totalHours.toFixed(1)}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {weeklyStats.totalHours.toFixed(1)}
+                </p>
                 <p className="text-sm text-muted-foreground">Totaal uren</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-600">€{weeklyStats.totalEarnings.toFixed(2)}</p>
-                <p className="text-sm text-muted-foreground">Totaal verdiensten</p>
+                <p className="text-2xl font-bold text-green-600">
+                  €{weeklyStats.totalEarnings.toFixed(2)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Totaal verdiensten
+                </p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-600">€{weeklyStats.approvedEarnings.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  €{weeklyStats.approvedEarnings.toFixed(2)}
+                </p>
                 <p className="text-sm text-muted-foreground">Goedgekeurd</p>
               </div>
             </div>
@@ -207,16 +261,20 @@ export default function HoursPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
-                      <span className="font-medium text-sm">{entry.dayName}</span>
+                      <span className="font-medium text-sm">
+                        {entry.dayName}
+                      </span>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(entry.date).toLocaleDateString('nl-NL', {
-                          day: 'numeric',
-                          month: 'long'
+                        {new Date(entry.date).toLocaleDateString("nl-NL", {
+                          day: "numeric",
+                          month: "long",
                         })}
                       </p>
-                      <p className="text-xs text-muted-foreground">Geen uren ingevoerd</p>
+                      <p className="text-xs text-muted-foreground">
+                        Geen uren ingevoerd
+                      </p>
                     </div>
                   </div>
                   <Button variant="outline" size="sm">
@@ -230,15 +288,21 @@ export default function HoursPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <span className="font-medium text-sm text-primary">{entry.dayName}</span>
+                        <span className="font-medium text-sm text-primary">
+                          {entry.dayName}
+                        </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{entry.project}</p>
-                        <p className="text-sm text-muted-foreground truncate">{entry.company}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {entry.company}
+                        </p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            <span>{entry.startTime} - {entry.endTime}</span>
+                            <span>
+                              {entry.startTime} - {entry.endTime}
+                            </span>
                           </div>
                           {entry.isGPSVerified && (
                             <Badge variant="secondary" className="text-xs">
@@ -265,7 +329,9 @@ export default function HoursPage() {
                   {/* Hours breakdown */}
                   <div className="grid grid-cols-4 gap-4 text-sm bg-muted/30 rounded-lg p-3">
                     <div>
-                      <p className="text-xs text-muted-foreground">Gewerkte uren</p>
+                      <p className="text-xs text-muted-foreground">
+                        Gewerkte uren
+                      </p>
                       <p className="font-medium">{entry.totalHours}u</p>
                     </div>
                     <div>
@@ -278,7 +344,9 @@ export default function HoursPage() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Totaal</p>
-                      <p className="font-medium text-green-600">€{entry.totalEarned.toFixed(2)}</p>
+                      <p className="font-medium text-green-600">
+                        €{entry.totalEarned.toFixed(2)}
+                      </p>
                     </div>
                   </div>
 
@@ -296,17 +364,17 @@ export default function HoursPage() {
 
         {/* Action buttons */}
         <div className="flex gap-3">
-          <Button
-            className="flex-1"
-            onClick={() => setShowAddHours(true)}
-          >
+          <Button className="flex-1" onClick={() => setShowAddHours(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Handmatig toevoegen
           </Button>
           <Button
             variant="outline"
             onClick={submitWeek}
-            disabled={submittingWeek || timeEntries.filter(e => e.status !== "EMPTY").length === 0}
+            disabled={
+              submittingWeek ||
+              timeEntries.filter((e) => e.status !== "EMPTY").length === 0
+            }
           >
             {submittingWeek ? (
               <>

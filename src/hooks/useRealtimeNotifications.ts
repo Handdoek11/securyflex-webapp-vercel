@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { createSupabaseClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { useCallback, useEffect, useState } from "react";
+import { createSupabaseClient } from "@/lib/supabase/client";
 
 export interface Notification {
   id: string;
-  type: 'INFO' | 'WARNING' | 'ERROR' | 'SUCCESS' | 'URGENT';
-  category: 'SHIFT' | 'PAYMENT' | 'DOCUMENT' | 'SYSTEM' | 'MESSAGE';
+  type: "INFO" | "WARNING" | "ERROR" | "SUCCESS" | "URGENT";
+  category: "SHIFT" | "PAYMENT" | "DOCUMENT" | "SYSTEM" | "MESSAGE";
   title: string;
   message: string;
   timestamp: Date;
@@ -32,7 +32,7 @@ export function useRealtimeNotifications(userId: string | undefined) {
     notifications: [],
     unreadCount: 0,
     urgentCount: 0,
-    lastUpdate: new Date()
+    lastUpdate: new Date(),
   });
   const [isConnected, setIsConnected] = useState(false);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
@@ -43,9 +43,10 @@ export function useRealtimeNotifications(userId: string | undefined) {
     const supabase = createSupabaseClient();
 
     // Subscribe to personal notification channel
-    const notificationChannel = supabase.channel(`notifications:${userId}`)
-      .on('broadcast', { event: 'new-notification' }, (payload) => {
-        console.log('New notification:', payload);
+    const notificationChannel = supabase
+      .channel(`notifications:${userId}`)
+      .on("broadcast", { event: "new-notification" }, (payload) => {
+        console.log("New notification:", payload);
 
         const notification: Notification = {
           id: payload.payload.id,
@@ -57,10 +58,10 @@ export function useRealtimeNotifications(userId: string | undefined) {
           isRead: false,
           actionUrl: payload.payload.actionUrl,
           actionLabel: payload.payload.actionLabel,
-          metadata: payload.payload.metadata
+          metadata: payload.payload.metadata,
         };
 
-        setState(prev => {
+        setState((prev) => {
           const updated = [...prev.notifications];
 
           // Add to beginning of array (newest first)
@@ -73,50 +74,59 @@ export function useRealtimeNotifications(userId: string | undefined) {
 
           return {
             notifications: updated,
-            unreadCount: updated.filter(n => !n.isRead).length,
-            urgentCount: updated.filter(n => n.type === 'URGENT' && !n.isRead).length,
-            lastUpdate: new Date()
+            unreadCount: updated.filter((n) => !n.isRead).length,
+            urgentCount: updated.filter((n) => n.type === "URGENT" && !n.isRead)
+              .length,
+            lastUpdate: new Date(),
           };
         });
 
         // Show browser notification if permission granted
-        if (notification.type === 'URGENT' && 'Notification' in window && Notification.permission === 'granted') {
+        if (
+          notification.type === "URGENT" &&
+          "Notification" in window &&
+          Notification.permission === "granted"
+        ) {
           new Notification(notification.title, {
             body: notification.message,
-            icon: '/logo-icon.png',
-            badge: '/badge-icon.png',
+            icon: "/logo-icon.png",
+            badge: "/badge-icon.png",
             vibrate: [200, 100, 200],
             tag: notification.id,
-            data: { actionUrl: notification.actionUrl }
+            data: { actionUrl: notification.actionUrl },
           });
         }
       })
-      .on('broadcast', { event: 'mark-read' }, (payload) => {
+      .on("broadcast", { event: "mark-read" }, (payload) => {
         const notificationId = payload.payload.notificationId;
 
-        setState(prev => {
-          const updated = prev.notifications.map(n =>
-            n.id === notificationId ? { ...n, isRead: true } : n
+        setState((prev) => {
+          const updated = prev.notifications.map((n) =>
+            n.id === notificationId ? { ...n, isRead: true } : n,
           );
 
           return {
             notifications: updated,
-            unreadCount: updated.filter(n => !n.isRead).length,
-            urgentCount: updated.filter(n => n.type === 'URGENT' && !n.isRead).length,
-            lastUpdate: new Date()
+            unreadCount: updated.filter((n) => !n.isRead).length,
+            urgentCount: updated.filter((n) => n.type === "URGENT" && !n.isRead)
+              .length,
+            lastUpdate: new Date(),
           };
         });
       })
-      .on('broadcast', { event: 'mark-all-read' }, () => {
-        setState(prev => ({
-          notifications: prev.notifications.map(n => ({ ...n, isRead: true })),
+      .on("broadcast", { event: "mark-all-read" }, () => {
+        setState((prev) => ({
+          notifications: prev.notifications.map((n) => ({
+            ...n,
+            isRead: true,
+          })),
           unreadCount: 0,
           urgentCount: 0,
-          lastUpdate: new Date()
+          lastUpdate: new Date(),
         }));
       })
       .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
+        if (status === "SUBSCRIBED") {
           setIsConnected(true);
           console.log(`Connected to notifications channel for user ${userId}`);
         }
@@ -132,25 +142,28 @@ export function useRealtimeNotifications(userId: string | undefined) {
           const data = await response.json();
           const notifications = data.notifications.map((n: any) => ({
             ...n,
-            timestamp: new Date(n.timestamp)
+            timestamp: new Date(n.timestamp),
           }));
 
           setState({
             notifications,
-            unreadCount: notifications.filter((n: Notification) => !n.isRead).length,
-            urgentCount: notifications.filter((n: Notification) => n.type === 'URGENT' && !n.isRead).length,
-            lastUpdate: new Date()
+            unreadCount: notifications.filter((n: Notification) => !n.isRead)
+              .length,
+            urgentCount: notifications.filter(
+              (n: Notification) => n.type === "URGENT" && !n.isRead,
+            ).length,
+            lastUpdate: new Date(),
           });
         }
       } catch (error) {
-        console.error('Error fetching notifications:', error);
+        console.error("Error fetching notifications:", error);
       }
     };
 
     fetchNotifications();
 
     // Request notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
+    if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
 
@@ -164,46 +177,50 @@ export function useRealtimeNotifications(userId: string | undefined) {
   }, [userId]);
 
   // Mark notification as read
-  const markAsRead = useCallback(async (notificationId: string) => {
-    if (!channel) return;
+  const markAsRead = useCallback(
+    async (notificationId: string) => {
+      if (!channel) return;
 
-    await channel.send({
-      type: 'broadcast',
-      event: 'mark-read',
-      payload: { notificationId }
-    });
+      await channel.send({
+        type: "broadcast",
+        event: "mark-read",
+        payload: { notificationId },
+      });
 
-    // Optimistically update local state
-    setState(prev => {
-      const updated = prev.notifications.map(n =>
-        n.id === notificationId ? { ...n, isRead: true } : n
-      );
+      // Optimistically update local state
+      setState((prev) => {
+        const updated = prev.notifications.map((n) =>
+          n.id === notificationId ? { ...n, isRead: true } : n,
+        );
 
-      return {
-        notifications: updated,
-        unreadCount: updated.filter(n => !n.isRead).length,
-        urgentCount: updated.filter(n => n.type === 'URGENT' && !n.isRead).length,
-        lastUpdate: new Date()
-      };
-    });
-  }, [channel]);
+        return {
+          notifications: updated,
+          unreadCount: updated.filter((n) => !n.isRead).length,
+          urgentCount: updated.filter((n) => n.type === "URGENT" && !n.isRead)
+            .length,
+          lastUpdate: new Date(),
+        };
+      });
+    },
+    [channel],
+  );
 
   // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
     if (!channel) return;
 
     await channel.send({
-      type: 'broadcast',
-      event: 'mark-all-read',
-      payload: {}
+      type: "broadcast",
+      event: "mark-all-read",
+      payload: {},
     });
 
     // Optimistically update local state
-    setState(prev => ({
-      notifications: prev.notifications.map(n => ({ ...n, isRead: true })),
+    setState((prev) => ({
+      notifications: prev.notifications.map((n) => ({ ...n, isRead: true })),
       unreadCount: 0,
       urgentCount: 0,
-      lastUpdate: new Date()
+      lastUpdate: new Date(),
     }));
   }, [channel]);
 
@@ -213,7 +230,7 @@ export function useRealtimeNotifications(userId: string | undefined) {
       notifications: [],
       unreadCount: 0,
       urgentCount: 0,
-      lastUpdate: new Date()
+      lastUpdate: new Date(),
     });
   }, []);
 
@@ -225,7 +242,7 @@ export function useRealtimeNotifications(userId: string | undefined) {
     markAsRead,
     markAllAsRead,
     clearAll,
-    lastUpdate: state.lastUpdate
+    lastUpdate: state.lastUpdate,
   };
 }
 
@@ -237,9 +254,9 @@ export function useRealtimeAlerts(opdrachtgeverId: string | undefined) {
     shiftAlerts: Array<{
       id: string;
       shiftId: string;
-      type: 'UNFILLED' | 'NO_SHOW' | 'INCIDENT' | 'LATE_CHECK_IN';
+      type: "UNFILLED" | "NO_SHOW" | "INCIDENT" | "LATE_CHECK_IN";
       message: string;
-      severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+      severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
       timestamp: Date;
       requiresAction: boolean;
     }>;
@@ -262,7 +279,7 @@ export function useRealtimeAlerts(opdrachtgeverId: string | undefined) {
   }>({
     shiftAlerts: [],
     documentAlerts: [],
-    paymentAlerts: []
+    paymentAlerts: [],
   });
 
   useEffect(() => {
@@ -271,11 +288,12 @@ export function useRealtimeAlerts(opdrachtgeverId: string | undefined) {
     const supabase = createSupabaseClient();
 
     // Subscribe to alerts channel
-    const channel = supabase.channel(`alerts:${opdrachtgeverId}`)
-      .on('broadcast', { event: 'shift-alert' }, (payload) => {
-        console.log('Shift alert:', payload);
+    const channel = supabase
+      .channel(`alerts:${opdrachtgeverId}`)
+      .on("broadcast", { event: "shift-alert" }, (payload) => {
+        console.log("Shift alert:", payload);
 
-        setAlerts(prev => ({
+        setAlerts((prev) => ({
           ...prev,
           shiftAlerts: [
             {
@@ -285,16 +303,16 @@ export function useRealtimeAlerts(opdrachtgeverId: string | undefined) {
               message: payload.payload.message,
               severity: payload.payload.severity,
               timestamp: new Date(payload.payload.timestamp),
-              requiresAction: payload.payload.requiresAction
+              requiresAction: payload.payload.requiresAction,
             },
-            ...prev.shiftAlerts
-          ].slice(0, 20) // Keep last 20 alerts
+            ...prev.shiftAlerts,
+          ].slice(0, 20), // Keep last 20 alerts
         }));
       })
-      .on('broadcast', { event: 'document-alert' }, (payload) => {
-        console.log('Document alert:', payload);
+      .on("broadcast", { event: "document-alert" }, (payload) => {
+        console.log("Document alert:", payload);
 
-        setAlerts(prev => ({
+        setAlerts((prev) => ({
           ...prev,
           documentAlerts: [
             {
@@ -303,16 +321,16 @@ export function useRealtimeAlerts(opdrachtgeverId: string | undefined) {
               documentType: payload.payload.documentType,
               message: payload.payload.message,
               expiresIn: payload.payload.expiresIn,
-              timestamp: new Date(payload.payload.timestamp)
+              timestamp: new Date(payload.payload.timestamp),
             },
-            ...prev.documentAlerts
-          ].slice(0, 10)
+            ...prev.documentAlerts,
+          ].slice(0, 10),
         }));
       })
-      .on('broadcast', { event: 'payment-alert' }, (payload) => {
-        console.log('Payment alert:', payload);
+      .on("broadcast", { event: "payment-alert" }, (payload) => {
+        console.log("Payment alert:", payload);
 
-        setAlerts(prev => ({
+        setAlerts((prev) => ({
           ...prev,
           paymentAlerts: [
             {
@@ -321,10 +339,10 @@ export function useRealtimeAlerts(opdrachtgeverId: string | undefined) {
               message: payload.payload.message,
               amount: payload.payload.amount,
               dueDate: new Date(payload.payload.dueDate),
-              isOverdue: payload.payload.isOverdue
+              isOverdue: payload.payload.isOverdue,
             },
-            ...prev.paymentAlerts
-          ].slice(0, 10)
+            ...prev.paymentAlerts,
+          ].slice(0, 10),
         }));
       })
       .subscribe();
@@ -332,26 +350,31 @@ export function useRealtimeAlerts(opdrachtgeverId: string | undefined) {
     // Initial fetch
     const fetchAlerts = async () => {
       try {
-        const response = await fetch(`/api/alerts/opdrachtgever/${opdrachtgeverId}`);
+        const response = await fetch(
+          `/api/alerts/opdrachtgever/${opdrachtgeverId}`,
+        );
         if (response.ok) {
           const data = await response.json();
           setAlerts({
-            shiftAlerts: data.shiftAlerts?.map((a: any) => ({
-              ...a,
-              timestamp: new Date(a.timestamp)
-            })) || [],
-            documentAlerts: data.documentAlerts?.map((a: any) => ({
-              ...a,
-              timestamp: new Date(a.timestamp)
-            })) || [],
-            paymentAlerts: data.paymentAlerts?.map((a: any) => ({
-              ...a,
-              dueDate: new Date(a.dueDate)
-            })) || []
+            shiftAlerts:
+              data.shiftAlerts?.map((a: any) => ({
+                ...a,
+                timestamp: new Date(a.timestamp),
+              })) || [],
+            documentAlerts:
+              data.documentAlerts?.map((a: any) => ({
+                ...a,
+                timestamp: new Date(a.timestamp),
+              })) || [],
+            paymentAlerts:
+              data.paymentAlerts?.map((a: any) => ({
+                ...a,
+                dueDate: new Date(a.dueDate),
+              })) || [],
           });
         }
       } catch (error) {
-        console.error('Error fetching alerts:', error);
+        console.error("Error fetching alerts:", error);
       }
     };
 
@@ -363,16 +386,20 @@ export function useRealtimeAlerts(opdrachtgeverId: string | undefined) {
   }, [opdrachtgeverId]);
 
   const totalAlerts =
-    alerts.shiftAlerts.filter(a => a.requiresAction).length +
+    alerts.shiftAlerts.filter((a) => a.requiresAction).length +
     alerts.documentAlerts.length +
-    alerts.paymentAlerts.filter(a => a.isOverdue).length;
+    alerts.paymentAlerts.filter((a) => a.isOverdue).length;
 
-  const criticalAlerts = alerts.shiftAlerts.filter(a => a.severity === 'CRITICAL');
+  const criticalAlerts = alerts.shiftAlerts.filter(
+    (a) => a.severity === "CRITICAL",
+  );
 
   return {
     alerts,
     totalAlerts,
     criticalAlerts,
-    hasUrgentAlerts: criticalAlerts.length > 0 || alerts.paymentAlerts.some(a => a.isOverdue)
+    hasUrgentAlerts:
+      criticalAlerts.length > 0 ||
+      alerts.paymentAlerts.some((a) => a.isOverdue),
   };
 }

@@ -1,9 +1,15 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Shield, Building2, Factory, ArrowRight, CheckCircle } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  CheckCircle,
+  Factory,
+  Shield,
+} from "lucide-react";
 import Link from "next/link";
-import { useRole, RoleDisplayNames } from "@/contexts/RoleContext";
+import { Button } from "@/components/ui/button";
+import { useRole } from "@/contexts/RoleContext";
 
 export function HeroSection() {
   const { activeRole } = useRole();
@@ -17,15 +23,19 @@ export function HeroSection() {
         main: "€28",
         mainLabel: "per uur",
         secondary: "24u",
-        secondaryLabel: "betaling"
+        secondaryLabel: "betaling",
       },
       benefits: [
         "Kies je eigen werktijden",
         "Werk bij top locaties",
         "GPS check-in = bewijs",
-        "Automatische facturatie"
+        "Automatische facturatie",
       ],
-      cta: { text: "Start direct", href: "/beveiligers", secondary: "Bekijk beschikbare shifts" }
+      cta: {
+        text: "Start direct",
+        href: "/beveiligers",
+        secondary: "Bekijk beschikbare shifts",
+      },
     },
     BEDRIJF: {
       title: "DIRECT TOEGANG TOT 2.847+ BEVEILIGERS",
@@ -34,15 +44,19 @@ export function HeroSection() {
         main: "2.847+",
         mainLabel: "beveiligers",
         secondary: "15min",
-        secondaryLabel: "responstijd"
+        secondaryLabel: "responstijd",
       },
       benefits: [
         "Geen werkgeversrisico",
         "Automatische planning",
         "Real-time GPS monitoring",
-        "Directe facturatie"
+        "Directe facturatie",
       ],
-      cta: { text: "Vraag demo aan", href: "/beveiligingsbedrijven", secondary: "Bereken je besparing" }
+      cta: {
+        text: "Vraag demo aan",
+        href: "/beveiligingsbedrijven",
+        secondary: "Bereken je besparing",
+      },
     },
     OPDRACHTGEVER: {
       title: "BEVEILIGING BINNEN 5 MINUTEN GEREGELD",
@@ -51,23 +65,28 @@ export function HeroSection() {
         main: "5min",
         mainLabel: "geregeld",
         secondary: "100%",
-        secondaryLabel: "WPBR gecertificeerd"
+        secondaryLabel: "WPBR gecertificeerd",
       },
       benefits: [
         "Direct beschikbaar",
         "Vaste uurtarieven",
         "Live GPS tracking",
-        "Betaal achteraf"
+        "Betaal achteraf",
       ],
-      cta: { text: "Boek beveiliging", href: "/opdrachtgevers", secondary: "Bereken kosten" }
+      cta: {
+        text: "Boek beveiliging",
+        href: "/opdrachtgevers",
+        secondary: "Bereken kosten",
+      },
     },
     null: {
       title: "BEVEILIGING ZONDER GEDOE",
-      subtitle: "Het platform dat beveiligers, bedrijven en opdrachtgevers verbindt",
+      subtitle:
+        "Het platform dat beveiligers, bedrijven en opdrachtgevers verbindt",
       stats: null,
       benefits: [],
-      cta: null
-    }
+      cta: null,
+    },
   };
 
   const content = roleContent[activeRole || "null"];
@@ -92,12 +111,20 @@ export function HeroSection() {
               {content.stats && (
                 <div className="flex justify-center gap-12 mb-8">
                   <div className="text-center">
-                    <div className="text-4xl lg:text-5xl font-bold text-primary">{content.stats.main}</div>
-                    <div className="text-sm text-muted-foreground mt-1">{content.stats.mainLabel}</div>
+                    <div className="text-4xl lg:text-5xl font-bold text-primary">
+                      {content.stats.main}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {content.stats.mainLabel}
+                    </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-4xl lg:text-5xl font-bold text-primary">{content.stats.secondary}</div>
-                    <div className="text-sm text-muted-foreground mt-1">{content.stats.secondaryLabel}</div>
+                    <div className="text-4xl lg:text-5xl font-bold text-primary">
+                      {content.stats.secondary}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {content.stats.secondaryLabel}
+                    </div>
                   </div>
                 </div>
               )}
@@ -116,7 +143,8 @@ export function HeroSection() {
                   <div className="mt-8 space-y-3">
                     <Link href={content.cta.href}>
                       <Button size="lg" className="w-full">
-                        {content.cta.text} <ArrowRight className="h-4 w-4 ml-2" />
+                        {content.cta.text}{" "}
+                        <ArrowRight className="h-4 w-4 ml-2" />
                       </Button>
                     </Link>
                     {content.cta.secondary && (
@@ -131,56 +159,60 @@ export function HeroSection() {
           ) : (
             /* User Path Cards */
             <div className="grid md:grid-cols-3 gap-6 mb-12">
-            <Link href="/beveiligers">
-              <div className="group cursor-pointer bg-white rounded-xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Shield className="h-8 w-8 text-primary" />
+              <Link href="/beveiligers">
+                <div className="group cursor-pointer bg-white rounded-xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
+                  <div className="flex justify-center mb-4">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Shield className="h-8 w-8 text-primary" />
+                    </div>
                   </div>
+                  <h3 className="text-xl font-bold mb-2">Ik ben Beveiliger</h3>
+                  <p className="text-muted-foreground mb-4 flex-grow">
+                    Vind shifts, werk flexibel en krijg snel betaald
+                  </p>
+                  <span className="text-primary font-medium group-hover:underline">
+                    Start als beveiliger →
+                  </span>
                 </div>
-                <h3 className="text-xl font-bold mb-2">Ik ben Beveiliger</h3>
-                <p className="text-muted-foreground mb-4 flex-grow">
-                  Vind shifts, werk flexibel en krijg snel betaald
-                </p>
-                <span className="text-primary font-medium group-hover:underline">
-                  Start als beveiliger →
-                </span>
-              </div>
-            </Link>
+              </Link>
 
-            <Link href="/beveiligingsbedrijven">
-              <div className="group cursor-pointer bg-white rounded-xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Building2 className="h-8 w-8 text-primary" />
+              <Link href="/beveiligingsbedrijven">
+                <div className="group cursor-pointer bg-white rounded-xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
+                  <div className="flex justify-center mb-4">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Building2 className="h-8 w-8 text-primary" />
+                    </div>
                   </div>
+                  <h3 className="text-xl font-bold mb-2">
+                    Wij zijn een Beveiligingsbedrijf
+                  </h3>
+                  <p className="text-muted-foreground mb-4 flex-grow">
+                    Manage je team en win meer opdrachten
+                  </p>
+                  <span className="text-primary font-medium group-hover:underline">
+                    Vraag demo aan →
+                  </span>
                 </div>
-                <h3 className="text-xl font-bold mb-2">Wij zijn een Beveiligingsbedrijf</h3>
-                <p className="text-muted-foreground mb-4 flex-grow">
-                  Manage je team en win meer opdrachten
-                </p>
-                <span className="text-primary font-medium group-hover:underline">
-                  Vraag demo aan →
-                </span>
-              </div>
-            </Link>
+              </Link>
 
-            <Link href="/opdrachtgevers">
-              <div className="group cursor-pointer bg-white rounded-xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Factory className="h-8 w-8 text-primary" />
+              <Link href="/opdrachtgevers">
+                <div className="group cursor-pointer bg-white rounded-xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
+                  <div className="flex justify-center mb-4">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Factory className="h-8 w-8 text-primary" />
+                    </div>
                   </div>
+                  <h3 className="text-xl font-bold mb-2">
+                    Ik zoek Beveiliging
+                  </h3>
+                  <p className="text-muted-foreground mb-4 flex-grow">
+                    Boek direct betrouwbare beveiligers
+                  </p>
+                  <span className="text-primary font-medium group-hover:underline">
+                    Vraag offerte aan →
+                  </span>
                 </div>
-                <h3 className="text-xl font-bold mb-2">Ik zoek Beveiliging</h3>
-                <p className="text-muted-foreground mb-4 flex-grow">
-                  Boek direct betrouwbare beveiligers
-                </p>
-                <span className="text-primary font-medium group-hover:underline">
-                  Vraag offerte aan →
-                </span>
-              </div>
-            </Link>
+              </Link>
             </div>
           )}
 

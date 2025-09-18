@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { z } from "zod";
 
 // GET /api/notifications - Get user notifications
 export async function GET(request: NextRequest) {
@@ -11,14 +11,14 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const searchParams = request.nextUrl.searchParams;
     const category = searchParams.get("category");
     const unreadOnly = searchParams.get("unreadOnly") === "true";
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
     const cursor = searchParams.get("cursor");
 
     const notifications = await prisma.notification.findMany({
@@ -28,22 +28,22 @@ export async function GET(request: NextRequest) {
         ...(unreadOnly && { isRead: false }),
         ...(cursor && {
           createdAt: {
-            lt: new Date(cursor)
-          }
-        })
+            lt: new Date(cursor),
+          },
+        }),
       },
       orderBy: {
-        createdAt: "desc"
+        createdAt: "desc",
       },
-      take: limit
+      take: limit,
     });
 
     // Get unread count
     const unreadCount = await prisma.notification.count({
       where: {
         userId: session.user.id,
-        isRead: false
-      }
+        isRead: false,
+      },
     });
 
     // Get category counts
@@ -51,11 +51,11 @@ export async function GET(request: NextRequest) {
       by: ["category"],
       where: {
         userId: session.user.id,
-        isRead: false
+        isRead: false,
       },
       _count: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     return NextResponse.json({
@@ -63,20 +63,25 @@ export async function GET(request: NextRequest) {
       data: {
         notifications,
         unreadCount,
-        categoryCounts: categoryCounts.reduce((acc, item) => {
-          acc[item.category] = item._count.category;
-          return acc;
-        }, {} as Record<string, number>),
+        categoryCounts: categoryCounts.reduce(
+          (acc, item) => {
+            acc[item.category] = item._count.category;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
         hasMore: notifications.length === limit,
-        nextCursor: notifications.length > 0 ? notifications[notifications.length - 1].createdAt.toISOString() : null
-      }
+        nextCursor:
+          notifications.length > 0
+            ? notifications[notifications.length - 1].createdAt.toISOString()
+            : null,
+      },
     });
-
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch notifications" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -89,7 +94,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -108,14 +113,21 @@ export async function POST(request: NextRequest) {
         "PAYMENT_PENDING",
         "WERKUUR_APPROVED",
         "WERKUUR_DISPUTED",
-        "SYSTEM_ANNOUNCEMENT"
+        "SYSTEM_ANNOUNCEMENT",
       ]),
-      category: z.enum(["OPDRACHT", "TEAM", "PAYMENT", "MESSAGE", "REVIEW", "SYSTEM"]),
+      category: z.enum([
+        "OPDRACHT",
+        "TEAM",
+        "PAYMENT",
+        "MESSAGE",
+        "REVIEW",
+        "SYSTEM",
+      ]),
       title: z.string(),
       message: z.string(),
       actionUrl: z.string().optional(),
       actionLabel: z.string().optional(),
-      metadata: z.any().optional()
+      metadata: z.any().optional(),
     });
 
     const body = await request.json();
@@ -130,8 +142,8 @@ export async function POST(request: NextRequest) {
         message: validatedData.message,
         actionUrl: validatedData.actionUrl,
         actionLabel: validatedData.actionLabel,
-        metadata: validatedData.metadata
-      }
+        metadata: validatedData.metadata,
+      },
     });
 
     // Send real-time notification via Supabase
@@ -141,25 +153,28 @@ export async function POST(request: NextRequest) {
     await supabase.channel(`user:${validatedData.recipientId}`).send({
       type: "broadcast",
       event: "new_notification",
-      payload: notification
+      payload: notification,
     });
 
     return NextResponse.json({
       success: true,
-      data: notification
+      data: notification,
     });
-
   } catch (error) {
     console.error("Error creating notification:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid notification data", details: error.errors },
-        { status: 400 }
+        {
+          success: false,
+          error: "Invalid notification data",
+          details: error.errors,
+        },
+        { status: 400 },
       );
     }
     return NextResponse.json(
       { success: false, error: "Failed to create notification" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -172,13 +187,13 @@ export async function PATCH(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const updateNotificationSchema = z.object({
       notificationIds: z.array(z.string()).optional(),
-      markAllAsRead: z.boolean().optional()
+      markAllAsRead: z.boolean().optional(),
     });
 
     const body = await request.json();
@@ -191,50 +206,49 @@ export async function PATCH(request: NextRequest) {
       result = await prisma.notification.updateMany({
         where: {
           userId: session.user.id,
-          isRead: false
+          isRead: false,
         },
         data: {
           isRead: true,
-          readAt: new Date()
-        }
+          readAt: new Date(),
+        },
       });
     } else if (validatedData.notificationIds) {
       // Mark specific notifications as read
       result = await prisma.notification.updateMany({
         where: {
           id: { in: validatedData.notificationIds },
-          userId: session.user.id
+          userId: session.user.id,
         },
         data: {
           isRead: true,
-          readAt: new Date()
-        }
+          readAt: new Date(),
+        },
       });
     } else {
       return NextResponse.json(
         { success: false, error: "No notifications specified" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        count: result.count
-      }
+        count: result.count,
+      },
     });
-
   } catch (error) {
     console.error("Error updating notifications:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Invalid update data", details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return NextResponse.json(
       { success: false, error: "Failed to update notifications" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -247,7 +261,7 @@ export async function DELETE(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -260,35 +274,34 @@ export async function DELETE(request: NextRequest) {
     if (clearAll) {
       result = await prisma.notification.deleteMany({
         where: {
-          userId: session.user.id
-        }
+          userId: session.user.id,
+        },
       });
     } else if (notificationIds) {
       result = await prisma.notification.deleteMany({
         where: {
           id: { in: notificationIds },
-          userId: session.user.id
-        }
+          userId: session.user.id,
+        },
       });
     } else {
       return NextResponse.json(
         { success: false, error: "No notifications specified" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        count: result.count
-      }
+        count: result.count,
+      },
     });
-
   } catch (error) {
     console.error("Error deleting notifications:", error);
     return NextResponse.json(
       { success: false, error: "Failed to delete notifications" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

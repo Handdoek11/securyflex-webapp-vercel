@@ -1,35 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
-  Search,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Euro,
   Filter,
   MapPin,
-  Clock,
-  Users,
-  Euro,
-  AlertTriangle,
   Plus,
-  Eye,
-  Edit,
+  Search,
   Star,
-  CheckCircle,
-  XCircle,
-  Loader2
+  Users,
 } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
 import { useOpdrachtgeverShifts } from "@/hooks/useApiData";
-import { useOpdrachtgeverOwnShiftsBroadcast, useShiftApplicationsBroadcast } from "@/hooks/useRealtimeBroadcast";
-import { useSession } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-const mockShifts = {
+import { useOpdrachtgeverOwnShiftsBroadcast } from "@/hooks/useRealtimeBroadcast";
+
+const _mockShifts = {
   open: [
     {
       id: "1",
@@ -40,10 +37,10 @@ const mockShifts = {
       endTime: "06:00",
       filled: 2,
       required: 3,
-      hourlyRate: 22.50,
+      hourlyRate: 22.5,
       isUrgent: true,
       requirements: ["VCA Basis", "Engels B1+"],
-      status: "OPEN"
+      status: "OPEN",
     },
     {
       id: "2",
@@ -54,11 +51,11 @@ const mockShifts = {
       endTime: "22:00",
       filled: 0,
       required: 2,
-      hourlyRate: 19.50,
+      hourlyRate: 19.5,
       isUrgent: false,
       requirements: ["WPBR vergunning"],
-      status: "OPEN"
-    }
+      status: "OPEN",
+    },
   ],
   active: [
     {
@@ -72,10 +69,10 @@ const mockShifts = {
         { name: "Jan de Vries", checkedInAt: "06:03", status: "ACTIVE" },
         { name: "Maria Jansen", checkedInAt: "06:01", status: "ACTIVE" },
         { name: "Peter Smit", checkedInAt: "06:00", status: "ACTIVE" },
-        { name: "Ahmed K.", checkedInAt: "06:02", status: "ACTIVE" }
+        { name: "Ahmed K.", checkedInAt: "06:02", status: "ACTIVE" },
       ],
       status: "LIVE",
-      endTimeRemaining: "2 uur 15 min"
+      endTimeRemaining: "2 uur 15 min",
     },
     {
       id: "4",
@@ -86,11 +83,16 @@ const mockShifts = {
       endTime: "22:00",
       team: [
         { name: "Tom Peters", checkedInAt: "14:00", status: "ACTIVE" },
-        { name: "Lisa Admin", checkedInAt: null, status: "LATE", minutesLate: 15 }
+        {
+          name: "Lisa Admin",
+          checkedInAt: null,
+          status: "LATE",
+          minutesLate: 15,
+        },
       ],
       status: "ISSUE",
-      issue: "Lisa Admin 15 min te laat"
-    }
+      issue: "Lisa Admin 15 min te laat",
+    },
   ],
   history: [
     {
@@ -102,9 +104,9 @@ const mockShifts = {
       endTime: "14:00",
       beveiligers: 4,
       status: "COMPLETED",
-      totalCost: 896.00,
+      totalCost: 896.0,
       rating: 5,
-      feedback: "Uitstekend"
+      feedback: "Uitstekend",
     },
     {
       id: "6",
@@ -115,10 +117,10 @@ const mockShifts = {
       endTime: "06:00",
       beveiligers: 2,
       status: "COMPLETED",
-      totalCost: 456.00,
+      totalCost: 456.0,
       rating: 4,
       feedback: "Goed",
-      note: "1 beveiliger 10 min laat"
+      note: "1 beveiliger 10 min laat",
     },
     {
       id: "7",
@@ -127,10 +129,10 @@ const mockShifts = {
       date: "2025-09-12",
       beveiligers: 2,
       status: "CANCELLED",
-      totalCost: 0.00,
-      reason: "Technische storing"
-    }
-  ]
+      totalCost: 0.0,
+      reason: "Technische storing",
+    },
+  ],
 };
 
 function getStatusBadge(status: string, isUrgent?: boolean) {
@@ -149,7 +151,9 @@ function getStatusBadge(status: string, isUrgent?: boolean) {
     case "ISSUE":
       return <Badge className="bg-amber-500 hover:bg-amber-600">⚠️ Issue</Badge>;
     case "COMPLETED":
-      return <Badge className="bg-gray-500 hover:bg-gray-600">✅ Voltooid</Badge>;
+      return (
+        <Badge className="bg-gray-500 hover:bg-gray-600">✅ Voltooid</Badge>
+      );
     case "CANCELLED":
       return <Badge variant="destructive">❌ Geannuleerd</Badge>;
     default:
@@ -166,22 +170,34 @@ export default function OpdrachtgeverShiftsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch data for each tab using real API calls
-  const { data: openShiftsData, loading: openLoading, refetch: refetchOpen } = useOpdrachtgeverShifts({
+  const {
+    data: openShiftsData,
+    loading: openLoading,
+    refetch: refetchOpen,
+  } = useOpdrachtgeverShifts({
     status: "open",
     page: 1,
-    limit: 20
+    limit: 20,
   });
 
-  const { data: activeShiftsData, loading: activeLoading, refetch: refetchActive } = useOpdrachtgeverShifts({
+  const {
+    data: activeShiftsData,
+    loading: activeLoading,
+    refetch: refetchActive,
+  } = useOpdrachtgeverShifts({
     status: "active",
     page: 1,
-    limit: 20
+    limit: 20,
   });
 
-  const { data: historyShiftsData, loading: historyLoading, refetch: refetchHistory } = useOpdrachtgeverShifts({
+  const {
+    data: historyShiftsData,
+    loading: historyLoading,
+    refetch: refetchHistory,
+  } = useOpdrachtgeverShifts({
     status: "completed",
     page: 1,
-    limit: 20
+    limit: 20,
   });
 
   // Get shift counts
@@ -196,14 +212,14 @@ export default function OpdrachtgeverShiftsPage() {
   // Real-time updates for shifts
   useOpdrachtgeverOwnShiftsBroadcast(
     session?.user?.id || "", // Use user ID instead of opdrachtgever ID for now
-    (shift, eventType) => {
+    (_shift, eventType) => {
       // Refetch appropriate data based on the event type
       refetchOpen();
       refetchActive();
       if (eventType === "OPDRACHT_STATUS_CHANGED") {
         refetchHistory();
       }
-    }
+    },
   );
 
   // Set initial tab from URL params
@@ -288,7 +304,10 @@ export default function OpdrachtgeverShiftsPage() {
               </div>
             ) : openShifts.length > 0 ? (
               openShifts.map((shift: any) => (
-                <Card key={shift.id} className={`p-4 ${shift.isUrgent || shift.needsAttention ? 'border-amber-500 border-2' : ''}`}>
+                <Card
+                  key={shift.id}
+                  className={`p-4 ${shift.isUrgent || shift.needsAttention ? "border-amber-500 border-2" : ""}`}
+                >
                   {(shift.isUrgent || shift.needsAttention) && (
                     <div className="bg-amber-500 text-white px-3 py-1 rounded-t-lg -mx-4 -mt-4 mb-4">
                       <div className="flex items-center gap-2 font-medium">
@@ -309,42 +328,77 @@ export default function OpdrachtgeverShiftsPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span>{new Date(shift.date).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })} • {shift.startTime}-{shift.endTime}</span>
+                            <span>
+                              {new Date(shift.date).toLocaleDateString(
+                                "nl-NL",
+                                {
+                                  weekday: "short",
+                                  day: "numeric",
+                                  month: "short",
+                                },
+                              )}{" "}
+                              • {shift.startTime}-{shift.endTime}
+                            </span>
                           </div>
                         </div>
 
                         <div className="mb-3">
                           <div className="flex items-center justify-between text-sm mb-1">
-                            <span>Gevuld: {shift.filled}/{shift.requiredBeveiligers} beveiligers</span>
-                            <span>{Math.round((shift.filled / shift.requiredBeveiligers) * 100)}%</span>
+                            <span>
+                              Gevuld: {shift.filled}/{shift.requiredBeveiligers}{" "}
+                              beveiligers
+                            </span>
+                            <span>
+                              {Math.round(
+                                (shift.filled / shift.requiredBeveiligers) *
+                                  100,
+                              )}
+                              %
+                            </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
                             <div
                               className={`h-2 rounded-full transition-all duration-300 ${
-                                shift.filled === shift.requiredBeveiligers ? 'bg-green-500' :
-                                shift.filled > 0 ? 'bg-amber-500' : 'bg-gray-300'
+                                shift.filled === shift.requiredBeveiligers
+                                  ? "bg-green-500"
+                                  : shift.filled > 0
+                                    ? "bg-amber-500"
+                                    : "bg-gray-300"
                               }`}
-                              style={{ width: `${(shift.filled / shift.requiredBeveiligers) * 100}%` }}
+                              style={{
+                                width: `${(shift.filled / shift.requiredBeveiligers) * 100}%`,
+                              }}
                             ></div>
                           </div>
                         </div>
 
-                        {shift.requirements && shift.requirements.length > 0 && (
-                          <div className="mb-3">
-                            <p className="text-sm font-medium mb-1">Vereisten:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {shift.requirements.map((req: string, index: number) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {req}
-                                </Badge>
-                              ))}
+                        {shift.requirements &&
+                          shift.requirements.length > 0 && (
+                            <div className="mb-3">
+                              <p className="text-sm font-medium mb-1">
+                                Vereisten:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {shift.requirements.map(
+                                  (req: string, index: number) => (
+                                    <Badge
+                                      key={index}
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      {req}
+                                    </Badge>
+                                  ),
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
                         <div className="flex items-center gap-1 text-green-600 font-semibold">
                           <Euro className="h-4 w-4" />
-                          <span>€{shift.hourlyRate?.toFixed(2) || '0.00'}/uur</span>
+                          <span>
+                            €{shift.hourlyRate?.toFixed(2) || "0.00"}/uur
+                          </span>
                         </div>
                       </div>
                       {getStatusBadge(shift.status, shift.isUrgent)}
@@ -354,7 +408,9 @@ export default function OpdrachtgeverShiftsPage() {
                       <Button className="flex-1" size="sm">
                         Bekijk sollicitaties ({shift.applications || 0})
                       </Button>
-                      <Link href={`/dashboard/opdrachtgever/shifts/${shift.id}`}>
+                      <Link
+                        href={`/dashboard/opdrachtgever/shifts/${shift.id}`}
+                      >
                         <Button variant="outline" size="sm">
                           Details
                         </Button>
@@ -366,8 +422,12 @@ export default function OpdrachtgeverShiftsPage() {
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <Clock className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <h4 className="text-lg font-semibold mb-2">Geen openstaande shifts</h4>
-                <p className="mb-4">Maak je eerste shift aan om beveiligers te vinden</p>
+                <h4 className="text-lg font-semibold mb-2">
+                  Geen openstaande shifts
+                </h4>
+                <p className="mb-4">
+                  Maak je eerste shift aan om beveiligers te vinden
+                </p>
                 <Link href="/dashboard/opdrachtgever/shifts/nieuwe">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
@@ -398,7 +458,10 @@ export default function OpdrachtgeverShiftsPage() {
               </div>
             ) : activeShifts.length > 0 ? (
               activeShifts.map((shift: any) => (
-                <Card key={shift.id} className={`p-4 ${shift.isActive ? 'border-green-500 border-2' : 'border-amber-500 border-2'}`}>
+                <Card
+                  key={shift.id}
+                  className={`p-4 ${shift.isActive ? "border-green-500 border-2" : "border-amber-500 border-2"}`}
+                >
                   <div className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -414,14 +477,18 @@ export default function OpdrachtgeverShiftsPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span>{shift.startTime}-{shift.endTime}</span>
+                            <span>
+                              {shift.startTime}-{shift.endTime}
+                            </span>
                           </div>
                         </div>
 
                         {shift.isActive && (
                           <div className="flex items-center gap-2 text-sm mb-3">
                             <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span className="text-green-700">Shift is actief</span>
+                            <span className="text-green-700">
+                              Shift is actief
+                            </span>
                           </div>
                         )}
 
@@ -437,7 +504,9 @@ export default function OpdrachtgeverShiftsPage() {
 
                         {shift.workHours && shift.workHours.length > 0 && (
                           <div className="mt-3">
-                            <p className="text-sm font-medium mb-1">Werkuren:</p>
+                            <p className="text-sm font-medium mb-1">
+                              Werkuren:
+                            </p>
                             <div className="text-sm text-muted-foreground">
                               {shift.workHours.length} uren ingevoerd
                             </div>
@@ -448,7 +517,10 @@ export default function OpdrachtgeverShiftsPage() {
                     </div>
 
                     <div className="flex gap-2 pt-2 border-t">
-                      <Link href={`/dashboard/opdrachtgever/shifts/${shift.id}`} className="flex-1">
+                      <Link
+                        href={`/dashboard/opdrachtgever/shifts/${shift.id}`}
+                        className="flex-1"
+                      >
                         <Button className="w-full" size="sm">
                           Live tracking
                         </Button>
@@ -465,12 +537,12 @@ export default function OpdrachtgeverShiftsPage() {
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <Activity className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <h4 className="text-lg font-semibold mb-2">Geen actieve shifts</h4>
+                <h4 className="text-lg font-semibold mb-2">
+                  Geen actieve shifts
+                </h4>
                 <p className="mb-4">Je hebt momenteel geen actieve shifts</p>
                 <Link href="/dashboard/opdrachtgever/shifts?tab=open">
-                  <Button variant="outline">
-                    Bekijk openstaande shifts
-                  </Button>
+                  <Button variant="outline">Bekijk openstaande shifts</Button>
                 </Link>
               </div>
             )}
@@ -512,8 +584,14 @@ export default function OpdrachtgeverShiftsPage() {
                     <div className="flex-1">
                       <h4 className="font-semibold">{shift.title}</h4>
                       <div className="text-sm text-muted-foreground mb-2">
-                        {new Date(shift.date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })} • {shift.startTime}-{shift.endTime}
-                        {shift.acceptedBeveiliger && ` • ${shift.acceptedBeveiliger.name}`}
+                        {new Date(shift.date).toLocaleDateString("nl-NL", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}{" "}
+                        • {shift.startTime}-{shift.endTime}
+                        {shift.acceptedBeveiliger &&
+                          ` • ${shift.acceptedBeveiliger.name}`}
                       </div>
 
                       {shift.feedback && shift.feedback.length > 0 && (
@@ -524,20 +602,32 @@ export default function OpdrachtgeverShiftsPage() {
                               <Star
                                 key={i}
                                 className={`w-4 h-4 ${
-                                  i < (shift.feedback[0]?.ratingBeveiliger || 0) ? "text-yellow-500 fill-yellow-500" : "text-gray-300"
+                                  i < (shift.feedback[0]?.ratingBeveiliger || 0)
+                                    ? "text-yellow-500 fill-yellow-500"
+                                    : "text-gray-300"
                                 }`}
                               />
                             ))}
                           </div>
                           {shift.feedback[0]?.commentaarBeveiliger && (
-                            <span>"{shift.feedback[0].commentaarBeveiliger}"</span>
+                            <span>
+                              "{shift.feedback[0].commentaarBeveiliger}"
+                            </span>
                           )}
                         </div>
                       )}
 
                       {shift.workHours && shift.workHours.length > 0 && (
                         <div className="text-sm text-muted-foreground mt-1">
-                          Werkuren: {shift.workHours.reduce((total: number, wh: any) => total + (wh.urenGewerkt || 0), 0).toFixed(1)}u
+                          Werkuren:{" "}
+                          {shift.workHours
+                            .reduce(
+                              (total: number, wh: any) =>
+                                total + (wh.urenGewerkt || 0),
+                              0,
+                            )
+                            .toFixed(1)}
+                          u
                         </div>
                       )}
                     </div>
@@ -553,7 +643,10 @@ export default function OpdrachtgeverShiftsPage() {
                   </div>
 
                   <div className="flex gap-2 pt-3 border-t mt-3">
-                    <Link href={`/dashboard/opdrachtgever/shifts/${shift.id}`} className="flex-1">
+                    <Link
+                      href={`/dashboard/opdrachtgever/shifts/${shift.id}`}
+                      className="flex-1"
+                    >
                       <Button variant="outline" className="w-full" size="sm">
                         Details bekijken
                       </Button>
@@ -567,12 +660,12 @@ export default function OpdrachtgeverShiftsPage() {
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <Clock className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <h4 className="text-lg font-semibold mb-2">Geen shift historie</h4>
+                <h4 className="text-lg font-semibold mb-2">
+                  Geen shift historie
+                </h4>
                 <p className="mb-4">Je hebt nog geen voltooide shifts</p>
                 <Link href="/dashboard/opdrachtgever/shifts?tab=open">
-                  <Button variant="outline">
-                    Bekijk openstaande shifts
-                  </Button>
+                  <Button variant="outline">Bekijk openstaande shifts</Button>
                 </Link>
               </div>
             )}

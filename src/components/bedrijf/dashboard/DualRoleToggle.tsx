@@ -1,8 +1,8 @@
 "use client";
 
-import { Briefcase, Users, ArrowRightLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRightLeft, Briefcase, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export type BedrijfRole = "opdrachtgever" | "leverancier";
@@ -21,10 +21,15 @@ export function DualRoleToggle({
   currentRole,
   onRoleChange,
   className,
-  stats
+  stats,
 }: DualRoleToggleProps) {
   return (
-    <div className={cn("flex items-center gap-2 bg-muted rounded-lg p-1", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-2 bg-muted rounded-lg p-1",
+        className,
+      )}
+    >
       <Button
         variant={currentRole === "leverancier" ? "default" : "ghost"}
         size="sm"

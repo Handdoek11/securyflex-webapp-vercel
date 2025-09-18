@@ -20,6 +20,10 @@ export const env = createEnv({
 
     // Optional monitoring
     SENTRY_DSN: z.string().url().optional(),
+
+    // Admin configuration
+    ADMIN_EMAILS: z.string().min(1).optional().default("stef@securyflex.com,robert@securyflex.com"),
+    ADMIN_TOOLS_PASSWORD: z.string().min(8).optional(),
   },
   client: {
     // Public Supabase keys
@@ -27,7 +31,11 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
 
     // App URL
-    NEXT_PUBLIC_APP_URL: z.string().url().optional().default("http://localhost:3000"),
+    NEXT_PUBLIC_APP_URL: z
+      .string()
+      .url()
+      .optional()
+      .default("http://localhost:3000"),
   },
   shared: {
     NODE_ENV: z.enum(["development", "production", "test"]).optional(),
@@ -42,6 +50,8 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
     SENTRY_DSN: process.env.SENTRY_DSN,
+    ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+    ADMIN_TOOLS_PASSWORD: process.env.ADMIN_TOOLS_PASSWORD,
 
     // Client
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

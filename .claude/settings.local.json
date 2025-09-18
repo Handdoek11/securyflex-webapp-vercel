@@ -27,7 +27,14 @@
       "Bash(pnpm:*)",
       "Bash(next dev:*)",
       "Bash(npx next:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(npx @biomejs/biome check:*)",
+      "Bash(npm run lint:*)",
+      "WebFetch(domain:www.prisma.io)",
+      "Bash(dir C:UserssvdweDesktopSecuryFlex-1srcappapi)",
+      "Bash(findstr:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

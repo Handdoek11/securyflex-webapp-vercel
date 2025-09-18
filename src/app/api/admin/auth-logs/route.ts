@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/admin/auth";
+import prisma from "@/lib/prisma";
 
 // GET /api/admin/auth-logs - View authentication logs
 export async function GET(request: NextRequest) {
@@ -9,30 +10,29 @@ export async function GET(request: NextRequest) {
     const session = await auth();
     if (!session?.user) {
       console.log("No session found for auth-logs request");
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Check if user is admin
-    const adminEmails = ['stef@securyflex.com', 'robert@securyflex.com'];
-    if (!adminEmails.includes(session.user.email)) {
-      console.log("Non-admin user attempted to access auth-logs:", session.user.email);
+    if (!isAdminEmail(session.user.email)) {
+      console.log(
+        "Non-admin user attempted to access auth-logs:",
+        session.user.email,
+      );
       return NextResponse.json(
         { error: "Admin access required" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     console.log("Auth-logs request from admin:", session.user.email);
 
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
     const userId = searchParams.get("userId");
     const eventType = searchParams.get("eventType");
 
-    const where: any = {};
+    const where: { userId?: string; eventType?: string } = {};
     if (userId) where.userId = userId;
     if (eventType) where.eventType = eventType;
 
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching auth logs:", error);
     return NextResponse.json(
       { error: "Failed to fetch logs" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

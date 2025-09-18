@@ -1,28 +1,27 @@
 "use client";
 
-import { useState } from "react";
 import {
   BarChart3,
-  TrendingUp,
-  CreditCard,
-  PiggyBank,
-  Building,
-  MapPin,
-  Users,
-  FileText,
-  CheckCircle,
-  MessageCircle,
   Book,
+  Building,
+  Calendar,
+  CheckCircle,
   ChevronRight,
-  AlertTriangle,
-  Star,
+  CreditCard,
   Download,
-  Calendar
+  FileText,
+  MapPin,
+  MessageCircle,
+  PiggyBank,
+  Star,
+  TrendingUp,
+  Users,
 } from "lucide-react";
+import { useState } from "react";
+import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
 
 // Mock data - will be replaced with real API calls
 const mockData = {
@@ -30,20 +29,20 @@ const mockData = {
     name: "Schiphol Security B.V.",
     rating: 4.7,
     totalShifts: 2847,
-    memberSince: "Maart 2019"
+    memberSince: "Maart 2019",
   },
   financial: {
-    outstandingAmount: 4892.50,
+    outstandingAmount: 4892.5,
     budgetUsed: 72,
-    monthlyBudget: 25000
+    monthlyBudget: 25000,
   },
   locations: {
     active: 12,
-    mostUsed: "Terminal 1"
+    mostUsed: "Terminal 1",
   },
   team: {
-    members: 8
-  }
+    members: 8,
+  },
 };
 
 interface MenuItemProps {
@@ -55,18 +54,27 @@ interface MenuItemProps {
   warning?: boolean;
 }
 
-function MenuItem({ icon, title, subtitle, onClick, badge, warning = false }: MenuItemProps) {
+function MenuItem({
+  icon,
+  title,
+  subtitle,
+  onClick,
+  badge,
+  warning = false,
+}: MenuItemProps) {
   return (
     <Card
       className={`p-4 mx-4 mb-2 cursor-pointer hover:bg-gray-50 transition-colors ${
-        warning ? 'border-amber-200 bg-amber-50/50' : ''
+        warning ? "border-amber-200 bg-amber-50/50" : ""
       }`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${warning ? 'bg-amber-100' : 'bg-blue-100'}`}>
-            <div className={warning ? 'text-amber-600' : 'text-blue-600'}>
+          <div
+            className={`p-2 rounded-lg ${warning ? "bg-amber-100" : "bg-blue-100"}`}
+          >
+            <div className={warning ? "text-amber-600" : "text-blue-600"}>
               {icon}
             </div>
           </div>
@@ -112,7 +120,9 @@ export default function OpdrachtgeverMeerPage() {
                   <span>{mockData.company.rating}</span>
                 </div>
                 <span>•</span>
-                <span>{mockData.company.totalShifts.toLocaleString()} shifts</span>
+                <span>
+                  {mockData.company.totalShifts.toLocaleString()} shifts
+                </span>
                 <span>•</span>
                 <span>Sinds {mockData.company.memberSince}</span>
               </div>
@@ -145,7 +155,7 @@ export default function OpdrachtgeverMeerPage() {
         <MenuItem
           icon={<CreditCard className="h-5 w-5" />}
           title="Facturen & betalingen"
-          subtitle={`Openstaand: €${mockData.financial.outstandingAmount.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}`}
+          subtitle={`Openstaand: €${mockData.financial.outstandingAmount.toLocaleString("nl-NL", { minimumFractionDigits: 2 })}`}
           warning={mockData.financial.outstandingAmount > 0}
           badge={
             mockData.financial.outstandingAmount > 0 ? (
@@ -237,11 +247,11 @@ export default function OpdrachtgeverMeerPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">Account type</h3>
-                <p className="text-sm text-muted-foreground">Premium Business</p>
+                <p className="text-sm text-muted-foreground">
+                  Premium Business
+                </p>
               </div>
-              <Badge className="bg-yellow-100 text-yellow-800">
-                Premium
-              </Badge>
+              <Badge className="bg-yellow-100 text-yellow-800">Premium</Badge>
             </div>
 
             <div className="border-t pt-3">
@@ -327,7 +337,9 @@ export default function OpdrachtgeverMeerPage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Voltooid:</span>
-                      <span className="font-medium text-green-600">45 (96%)</span>
+                      <span className="font-medium text-green-600">
+                        45 (96%)
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Geannuleerd:</span>
@@ -344,7 +356,9 @@ export default function OpdrachtgeverMeerPage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Totale kosten:</span>
-                      <span className="font-medium text-green-600">€15.892</span>
+                      <span className="font-medium text-green-600">
+                        €15.892
+                      </span>
                     </div>
                   </Card>
                 </div>
@@ -379,19 +393,25 @@ export default function OpdrachtgeverMeerPage() {
                     <div className="flex justify-between">
                       <span>1. Jan de Vries</span>
                       <span className="flex items-center gap-1">
-                        12 shifts <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" /> 4.9
+                        12 shifts{" "}
+                        <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />{" "}
+                        4.9
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>2. Maria Jansen</span>
                       <span className="flex items-center gap-1">
-                        8 shifts <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" /> 4.8
+                        8 shifts{" "}
+                        <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />{" "}
+                        4.8
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>3. Ahmed Khan</span>
                       <span className="flex items-center gap-1">
-                        7 shifts <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" /> 4.7
+                        7 shifts{" "}
+                        <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />{" "}
+                        4.7
                       </span>
                     </div>
                   </Card>

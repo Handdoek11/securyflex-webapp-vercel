@@ -1,8 +1,14 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { supabase } from "@/lib/supabase";
 import { useSession } from "next-auth/react";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { supabase } from "@/lib/supabase";
 
 interface RealtimeContextType {
   isConnected: boolean;
@@ -101,7 +107,11 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
       subscriptions.clear();
       channel.unsubscribe();
     };
-  }, [session?.user]);
+  }, [
+    session?.user,
+    subscriptions.clear, // Cleanup all subscriptions
+    subscriptions.forEach,
+  ]);
 
   return (
     <RealtimeContext.Provider

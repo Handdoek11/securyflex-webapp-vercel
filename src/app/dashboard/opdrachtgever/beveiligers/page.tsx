@@ -1,32 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
-  Search,
-  Filter,
-  MapPin,
-  Users,
-  Euro,
-  Star,
-  Heart,
-  MessageCircle,
-  User,
+  AlertTriangle,
   Award,
   CheckCircle,
-  Clock,
-  AlertTriangle,
+  Euro,
+  Heart,
+  Loader2,
+  MapPin,
+  MessageCircle,
   Plus,
-  Loader2
+  Search,
+  Star,
+  User,
+  Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OpdrachtgeverDashboardLayout } from "@/components/dashboard/OpdrachtgeverDashboardLayout";
-import { useOpdrachtgeverBeveiligers, useOpdrachtgeverFavorites, useManageFavorites } from "@/hooks/useApiData";
 import { toast } from "@/components/ui/toast";
+import {
+  useManageFavorites,
+  useOpdrachtgeverBeveiligers,
+  useOpdrachtgeverFavorites,
+} from "@/hooks/useApiData";
 
 // Note: Beveiligers page has minimal real-time requirements
 // Most updates are user-initiated (favorites, filtering)
@@ -34,10 +36,12 @@ import { toast } from "@/components/ui/toast";
 
 function getStatusIndicator(status: string, isOnline?: boolean) {
   if (isOnline) {
-    return <div className="flex items-center gap-1">
-      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-      <span className="text-green-600 text-sm font-medium">🟢</span>
-    </div>;
+    return (
+      <div className="flex items-center gap-1">
+        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+        <span className="text-green-600 text-sm font-medium">🟢</span>
+      </div>
+    );
   }
 
   switch (status) {
@@ -52,8 +56,27 @@ function getStatusIndicator(status: string, isOnline?: boolean) {
   }
 }
 
-function BeveiligersCard({ beveiliger, onToggleFavorite, isUpdating }: {
-  beveiliger: any;
+interface Beveiliger {
+  id: string;
+  name: string;
+  isPremium?: boolean;
+  isVerified?: boolean;
+  rating?: number;
+  totalReviews?: number;
+  location?: string;
+  hourlyRate?: number;
+  specialties?: string[];
+  availability?: string;
+  responseTime?: string;
+  certificates?: string[];
+}
+
+function BeveiligersCard({
+  beveiliger,
+  onToggleFavorite,
+  isUpdating,
+}: {
+  beveiliger: Beveiliger;
   onToggleFavorite: (id: string) => void;
   isUpdating?: boolean;
 }) {
@@ -63,7 +86,10 @@ function BeveiligersCard({ beveiliger, onToggleFavorite, isUpdating }: {
         {/* Profile Photo */}
         <div className="relative">
           <div className="w-15 h-15 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold">
-            {beveiliger.name.split(' ').map((n: string) => n[0]).join('')}
+            {beveiliger.name
+              .split(" ")
+              .map((n: string) => n[0])
+              .join("")}
           </div>
           {beveiliger.isPremium && (
             <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
@@ -78,7 +104,9 @@ function BeveiligersCard({ beveiliger, onToggleFavorite, isUpdating }: {
           <div className="flex items-start justify-between">
             <div>
               <h3 className="font-semibold text-lg">{beveiliger.name}</h3>
-              <p className="text-sm text-muted-foreground">{beveiliger.specialization}</p>
+              <p className="text-sm text-muted-foreground">
+                {beveiliger.specialization}
+              </p>
             </div>
             <div className="flex items-center gap-1">
               <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
@@ -89,11 +117,15 @@ function BeveiligersCard({ beveiliger, onToggleFavorite, isUpdating }: {
           {/* Status & Availability */}
           <div className="flex items-center gap-2 text-sm">
             {getStatusIndicator(beveiliger.status, beveiliger.isOnline)}
-            <span className={
-              beveiliger.status === "AVAILABLE" ? "text-green-700" :
-              beveiliger.status === "LIMITED" ? "text-amber-700" :
-              "text-red-700"
-            }>
+            <span
+              className={
+                beveiliger.status === "AVAILABLE"
+                  ? "text-green-700"
+                  : beveiliger.status === "LIMITED"
+                    ? "text-amber-700"
+                    : "text-red-700"
+              }
+            >
               {beveiliger.availabilityText}
             </span>
             {beveiliger.isFavoriteClient && (
@@ -108,7 +140,9 @@ function BeveiligersCard({ beveiliger, onToggleFavorite, isUpdating }: {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />
-              <span>{beveiliger.location} ({beveiliger.distance}km)</span>
+              <span>
+                {beveiliger.location} ({beveiliger.distance}km)
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <Users className="h-3 w-3" />
@@ -126,7 +160,9 @@ function BeveiligersCard({ beveiliger, onToggleFavorite, isUpdating }: {
           {beveiliger.isPremium && (
             <div className="flex items-center gap-1 text-sm">
               <Award className="h-4 w-4 text-yellow-500" />
-              <span className="text-yellow-700 font-medium">Premium beveiliger</span>
+              <span className="text-yellow-700 font-medium">
+                Premium beveiliger
+              </span>
             </div>
           )}
 
@@ -162,28 +198,40 @@ function BeveiligersCard({ beveiliger, onToggleFavorite, isUpdating }: {
           )}
 
           {/* Certifications */}
-          {beveiliger.certifications && beveiliger.certifications.length > 0 && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">
-                {beveiliger.specialization === "Starter (3 maanden)" ? "Certificaten:" :
-                 beveiliger.specialization === "Mobiele Surveillance" ? "Specialisaties:" :
-                 "Certificaten:"}
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {beveiliger.certifications.map((cert: string, index: number) => (
-                  <Badge key={index} variant="secondary" className="text-xs bg-blue-50 text-blue-700">
-                    {cert}
-                  </Badge>
-                ))}
+          {beveiliger.certifications &&
+            beveiliger.certifications.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {beveiliger.specialization === "Starter (3 maanden)"
+                    ? "Certificaten:"
+                    : beveiliger.specialization === "Mobiele Surveillance"
+                      ? "Specialisaties:"
+                      : "Certificaten:"}
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {beveiliger.certifications.map(
+                    (cert: string, index: number) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="text-xs bg-blue-50 text-blue-700"
+                      >
+                        {cert}
+                      </Badge>
+                    ),
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Document Status Warning */}
           {beveiliger.documents?.vog === false && (
             <div className="flex items-center gap-2 text-sm text-amber-700">
               <AlertTriangle className="h-4 w-4" />
-              <span>📄 VOG verloopt over {beveiliger.documents.vogExpiresInDays} dagen</span>
+              <span>
+                📄 VOG verloopt over {beveiliger.documents.vogExpiresInDays}{" "}
+                dagen
+              </span>
             </div>
           )}
 
@@ -192,9 +240,11 @@ function BeveiligersCard({ beveiliger, onToggleFavorite, isUpdating }: {
             <div className="text-sm">
               <p className="font-medium mb-1">📄 Documenten:</p>
               <div className="space-x-2">
-                <span>Pas {beveiliger.documents.id ? '✅' : '❌'}</span>
-                <span>VOG {beveiliger.documents.vog ? '✅' : '❌'}</span>
-                <span>Diploma {beveiliger.documents.diploma ? '✅' : '❌'}</span>
+                <span>Pas {beveiliger.documents.id ? "✅" : "❌"}</span>
+                <span>VOG {beveiliger.documents.vog ? "✅" : "❌"}</span>
+                <span>
+                  Diploma {beveiliger.documents.diploma ? "✅" : "❌"}
+                </span>
               </div>
             </div>
           )}
@@ -203,10 +253,16 @@ function BeveiligersCard({ beveiliger, onToggleFavorite, isUpdating }: {
 
       {/* Action Buttons */}
       <div className="flex gap-2 pt-2 border-t">
-        <Button className="flex-1" size="sm" disabled={beveiliger.status === "UNAVAILABLE"}>
-          {beveiliger.status === "UNAVAILABLE" ? "Boek voor morgen" :
-           beveiliger.isNewTalent ? "Probeer uit" :
-           "Direct boeken"}
+        <Button
+          className="flex-1"
+          size="sm"
+          disabled={beveiliger.status === "UNAVAILABLE"}
+        >
+          {beveiliger.status === "UNAVAILABLE"
+            ? "Boek voor morgen"
+            : beveiliger.isNewTalent
+              ? "Probeer uit"
+              : "Direct boeken"}
         </Button>
         <Button variant="outline" size="sm">
           <MessageCircle className="h-3 w-3 mr-1" />
@@ -225,7 +281,9 @@ function BeveiligersCard({ beveiliger, onToggleFavorite, isUpdating }: {
           {isUpdating ? (
             <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <Heart className={`h-3 w-3 ${beveiliger.isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
+            <Heart
+              className={`h-3 w-3 ${beveiliger.isFavorite ? "fill-red-500 text-red-500" : ""}`}
+            />
           )}
         </Button>
         {beveiliger.isNewTalent && (
@@ -246,25 +304,40 @@ export default function OpdrachtgeverBeveiligersPage() {
     location: "",
     specialization: "",
     minRating: 0,
-    availableOnly: false
+    availableOnly: false,
   });
 
   // API hooks
-  const { data: beveiligersData, loading: beveiligersLoading, refetch: refetchBeveiligers } = useOpdrachtgeverBeveiligers({
+  const {
+    data: beveiligersData,
+    loading: beveiligersLoading,
+    refetch: refetchBeveiligers,
+  } = useOpdrachtgeverBeveiligers({
     view: filters.view,
     search: searchQuery,
     location: filters.location,
     specialization: filters.specialization,
     minRating: filters.minRating,
-    availableOnly: filters.availableOnly
+    availableOnly: filters.availableOnly,
   });
 
-  const { data: favoritesData, loading: favoritesLoading, refetch: refetchFavorites } = useOpdrachtgeverFavorites();
-  const { mutate: manageFavorite, loading: managingFavorite } = useManageFavorites();
+  const {
+    data: favoritesData,
+    loading: favoritesLoading,
+    refetch: refetchFavorites,
+  } = useOpdrachtgeverFavorites();
+  const { mutate: manageFavorite, loading: managingFavorite } =
+    useManageFavorites();
 
   // Extract data
   const beveiligers = beveiligersData?.beveiligers || [];
-  const stats = beveiligersData?.stats || { total: 0, available: 0, favorites: 0, premium: 0, averageRating: 0 };
+  const stats = beveiligersData?.stats || {
+    total: 0,
+    available: 0,
+    favorites: 0,
+    premium: 0,
+    averageRating: 0,
+  };
   const favorites = favoritesData?.favorites || [];
 
   // Update filters based on active tab
@@ -284,16 +357,17 @@ export default function OpdrachtgeverBeveiligersPage() {
     }
 
     setFilters(newFilters);
-  }, [activeTab]);
+  }, [activeTab, filters]);
 
   const toggleFavorite = async (beveiligerId: string) => {
     try {
-      const isCurrentlyFavorite = beveiligers.find(b => b.id === beveiligerId)?.isFavorite ||
-                                 favorites.some(f => f.id === beveiligerId);
+      const isCurrentlyFavorite =
+        beveiligers.find((b) => b.id === beveiligerId)?.isFavorite ||
+        favorites.some((f) => f.id === beveiligerId);
 
       const result = await manageFavorite({
         beveiligerId,
-        action: isCurrentlyFavorite ? "remove" : "add"
+        action: isCurrentlyFavorite ? "remove" : "add",
       });
 
       if (result.success) {
@@ -304,7 +378,7 @@ export default function OpdrachtgeverBeveiligersPage() {
       } else {
         toast.error(result.error || "Er ging iets mis");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Er ging iets mis bij het bijwerken van favorieten");
     }
   };
@@ -382,7 +456,7 @@ export default function OpdrachtgeverBeveiligersPage() {
           <TabsContent value="favorieten" className="space-y-4">
             {favoritesLoading ? (
               <div className="space-y-4">
-                {[1, 2, 3].map(i => (
+                {[1, 2, 3].map((i) => (
                   <Card key={i} className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-center space-x-4">
@@ -407,8 +481,12 @@ export default function OpdrachtgeverBeveiligersPage() {
                     beveiliger={{
                       ...beveiliger,
                       isFavorite: true,
-                      availabilityText: beveiliger.isAvailable ? "Beschikbaar nu" : "Niet beschikbaar",
-                      status: beveiliger.isAvailable ? "AVAILABLE" : "UNAVAILABLE"
+                      availabilityText: beveiliger.isAvailable
+                        ? "Beschikbaar nu"
+                        : "Niet beschikbaar",
+                      status: beveiliger.isAvailable
+                        ? "AVAILABLE"
+                        : "UNAVAILABLE",
                     }}
                     onToggleFavorite={toggleFavorite}
                     isUpdating={managingFavorite}
@@ -418,7 +496,9 @@ export default function OpdrachtgeverBeveiligersPage() {
             ) : (
               <div className="text-center py-12 space-y-4">
                 <div className="text-4xl">⭐</div>
-                <h3 className="text-lg font-semibold">Nog geen favoriete beveiligers</h3>
+                <h3 className="text-lg font-semibold">
+                  Nog geen favoriete beveiligers
+                </h3>
                 <p className="text-muted-foreground">
                   Voeg beveiligers toe aan je favorieten voor snelle toegang.
                 </p>
@@ -433,7 +513,7 @@ export default function OpdrachtgeverBeveiligersPage() {
           <TabsContent value="beschikbaar" className="space-y-4">
             {beveiligersLoading ? (
               <div className="space-y-4">
-                {[1, 2, 3].map(i => (
+                {[1, 2, 3].map((i) => (
                   <Card key={i} className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-center space-x-4">
@@ -452,54 +532,60 @@ export default function OpdrachtgeverBeveiligersPage() {
             ) : (
               <>
                 <h3 className="font-semibold text-lg">NU BESCHIKBAAR</h3>
-                {beveiligers
-                  .filter(b => b.isAvailable)
-                  .length > 0 ? (
+                {beveiligers.filter((b) => b.isAvailable).length > 0 ? (
                   beveiligers
-                    .filter(b => b.isAvailable)
+                    .filter((b) => b.isAvailable)
                     .map((beveiliger) => (
-                    <BeveiligersCard
-                      key={beveiliger.id}
-                      beveiliger={{
-                        ...beveiliger,
-                        availabilityText: "Beschikbaar nu",
-                        status: "AVAILABLE",
-                        isFavorite: favorites.some(f => f.id === beveiliger.id)
-                      }}
-                      onToggleFavorite={toggleFavorite}
-                      isUpdating={managingFavorite}
-                    />
-                  ))
+                      <BeveiligersCard
+                        key={beveiliger.id}
+                        beveiliger={{
+                          ...beveiliger,
+                          availabilityText: "Beschikbaar nu",
+                          status: "AVAILABLE",
+                          isFavorite: favorites.some(
+                            (f) => f.id === beveiliger.id,
+                          ),
+                        }}
+                        onToggleFavorite={toggleFavorite}
+                        isUpdating={managingFavorite}
+                      />
+                    ))
                 ) : (
                   <div className="text-center py-8 space-y-2">
                     <div className="text-2xl">🔍</div>
-                    <p className="text-muted-foreground">Geen beschikbare beveiligers gevonden</p>
+                    <p className="text-muted-foreground">
+                      Geen beschikbare beveiligers gevonden
+                    </p>
                   </div>
                 )}
 
-                <h3 className="font-semibold text-lg mt-6">BEPERKT BESCHIKBAAR</h3>
-                {beveiligers
-                  .filter(b => !b.isAvailable)
-                  .length > 0 ? (
+                <h3 className="font-semibold text-lg mt-6">
+                  BEPERKT BESCHIKBAAR
+                </h3>
+                {beveiligers.filter((b) => !b.isAvailable).length > 0 ? (
                   beveiligers
-                    .filter(b => !b.isAvailable)
+                    .filter((b) => !b.isAvailable)
                     .map((beveiliger) => (
-                    <BeveiligersCard
-                      key={beveiliger.id}
-                      beveiliger={{
-                        ...beveiliger,
-                        availabilityText: "Beperkt beschikbaar",
-                        status: "LIMITED",
-                        isFavorite: favorites.some(f => f.id === beveiliger.id)
-                      }}
-                      onToggleFavorite={toggleFavorite}
-                      isUpdating={managingFavorite}
-                    />
-                  ))
+                      <BeveiligersCard
+                        key={beveiliger.id}
+                        beveiliger={{
+                          ...beveiliger,
+                          availabilityText: "Beperkt beschikbaar",
+                          status: "LIMITED",
+                          isFavorite: favorites.some(
+                            (f) => f.id === beveiliger.id,
+                          ),
+                        }}
+                        onToggleFavorite={toggleFavorite}
+                        isUpdating={managingFavorite}
+                      />
+                    ))
                 ) : (
                   <div className="text-center py-8 space-y-2">
                     <div className="text-2xl">✅</div>
-                    <p className="text-muted-foreground">Alle beveiligers zijn beschikbaar!</p>
+                    <p className="text-muted-foreground">
+                      Alle beveiligers zijn beschikbaar!
+                    </p>
                   </div>
                 )}
               </>
@@ -513,12 +599,12 @@ export default function OpdrachtgeverBeveiligersPage() {
                 <Card className="p-4">
                   <Skeleton className="h-6 w-[200px] mb-3" />
                   <div className="grid grid-cols-2 gap-4">
-                    {[1, 2, 3, 4].map(i => (
+                    {[1, 2, 3, 4].map((i) => (
                       <Skeleton key={i} className="h-4 w-full" />
                     ))}
                   </div>
                 </Card>
-                {[1, 2, 3].map(i => (
+                {[1, 2, 3].map((i) => (
                   <Card key={i} className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-center space-x-4">
@@ -538,27 +624,41 @@ export default function OpdrachtgeverBeveiligersPage() {
               <>
                 {/* Team Statistics */}
                 <Card className="p-4">
-                  <h3 className="font-semibold text-lg mb-3">TEAM STATISTIEKEN</h3>
+                  <h3 className="font-semibold text-lg mb-3">
+                    TEAM STATISTIEKEN
+                  </h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Totaal beveiligers:</span>
+                      <span className="text-muted-foreground">
+                        Totaal beveiligers:
+                      </span>
                       <span className="ml-2 font-medium">{stats.total}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Beschikbaar nu:</span>
+                      <span className="text-muted-foreground">
+                        Beschikbaar nu:
+                      </span>
                       <span className="ml-2 font-medium text-green-600">
-                        {stats.available} ({stats.total > 0 ? Math.round((stats.available / stats.total) * 100) : 0}%)
+                        {stats.available} (
+                        {stats.total > 0
+                          ? Math.round((stats.available / stats.total) * 100)
+                          : 0}
+                        %)
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Gemiddelde rating:</span>
+                      <span className="text-muted-foreground">
+                        Gemiddelde rating:
+                      </span>
                       <span className="ml-2 font-medium flex items-center gap-1">
                         <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                         {stats.averageRating || 0}
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Premium beveiligers:</span>
+                      <span className="text-muted-foreground">
+                        Premium beveiligers:
+                      </span>
                       <span className="ml-2 font-medium">{stats.premium}</span>
                     </div>
                   </div>
@@ -572,9 +672,15 @@ export default function OpdrachtgeverBeveiligersPage() {
                       key={beveiliger.id}
                       beveiliger={{
                         ...beveiliger,
-                        availabilityText: beveiliger.isAvailable ? "Beschikbaar nu" : "Beperkt beschikbaar",
-                        status: beveiliger.isAvailable ? "AVAILABLE" : "LIMITED",
-                        isFavorite: favorites.some(f => f.id === beveiliger.id)
+                        availabilityText: beveiliger.isAvailable
+                          ? "Beschikbaar nu"
+                          : "Beperkt beschikbaar",
+                        status: beveiliger.isAvailable
+                          ? "AVAILABLE"
+                          : "LIMITED",
+                        isFavorite: favorites.some(
+                          (f) => f.id === beveiliger.id,
+                        ),
                       }}
                       onToggleFavorite={toggleFavorite}
                       isUpdating={managingFavorite}
@@ -583,9 +689,12 @@ export default function OpdrachtgeverBeveiligersPage() {
                 ) : (
                   <div className="text-center py-12 space-y-4">
                     <div className="text-4xl">👥</div>
-                    <h3 className="text-lg font-semibold">Geen beveiligers gevonden</h3>
+                    <h3 className="text-lg font-semibold">
+                      Geen beveiligers gevonden
+                    </h3>
                     <p className="text-muted-foreground">
-                      Er zijn momenteel geen beveiligers beschikbaar die voldoen aan je zoekcriteria.
+                      Er zijn momenteel geen beveiligers beschikbaar die voldoen
+                      aan je zoekcriteria.
                     </p>
                   </div>
                 )}

@@ -1,9 +1,15 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { MapPin, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Clock, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface ShiftCardProps {
   title: string;
@@ -27,9 +33,11 @@ export function ShiftCard({
   requirements,
 }: ShiftCardProps) {
   return (
-    <Card className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1 ${
-      urgent ? "border-accent ring-2 ring-accent/20 animate-pulse" : ""
-    }`}>
+    <Card
+      className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1 ${
+        urgent ? "border-accent ring-2 ring-accent/20 animate-pulse" : ""
+      }`}
+    >
       {urgent && (
         <div className="absolute top-0 right-0 bg-accent text-accent-foreground px-2 py-1 text-xs font-semibold rounded-bl-md">
           URGENT
@@ -59,7 +67,13 @@ export function ShiftCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 text-sm">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <span className={spotsLeft <= 2 ? "text-accent font-medium" : "text-muted-foreground"}>
+            <span
+              className={
+                spotsLeft <= 2
+                  ? "text-accent font-medium"
+                  : "text-muted-foreground"
+              }
+            >
               {spotsLeft} {spotsLeft === 1 ? "plek" : "plekken"}
             </span>
           </div>
@@ -72,10 +86,7 @@ export function ShiftCard({
           </div>
         )}
 
-        <Button
-          className="w-full"
-          variant={urgent ? "default" : "outline"}
-        >
+        <Button className="w-full" variant={urgent ? "default" : "outline"}>
           {urgent ? "SOLLICITEER NU →" : "BEKIJK DETAILS →"}
         </Button>
       </CardContent>

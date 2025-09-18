@@ -1,32 +1,31 @@
 "use client";
 
-import { useState } from "react";
 import {
-  CreditCard,
-  TrendingUp,
-  Euro,
-  Clock,
-  CheckCircle,
+  Activity,
   AlertCircle,
-  Download,
-  Upload,
-  FileText,
-  Calendar,
-  Users,
-  ArrowUpRight,
   ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Euro,
   ExternalLink,
+  FileText,
+  PieChart,
   RefreshCw,
   Shield,
+  TrendingUp,
+  Upload,
   Zap,
-  DollarSign,
-  PieChart,
-  BarChart3,
-  Activity
 } from "lucide-react";
+import { useState } from "react";
+import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -36,12 +35,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
   Table,
   TableBody,
   TableCell,
@@ -49,7 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Transaction {
   id: string;
@@ -91,7 +84,7 @@ export default function BedrijfFinqlePage() {
       status: "completed",
       date: "2025-01-15T14:30:00",
       reference: "DP-2025-0142",
-      merchant: "Jan de Vries"
+      merchant: "Jan de Vries",
     },
     {
       id: "2",
@@ -100,7 +93,7 @@ export default function BedrijfFinqlePage() {
       amount: 12500,
       status: "processing",
       date: "2025-01-14T10:00:00",
-      reference: "INV-2025-0089"
+      reference: "INV-2025-0089",
     },
     {
       id: "3",
@@ -109,7 +102,7 @@ export default function BedrijfFinqlePage() {
       amount: -8900,
       status: "completed",
       date: "2025-01-13T16:45:00",
-      reference: "PAY-2025-0234"
+      reference: "PAY-2025-0234",
     },
     {
       id: "4",
@@ -119,7 +112,7 @@ export default function BedrijfFinqlePage() {
       status: "pending",
       date: "2025-01-13T12:00:00",
       reference: "DP-2025-0141",
-      merchant: "Sophie Bakker"
+      merchant: "Sophie Bakker",
     },
     {
       id: "5",
@@ -128,8 +121,8 @@ export default function BedrijfFinqlePage() {
       amount: 25000,
       status: "completed",
       date: "2025-01-10T09:00:00",
-      reference: "CR-2025-0012"
-    }
+      reference: "CR-2025-0012",
+    },
   ];
 
   const directPaymentRequests: DirectPaymentRequest[] = [
@@ -141,7 +134,7 @@ export default function BedrijfFinqlePage() {
       shiftDate: "2025-01-08",
       requestDate: "2025-01-15",
       status: "approved",
-      fee: 36.25
+      fee: 36.25,
     },
     {
       id: "2",
@@ -151,7 +144,7 @@ export default function BedrijfFinqlePage() {
       shiftDate: "2025-01-10",
       requestDate: "2025-01-13",
       status: "pending",
-      fee: 25.81
+      fee: 25.81,
     },
     {
       id: "3",
@@ -161,8 +154,8 @@ export default function BedrijfFinqlePage() {
       shiftDate: "2025-01-05",
       requestDate: "2025-01-12",
       status: "approved",
-      fee: 45.24
-    }
+      fee: 45.24,
+    },
   ];
 
   const weeklyStats = {
@@ -170,7 +163,7 @@ export default function BedrijfFinqlePage() {
     directPayments: 12,
     invoicesSent: 8,
     averagePaymentTime: 18,
-    totalFees: 423.50
+    totalFees: 423.5,
   };
 
   const handleRefresh = () => {
@@ -214,7 +207,9 @@ export default function BedrijfFinqlePage() {
       headerActions={
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleRefresh}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+            />
             Vernieuwen
           </Button>
           <Button variant="outline">
@@ -245,12 +240,19 @@ export default function BedrijfFinqlePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <p className="text-sm text-muted-foreground">Kredietlimiet</p>
-            <p className="text-2xl font-semibold">€{creditLimit.toLocaleString("nl-NL")}</p>
+            <p className="text-2xl font-semibold">
+              €{creditLimit.toLocaleString("nl-NL")}
+            </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Gebruikt</p>
-            <p className="text-2xl font-semibold">€{creditUsed.toLocaleString("nl-NL")}</p>
-            <Progress value={(creditUsed / creditLimit) * 100} className="mt-2" />
+            <p className="text-2xl font-semibold">
+              €{creditUsed.toLocaleString("nl-NL")}
+            </p>
+            <Progress
+              value={(creditUsed / creditLimit) * 100}
+              className="mt-2"
+            />
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Beschikbaar</p>
@@ -283,7 +285,9 @@ export default function BedrijfFinqlePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Direct Payments</p>
-              <p className="text-xl font-semibold">{weeklyStats.directPayments}</p>
+              <p className="text-xl font-semibold">
+                {weeklyStats.directPayments}
+              </p>
               <p className="text-xs text-muted-foreground mt-1">Deze week</p>
             </div>
             <Zap className="h-8 w-8 text-blue-600" />
@@ -294,7 +298,9 @@ export default function BedrijfFinqlePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Facturen</p>
-              <p className="text-xl font-semibold">{weeklyStats.invoicesSent}</p>
+              <p className="text-xl font-semibold">
+                {weeklyStats.invoicesSent}
+              </p>
               <p className="text-xs text-muted-foreground mt-1">Verstuurd</p>
             </div>
             <FileText className="h-8 w-8 text-purple-600" />
@@ -305,7 +311,9 @@ export default function BedrijfFinqlePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Gem. Betaaltijd</p>
-              <p className="text-xl font-semibold">{weeklyStats.averagePaymentTime}d</p>
+              <p className="text-xl font-semibold">
+                {weeklyStats.averagePaymentTime}d
+              </p>
               <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
                 <ArrowDownRight className="h-3 w-3" />
                 -3 dagen
@@ -342,7 +350,10 @@ export default function BedrijfFinqlePage() {
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Recente Transacties</h3>
-                <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                <Select
+                  value={selectedPeriod}
+                  onValueChange={setSelectedPeriod}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -370,12 +381,16 @@ export default function BedrijfFinqlePage() {
               <TableBody>
                 {transactions.map((transaction) => (
                   <TableRow key={transaction.id}>
-                    <TableCell>{getTransactionIcon(transaction.type)}</TableCell>
+                    <TableCell>
+                      {getTransactionIcon(transaction.type)}
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{transaction.description}</p>
                         {transaction.merchant && (
-                          <p className="text-xs text-muted-foreground">{transaction.merchant}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {transaction.merchant}
+                          </p>
                         )}
                       </div>
                     </TableCell>
@@ -386,10 +401,13 @@ export default function BedrijfFinqlePage() {
                       {new Date(transaction.date).toLocaleDateString("nl-NL")}
                     </TableCell>
                     <TableCell>{getStatusBadge(transaction.status)}</TableCell>
-                    <TableCell className={`text-right font-medium ${
-                      transaction.amount < 0 ? "text-green-600" : ""
-                    }`}>
-                      {transaction.amount < 0 ? "" : "+"}€{Math.abs(transaction.amount).toLocaleString("nl-NL")}
+                    <TableCell
+                      className={`text-right font-medium ${
+                        transaction.amount < 0 ? "text-green-600" : ""
+                      }`}
+                    >
+                      {transaction.amount < 0 ? "" : "+"}€
+                      {Math.abs(transaction.amount).toLocaleString("nl-NL")}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -411,14 +429,20 @@ export default function BedrijfFinqlePage() {
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold">Direct Payment Aanvragen</h3>
+                  <h3 className="text-lg font-semibold">
+                    Direct Payment Aanvragen
+                  </h3>
                   <p className="text-sm text-muted-foreground mt-1">
                     ZZP'ers krijgen binnen 24 uur uitbetaald via Finqle
                   </p>
                 </div>
                 <Badge variant="outline" className="gap-1">
                   <Activity className="h-3 w-3" />
-                  {directPaymentRequests.filter(r => r.status === "pending").length} in behandeling
+                  {
+                    directPaymentRequests.filter((r) => r.status === "pending")
+                      .length
+                  }{" "}
+                  in behandeling
                 </Badge>
               </div>
             </div>
@@ -439,17 +463,23 @@ export default function BedrijfFinqlePage() {
               <TableBody>
                 {directPaymentRequests.map((request) => (
                   <TableRow key={request.id}>
-                    <TableCell className="font-medium">{request.merchantName}</TableCell>
+                    <TableCell className="font-medium">
+                      {request.merchantName}
+                    </TableCell>
                     <TableCell>
                       {new Date(request.shiftDate).toLocaleDateString("nl-NL")}
                     </TableCell>
                     <TableCell>{request.hoursWorked}</TableCell>
-                    <TableCell>€{request.amount.toLocaleString("nl-NL")}</TableCell>
+                    <TableCell>
+                      €{request.amount.toLocaleString("nl-NL")}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       €{request.fee.toFixed(2)}
                     </TableCell>
                     <TableCell>
-                      {new Date(request.requestDate).toLocaleDateString("nl-NL")}
+                      {new Date(request.requestDate).toLocaleDateString(
+                        "nl-NL",
+                      )}
                     </TableCell>
                     <TableCell>{getStatusBadge(request.status)}</TableCell>
                     <TableCell>
@@ -476,7 +506,9 @@ export default function BedrijfFinqlePage() {
             <div className="p-6 border-t bg-muted/50">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">Totaal Direct Payments deze maand</p>
+                  <p className="text-sm font-medium">
+                    Totaal Direct Payments deze maand
+                  </p>
                   <p className="text-2xl font-semibold">€34.580</p>
                 </div>
                 <div className="text-right">
@@ -521,7 +553,9 @@ export default function BedrijfFinqlePage() {
               <Card className="p-4 border-dashed">
                 <p className="text-sm text-muted-foreground">Betaald (30d)</p>
                 <p className="text-xl font-semibold text-green-600">€67.890</p>
-                <p className="text-xs text-muted-foreground mt-1">23 facturen</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  23 facturen
+                </p>
               </Card>
 
               <Card className="p-4 border-dashed">

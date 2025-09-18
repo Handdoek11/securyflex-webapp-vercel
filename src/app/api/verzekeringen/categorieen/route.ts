@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // GET /api/verzekeringen/categorieen - Haal alle verzekeringscategorieën op
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "Niet ingelogd" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -18,19 +18,20 @@ export async function GET(request: NextRequest) {
     const zzpProfile = await prisma.zZPProfile.findUnique({
       where: { userId: session.user.id },
       include: {
-        subscription: true
-      }
+        subscription: true,
+      },
     });
 
     if (!zzpProfile) {
       return NextResponse.json(
         { success: false, error: "Alleen voor ZZP beveiligers" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Check subscription status
-    const hasActiveSubscription = zzpProfile.subscription?.status === "active" &&
+    const hasActiveSubscription =
+      zzpProfile.subscription?.status === "active" &&
       new Date(zzpProfile.subscription.currentPeriodEnd) > new Date();
 
     if (!hasActiveSubscription) {
@@ -38,9 +39,9 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: "Actief abonnement vereist",
-          requiresSubscription: true
+          requiresSubscription: true,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
       where: { isActief: true },
       include: {
         _count: {
-          select: { producten: true }
+          select: { producten: true },
         },
         producten: {
           where: { isActief: true },
@@ -58,31 +59,28 @@ export async function GET(request: NextRequest) {
             naam: true,
             korteBeschrijving: true,
             kortingPercentage: true,
-            isFeatured: true
+            isFeatured: true,
           },
           take: 3, // Show first 3 products as preview
-          orderBy: [
-            { isFeatured: 'desc' },
-            { sortOrder: 'asc' }
-          ]
-        }
+          orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }],
+        },
       },
-      orderBy: { sortOrder: 'asc' }
+      orderBy: { sortOrder: "asc" },
     });
 
     // Format response
-    const formattedCategories = categories.map(cat => ({
+    const formattedCategories = categories.map((cat) => ({
       id: cat.id,
       naam: cat.naam,
       beschrijving: cat.beschrijving,
       aantalProducten: cat._count.producten,
-      voorbeeldProducten: cat.producten.map(p => ({
+      voorbeeldProducten: cat.producten.map((p) => ({
         id: p.id,
         naam: p.naam,
         beschrijving: p.korteBeschrijving,
         korting: p.kortingPercentage,
-        isFeatured: p.isFeatured
-      }))
+        isFeatured: p.isFeatured,
+      })),
     }));
 
     return NextResponse.json({
@@ -91,16 +89,15 @@ export async function GET(request: NextRequest) {
         categories: formattedCategories,
         userStatus: {
           hasSubscription: true,
-          canAccessInsurance: true
-        }
-      }
+          canAccessInsurance: true,
+        },
+      },
     });
-
   } catch (error) {
     console.error("Error fetching insurance categories:", error);
     return NextResponse.json(
       { success: false, error: "Er ging iets mis" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

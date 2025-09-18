@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "Niet ingelogd" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
     const zzpProfile = await prisma.zZPProfile.findUnique({
       where: { userId: session.user.id },
       include: {
-        subscription: true
-      }
+        subscription: true,
+      },
     });
 
     if (!zzpProfile || zzpProfile.subscription?.status !== "active") {
@@ -32,15 +32,15 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: "Actief abonnement vereist",
-          requiresSubscription: true
+          requiresSubscription: true,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Build query
     const whereClause: any = {
-      isActief: true
+      isActief: true,
     };
 
     if (categorieId) {
@@ -58,8 +58,8 @@ export async function GET(request: NextRequest) {
         categorie: {
           select: {
             id: true,
-            naam: true
-          }
+            naam: true,
+          },
         },
         kortingen: {
           include: {
@@ -67,41 +67,43 @@ export async function GET(request: NextRequest) {
               where: {
                 isActief: true,
                 geldigVan: { lte: new Date() },
-                geldigTot: { gte: new Date() }
-              }
-            }
-          }
+                geldigTot: { gte: new Date() },
+              },
+            },
+          },
         },
         _count: {
-          select: { aanvragen: true }
-        }
+          select: { aanvragen: true },
+        },
       },
-      orderBy: [
-        { isFeatured: 'desc' },
-        { sortOrder: 'asc' },
-        { naam: 'asc' }
-      ]
+      orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }, { naam: "asc" }],
     });
 
     // Format response with calculated discounts
-    const formattedProducts = products.map(product => {
+    const formattedProducts = products.map((product) => {
       // Find best available discount
       const activeDiscounts = product.kortingen
-        .filter(pk => pk.korting && pk.korting.isActief)
-        .map(pk => pk.korting);
+        .filter((pk) => pk.korting?.isActief)
+        .map((pk) => pk.korting);
 
       const bestDiscount = activeDiscounts.reduce((best, current) => {
         if (!current) return best;
         if (!best) return current;
 
         // Compare discount values (convert to percentage if needed)
-        const currentValue = current.kortingType === 'PERCENTAGE'
-          ? Number(current.waarde)
-          : (product.basispremie ? Number(current.waarde) / Number(product.basispremie) * 100 : 0);
+        const currentValue =
+          current.kortingType === "PERCENTAGE"
+            ? Number(current.waarde)
+            : product.basispremie
+              ? (Number(current.waarde) / Number(product.basispremie)) * 100
+              : 0;
 
-        const bestValue = best.kortingType === 'PERCENTAGE'
-          ? Number(best.waarde)
-          : (product.basispremie ? Number(best.waarde) / Number(product.basispremie) * 100 : 0);
+        const bestValue =
+          best.kortingType === "PERCENTAGE"
+            ? Number(best.waarde)
+            : product.basispremie
+              ? (Number(best.waarde) / Number(product.basispremie)) * 100
+              : 0;
 
         return currentValue > bestValue ? current : best;
       }, null as any);
@@ -116,16 +118,22 @@ export async function GET(request: NextRequest) {
         verzekeraarLogo: product.verzekeraarLogo,
         basispremie: product.basispremie,
         platformKorting: product.kortingPercentage,
-        extraKorting: bestDiscount ? {
-          code: bestDiscount.code,
-          naam: bestDiscount.naam,
-          type: bestDiscount.kortingType,
-          waarde: bestDiscount.waarde
-        } : null,
-        totaleKorting: Number(product.kortingPercentage) + (bestDiscount && bestDiscount.kortingType === 'PERCENTAGE' ? Number(bestDiscount.waarde) : 0),
+        extraKorting: bestDiscount
+          ? {
+              code: bestDiscount.code,
+              naam: bestDiscount.naam,
+              type: bestDiscount.kortingType,
+              waarde: bestDiscount.waarde,
+            }
+          : null,
+        totaleKorting:
+          Number(product.kortingPercentage) +
+          (bestDiscount && bestDiscount.kortingType === "PERCENTAGE"
+            ? Number(bestDiscount.waarde)
+            : 0),
         features: product.productFeatures,
         isFeatured: product.isFeatured,
-        aantalAanvragen: product._count.aanvragen
+        aantalAanvragen: product._count.aanvragen,
       };
     });
 
@@ -133,15 +141,14 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         products: formattedProducts,
-        total: formattedProducts.length
-      }
+        total: formattedProducts.length,
+      },
     });
-
   } catch (error) {
     console.error("Error fetching insurance products:", error);
     return NextResponse.json(
       { success: false, error: "Er ging iets mis" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

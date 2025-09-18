@@ -1,6 +1,15 @@
 "use client";
 
-import { Download, Search, CreditCard, Building, Send, Users, FileText, Eye } from "lucide-react";
+import {
+  Building,
+  CreditCard,
+  Download,
+  Eye,
+  FileText,
+  Search,
+  Send,
+  Users,
+} from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
 
 export function ProcessSection() {
@@ -12,7 +21,9 @@ export function ProcessSection() {
       <section className="py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4">HOE HET WERKT</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4">
+              HOE HET WERKT
+            </h2>
             <p className="text-lg text-muted-foreground">
               Simpel proces voor iedereen - klaar in 3 stappen
             </p>
@@ -21,7 +32,9 @@ export function ProcessSection() {
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Beveiligers Process */}
             <div className="text-center">
-              <h3 className="text-xl font-bold mb-6 text-primary">Beveiligers</h3>
+              <h3 className="text-xl font-bold mb-6 text-primary">
+                Beveiligers
+              </h3>
 
               <div className="space-y-8">
                 <div>
@@ -67,7 +80,9 @@ export function ProcessSection() {
 
             {/* Bedrijven Process */}
             <div className="text-center">
-              <h3 className="text-xl font-bold mb-6 text-primary">Beveiligingsbedrijven</h3>
+              <h3 className="text-xl font-bold mb-6 text-primary">
+                Beveiligingsbedrijven
+              </h3>
 
               <div className="space-y-8">
                 <div>
@@ -113,7 +128,9 @@ export function ProcessSection() {
 
             {/* Opdrachtgevers Process */}
             <div className="text-center">
-              <h3 className="text-xl font-bold mb-6 text-primary">Opdrachtgevers</h3>
+              <h3 className="text-xl font-bold mb-6 text-primary">
+                Opdrachtgevers
+              </h3>
 
               <div className="space-y-8">
                 <div>
@@ -169,8 +186,10 @@ export function ProcessSection() {
           <h2 className="text-3xl lg:text-4xl font-bold mb-4">HOE HET WERKT</h2>
           <p className="text-lg text-muted-foreground">
             {activeRole === "beveiliger" && "In 3 stappen aan het werk"}
-            {activeRole === "beveiligingsbedrijf" && "Manage je team in 3 stappen"}
-            {activeRole === "opdrachtgever" && "Beveiliging regelen in 3 stappen"}
+            {activeRole === "beveiligingsbedrijf" &&
+              "Manage je team in 3 stappen"}
+            {activeRole === "opdrachtgever" &&
+              "Beveiliging regelen in 3 stappen"}
           </p>
         </div>
 
