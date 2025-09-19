@@ -11,11 +11,9 @@ Sentry.init({
   integrations: [
     Sentry.httpIntegration({
       // Capture outgoing HTTP requests
-      tracing: true,
     }),
     Sentry.prismaIntegration({
       // Capture Prisma operations
-      client: undefined, // Will be set dynamically
     }),
   ],
 

@@ -72,17 +72,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (user.zzpProfile) {
       ndNummerStatus = user.zzpProfile.ndNummerStatus;
       ndNummerExpiry = user.zzpProfile.ndNummerVervalDatum;
-      ndNummerValid =
+      ndNummerValid = !!(
         ndNummerStatus === "ACTIEF" &&
         ndNummerExpiry &&
-        new Date(ndNummerExpiry) > new Date();
+        new Date(ndNummerExpiry) > new Date()
+      );
     } else if (user.bedrijfProfile) {
       ndNummerStatus = user.bedrijfProfile.ndNummerStatus;
       ndNummerExpiry = user.bedrijfProfile.ndNummerVervalDatum;
-      ndNummerValid =
+      ndNummerValid = !!(
         ndNummerStatus === "ACTIEF" &&
         ndNummerExpiry &&
-        new Date(ndNummerExpiry) > new Date();
+        new Date(ndNummerExpiry) > new Date()
+      );
     }
 
     // Block application if ND-nummer is not valid
@@ -277,18 +279,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         voorgesteldTarief: validatedData.voorgesteldTarief,
         teamGrootte: validatedData.teamGrootte,
         status: opdracht.autoAccept ? "ACCEPTED" : "PENDING",
-        // Store ND-nummer compliance info for audit trail
-        complianceInfo: {
-          ndNummerStatus,
-          ndNummerExpiry,
-          complianceCheckedAt: new Date(),
-          daysUntilExpiry: ndNummerExpiry
-            ? Math.ceil(
-                (new Date(ndNummerExpiry).getTime() - Date.now()) /
-                  (1000 * 60 * 60 * 24),
-              )
-            : null,
-        },
       },
     });
 
@@ -299,7 +289,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           profileType: user.zzpProfile ? "ZZP" : "BEDRIJF",
           zzpProfileId: user.zzpProfile?.id,
           bedrijfProfileId: user.bedrijfProfile?.id,
-          ndNummer: user.zzpProfile?.ndNummer || user.bedrijfProfile?.ndNummer,
+          ndNummer: (user.zzpProfile?.ndNummer ||
+            user.bedrijfProfile?.ndNummer)!,
           action: "VERIFICATIE",
           newStatus: ndNummerStatus as NDNummerStatus,
           verificationSource: "Job Application",
@@ -324,13 +315,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       if (user.zzpProfile) {
         await prisma.werkuur.create({
           data: {
-            beveiligerId: user.zzpProfile.id,
+            zzpId: user.zzpProfile.id,
             opdrachtId,
-            datum: opdracht.startDatum,
             startTijd: opdracht.startDatum,
             eindTijd: opdracht.eindDatum,
             uurtarief: validatedData.voorgesteldTarief || opdracht.uurtarief,
-            status: "SCHEDULED",
+            status: "PENDING",
+            startLocatie: {},
+            urenGewerkt: 0,
           },
         });
       }
@@ -386,7 +378,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid input", details: error.errors },
+        { success: false, error: "Invalid input", details: error.issues },
         { status: 400 },
       );
     }
@@ -659,7 +651,7 @@ export async function PATCH(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid input", details: error.errors },
+        { success: false, error: "Invalid input", details: error.issues },
         { status: 400 },
       );
     }

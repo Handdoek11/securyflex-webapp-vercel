@@ -452,7 +452,10 @@ test.describe("ZZP User Flow", () => {
             error({
               code: 1, // PERMISSION_DENIED
               message: "User denied geolocation",
-            });
+              PERMISSION_DENIED: 1,
+              POSITION_UNAVAILABLE: 2,
+              TIMEOUT: 3,
+            } as GeolocationPositionError);
           },
         });
       });

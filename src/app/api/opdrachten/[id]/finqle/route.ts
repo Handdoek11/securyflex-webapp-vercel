@@ -46,8 +46,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         );
       }
 
-      // Check if opdrachtgever has Finqle debtor ID
-      if (!opdracht.opdrachtgever.finqleDebtorId) {
+      // Check if opdrachtgever exists and has Finqle debtor ID
+      if (!opdracht.opdrachtgever?.finqleDebtorId) {
         return NextResponse.json({
           success: false,
           error: "Opdrachtgever is niet geregistreerd bij Finqle",
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       // Check credit with Finqle
       const finqleClient = getFinqleClient();
       const creditCheck = await finqleClient.checkCredit(
-        opdracht.opdrachtgever.finqleDebtorId,
+        opdracht.opdrachtgever!.finqleDebtorId,
         totalAmount,
       );
 
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       for (const werkuur of werkuren) {
         // Find the ZZP for this werkuur
         const assignment = werkuur.opdracht.assignments.find(
-          (a) => a.teamLid.zzpId === werkuur.beveiligerId,
+          (a) => a.teamLid.zzpId === werkuur.zzpId,
         );
 
         if (!assignment) {
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           Number(werkuur.platformFee) * Number(werkuur.urenGewerkt);
 
         // Check if finqleDebtorId exists
-        if (!werkuur.opdracht.opdrachtgever.finqleDebtorId) {
+        if (!werkuur.opdracht.opdrachtgever?.finqleDebtorId) {
           console.error(
             `Opdrachtgever ${werkuur.opdracht.opdrachtgever.id} has no Finqle debtor ID`,
           );
@@ -167,13 +167,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         // Create billing request in Finqle
         const billingRequest = await finqleClient.createBillingRequest({
-          debtorId: werkuur.opdracht.opdrachtgever.finqleDebtorId,
+          debtorId: werkuur.opdracht.opdrachtgever!.finqleDebtorId,
           projectId: werkuur.opdrachtId,
           merchantId: zzp.finqleMerchantId,
           hours: Number(werkuur.urenGewerkt),
-          tariff: Number(werkuur.uurtarief),
+          hourlyRate: Number(werkuur.uurtarief),
           expenses: platformFee,
           description: `Werkuren ${werkuur.startTijd.toISOString().split("T")[0]} - Opdracht: ${werkuur.opdracht.titel}`,
+          periodStart: werkuur.startTijd,
+          periodEnd: werkuur.eindTijd || werkuur.startTijd,
+          tariff: platformFee,
         });
 
         if (!billingRequest.success || !billingRequest.data) {
@@ -186,9 +189,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         // Create Finqle transaction record
         const finqleTransaction = await prisma.finqleTransaction.create({
           data: {
-            werkuurId: werkuur.id,
+            werkuur: { connect: { id: werkuur.id } },
             merchantId: zzp.finqleMerchantId,
-            debtorId: werkuur.opdracht.opdrachtgever.finqleDebtorId,
+            debtorId: werkuur.opdracht.opdrachtgever!.finqleDebtorId,
             amount,
             directPayment: requestDirectPayment || false,
             finqleRequestId: billingRequest.data.requestId,

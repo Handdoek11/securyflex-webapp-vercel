@@ -87,7 +87,6 @@ export async function POST(request: NextRequest) {
 
     // Get client IP and User Agent
     const ipAddress =
-      request.ip ||
       request.headers.get("x-forwarded-for") ||
       request.headers.get("x-real-ip") ||
       "unknown";

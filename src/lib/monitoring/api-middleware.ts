@@ -1,11 +1,24 @@
 import type { NextRequest, NextResponse } from "next/server";
 import { SecuryFlexMonitoring } from "./sentry";
 
+function getClientIP(req: NextRequest): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+  const realIP = req.headers.get("x-real-ip");
+  if (realIP) {
+    return realIP;
+  }
+  // Fallback for development/testing
+  return "127.0.0.1";
+}
+
 /**
  * Monitoring middleware wrapper for API routes
  */
 export function withMonitoring<
-  T extends (...args: any[]) => Promise<NextResponse>,
+  T extends (...args: unknown[]) => Promise<NextResponse>,
 >(
   handler: T,
   options: {
@@ -16,7 +29,7 @@ export function withMonitoring<
 ): T {
   const { operation = "api", feature, trackPerformance = true } = options;
 
-  return (async (req: NextRequest, ...args: any[]) => {
+  return (async (req: NextRequest, ...args: unknown[]) => {
     const startTime = Date.now();
     const method = req.method;
     const pathname = req.nextUrl.pathname;
@@ -26,7 +39,7 @@ export function withMonitoring<
       method,
       pathname,
       req.headers.get("user-agent") || undefined,
-      req.headers.get("x-forwarded-for") || req.ip,
+      getClientIP(req),
     );
 
     // Create transaction for performance tracking
@@ -118,9 +131,9 @@ export function withMonitoring<
  * Database operation monitoring decorator
  */
 export function monitorDatabaseOperation<
-  T extends (...args: any[]) => Promise<any>,
+  T extends (...args: unknown[]) => Promise<unknown>,
 >(operation: string, table: string, fn: T): T {
-  return (async (...args: any[]) => {
+  return (async (...args: unknown[]) => {
     const startTime = Date.now();
 
     try {
@@ -156,7 +169,7 @@ export function trackSecurityEvent(
     | "unauthorized_access"
     | "rate_limit_exceeded"
     | "suspicious_activity",
-  details?: Record<string, any>,
+  details?: Record<string, unknown>,
 ) {
   const severityMap = {
     login_success: "low" as const,
@@ -185,7 +198,7 @@ export function trackBusinessEvent(
     | "shift_completed"
     | "review_submitted"
     | "dispute_created",
-  data?: Record<string, any>,
+  data?: Record<string, unknown>,
 ) {
   SecuryFlexMonitoring.trackBusinessEvent(event, data);
 }
@@ -194,7 +207,7 @@ export function trackBusinessEvent(
  * Performance monitor for critical paths
  */
 export function withPerformanceMonitoring<
-  T extends (...args: any[]) => Promise<any>,
+  T extends (...args: unknown[]) => Promise<unknown>,
 >(
   name: string,
   fn: T,
@@ -205,7 +218,7 @@ export function withPerformanceMonitoring<
 ): T {
   const { warnThreshold = 5000, errorThreshold = 10000 } = options;
 
-  return (async (...args: any[]) => {
+  return (async (...args: unknown[]) => {
     const transaction = SecuryFlexMonitoring.createTransaction(
       name,
       "function",
@@ -267,5 +280,11 @@ export function setUserContext(user: {
   role: string;
   hasCompletedProfile?: boolean;
 }) {
-  SecuryFlexMonitoring.setUserContext(user as any);
+  SecuryFlexMonitoring.setUserContext({
+    id: user.id,
+    email: user.email || undefined,
+    name: user.name || undefined,
+    role: user.role,
+    hasCompletedProfile: user.hasCompletedProfile,
+  });
 }

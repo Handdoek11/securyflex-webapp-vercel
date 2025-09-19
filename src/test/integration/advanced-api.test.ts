@@ -334,7 +334,7 @@ describe("Advanced API Integration Tests", () => {
 
         mockPrisma.werkuren.update.mockResolvedValue({
           id: "werkuren-1",
-          status: "VOLTOOID",
+          status: "AFGEROND",
           eindTijd: new Date(),
           totaleUren: 4.0,
           totaleVerdiensten: 120.0,
@@ -371,7 +371,7 @@ describe("Advanced API Integration Tests", () => {
         expect(mockPrisma.werkuren.update).toHaveBeenCalledWith({
           where: { id: "werkuren-1" },
           data: expect.objectContaining({
-            status: "VOLTOOID",
+            status: "AFGEROND",
             eindTijd: expect.any(Date),
             locatieCheckout: clockOutData.locatie,
             pauzes: expect.arrayContaining([
@@ -403,7 +403,7 @@ describe("Advanced API Integration Tests", () => {
 
         const mockUpdatedWerkuren = {
           id: "werkuren-1",
-          status: "VOLTOOID",
+          status: "AFGEROND",
           startTijd: startTime,
           eindTijd: endTime,
           totaleUren: 7.5, // 8 hours - 0.5 hour break

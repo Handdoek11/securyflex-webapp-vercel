@@ -47,8 +47,9 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
       where: { id: opdrachtId },
       include: {
         opdrachtgever: true,
-        bedrijf: true,
-        beveiligers: true,
+        creatorBedrijf: true,
+        acceptedBedrijf: true,
+        sollicitaties: true,
         assignments: true,
       },
     });
@@ -69,7 +70,10 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if already assigned to another bedrijf
-    if (opdracht.bedrijfId && opdracht.bedrijfId !== bedrijfProfile.id) {
+    if (
+      opdracht.acceptedBedrijfId &&
+      opdracht.acceptedBedrijfId !== bedrijfProfile.id
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -93,8 +97,8 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     // Check if opdrachtgever has Finqle credit limit
     let hasFinqleCredit = false;
     if (
-      opdracht.opdrachtgever.finqleDebtorId &&
-      opdracht.opdrachtgever.finqleCreditLimit
+      opdracht.opdrachtgever?.finqleDebtorId &&
+      opdracht.opdrachtgever?.finqleCreditLimit
     ) {
       const estimatedAmount =
         Number(opdracht.uurtarief) * opdracht.aantalBeveiligers * 8; // Estimate 8 hours
@@ -106,7 +110,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     const updatedOpdracht = await prisma.opdracht.update({
       where: { id: opdrachtId },
       data: {
-        bedrijfId: bedrijfProfile.id,
+        acceptedBedrijfId: bedrijfProfile.id,
         status: "TOEGEWEZEN",
       },
     });

@@ -299,20 +299,25 @@ export class PermissionError extends Error {
 }
 
 // Network error utilities
-export function handleNetworkError(error: any): string {
+export function handleNetworkError(error: unknown): string {
   // Check if user is offline
   if (!navigator.onLine) {
     return "Geen internetverbinding. Controleer je netwerk en probeer opnieuw.";
   }
 
   // Handle fetch errors
-  if (error.name === "TypeError" && error.message.includes("fetch")) {
+  if (
+    error instanceof Error &&
+    error.name === "TypeError" &&
+    error.message.includes("fetch")
+  ) {
     return "Kan geen verbinding maken met de server. Probeer later opnieuw.";
   }
 
   // Handle HTTP status errors
-  if (error.status || error.response?.status) {
-    const status = error.status || error.response.status;
+  const errorObj = error as { status?: number; response?: { status?: number } };
+  if (errorObj.status || errorObj.response?.status) {
+    const status = errorObj.status || errorObj.response?.status;
 
     switch (status) {
       case 400:
@@ -367,7 +372,8 @@ export function handleNetworkError(error: any): string {
 
   // Generic error message
   return (
-    error.message || "Er is een onverwachte fout opgetreden. Probeer opnieuw."
+    (error instanceof Error ? error.message : String(error)) ||
+    "Er is een onverwachte fout opgetreden. Probeer opnieuw."
   );
 }
 
@@ -472,7 +478,9 @@ export async function apiRequest<T>(
       throw new APIError("Netwerkfout - controleer je internetverbinding");
     }
 
-    throw new APIError(error.message || "Onbekende fout opgetreden");
+    throw new APIError(
+      error instanceof Error ? error.message : "Onbekende fout opgetreden",
+    );
   }
 }
 

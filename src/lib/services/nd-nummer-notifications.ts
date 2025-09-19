@@ -18,7 +18,7 @@ export interface NDNummerNotification {
   customMessage?: string;
   scheduledFor?: Date;
   ndNummer: string;
-  vervalDatum?: Date;
+  vervalDatum?: Date | null;
   daysUntilExpiry?: number;
 }
 
@@ -40,7 +40,7 @@ export function getNotificationTemplate(
     bedrijfsnaam?: string;
     ndNummer: string;
     daysUntilExpiry?: number;
-    vervalDatum?: Date;
+    vervalDatum?: Date | null;
     newStatus?: string;
   },
 ): NotificationTemplate {
@@ -186,15 +186,16 @@ export async function sendNotification(
       });
 
       // Broadcast real-time notification
-      await broadcastEvent(`user:${profile.user.id}:notifications`, {
-        type: "NOTIFICATION_NEW",
-        data: {
+      await broadcastEvent(
+        `user:${profile.user.id}:notifications`,
+        "NOTIFICATION_NEW",
+        {
           title: template.subject,
           message: finalMessage,
           urgency: notification.urgency,
           category: "ND_NUMMER",
         },
-      });
+      );
     }
 
     // Send email notification
@@ -356,7 +357,7 @@ export async function checkExpiringNDNummers(): Promise<void> {
             : ["EMAIL", "IN_APP"],
         urgency,
         ndNummer: profile.ndNummer,
-        vervalDatum: profile.ndNummerVervalDatum,
+        vervalDatum: profile.ndNummerVervalDatum || undefined,
         daysUntilExpiry,
       };
 
@@ -407,7 +408,7 @@ export async function checkExpiringNDNummers(): Promise<void> {
       // Create audit log
       await prisma.nDNummerAuditLog.create({
         data: {
-          profileType: profileType as any,
+          profileType: profileType,
           zzpProfileId: isZZP ? profile.id : undefined,
           bedrijfProfileId: isZZP ? undefined : profile.id,
           ndNummer: profile.ndNummer,
@@ -428,7 +429,7 @@ export async function checkExpiringNDNummers(): Promise<void> {
           channels: ["EMAIL", "SMS", "PUSH", "IN_APP"],
           urgency: "CRITICAL",
           ndNummer: profile.ndNummer,
-          vervalDatum: profile.ndNummerVervalDatum,
+          vervalDatum: profile.ndNummerVervalDatum || undefined,
         };
 
         await sendNotification(notification);

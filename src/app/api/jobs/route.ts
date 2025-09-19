@@ -414,7 +414,9 @@ export async function POST(request: NextRequest) {
         uurtarief: parseFloat(data.uurtarief),
         status: data.urgent ? "URGENT" : "OPEN",
         opdrachtgeverId: opdrachtgever?.id,
-        bedrijfId: bedrijf?.id,
+        creatorBedrijfId: bedrijf?.id,
+        creatorType: opdrachtgever ? "OPDRACHTGEVER" : "BEDRIJF",
+        creatorId: opdrachtgever?.id || bedrijf?.id || "",
       },
     });
 

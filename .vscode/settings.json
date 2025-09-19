@@ -1,7 +1,7 @@
 {
-  // === DISABLE CONFLICTING SERVICES ===
-  "typescript.validate.enable": false,
-  "javascript.validate.enable": false,
+  // === ENABLE TYPESCRIPT VALIDATION ===
+  "typescript.validate.enable": true,
+  "javascript.validate.enable": true,
   "typescript.format.enable": false,
   "javascript.format.enable": false,
 
@@ -33,12 +33,25 @@
     "editor.defaultFormatter": "biomejs.biome"
   },
 
-  // === BIOME LSP SETTINGS ===
-  "biome.enabled": true,
-  "biome.lsp.trace.server": "verbose",
+  // === ENABLE ERROR LENS FOR BETTER ERROR DISPLAY ===
+  "errorLens.enabled": true,
 
-  // === FORCE WORKSPACE TYPESCRIPT ===
+  // === ENABLE NATIVE VS CODE ERROR DISPLAY ===
+  "problems.decorations.enabled": true,
+  "problems.showCurrentInStatus": true,
+  "editor.renderLineHighlight": "all",
+  "editor.showUnused": true,
+
+  // === TYPESCRIPT LANGUAGE SERVICE FOR ERROR DETECTION ===
   "typescript.tsdk": "./node_modules/typescript/lib",
+  "typescript.tsserver.enable": true,
+  "typescript.suggest.enabled": true,
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "typescript.disableAutomaticTypeAcquisition": false,
+
+  // === WORKSPACE-WIDE ERROR CHECKING ===
+  "typescript.preferences.checkJs": true,
+  "typescript.reportStyleChecksAsWarnings": false,
 
   // Tailwind CSS settings
   "tailwindCSS.experimental.classRegex": [

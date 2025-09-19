@@ -18,7 +18,7 @@ export function ProcessSection() {
   // Don't show process section when no role is selected
   if (!activeRole) {
     return (
-      <section className="py-16 lg:py-24">
+      <section className="pt-16 lg:pt-24 pb-8">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold mb-4">
@@ -180,22 +180,21 @@ export function ProcessSection() {
   }
 
   return (
-    <section className="py-16 lg:py-24">
+    <section className="pt-16 lg:pt-24 pb-8">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl lg:text-4xl font-bold mb-4">HOE HET WERKT</h2>
           <p className="text-lg text-muted-foreground">
-            {activeRole === "beveiliger" && "In 3 stappen aan het werk"}
-            {activeRole === "beveiligingsbedrijf" &&
-              "Manage je team in 3 stappen"}
-            {activeRole === "opdrachtgever" &&
+            {activeRole === "ZZP_BEVEILIGER" && "In 3 stappen aan het werk"}
+            {activeRole === "BEDRIJF" && "Manage je team in 3 stappen"}
+            {activeRole === "OPDRACHTGEVER" &&
               "Beveiliging regelen in 3 stappen"}
           </p>
         </div>
 
         <div className="max-w-2xl mx-auto">
           {/* Beveiligers Process */}
-          {activeRole === "beveiliger" && (
+          {activeRole === "ZZP_BEVEILIGER" && (
             <div className="text-center">
               <div className="space-y-8">
                 <div>
@@ -241,7 +240,7 @@ export function ProcessSection() {
           )}
 
           {/* Bedrijven Process */}
-          {activeRole === "beveiligingsbedrijf" && (
+          {activeRole === "BEDRIJF" && (
             <div className="text-center">
               <div className="space-y-8">
                 <div>
@@ -287,7 +286,7 @@ export function ProcessSection() {
           )}
 
           {/* Opdrachtgevers Process */}
-          {activeRole === "opdrachtgever" && (
+          {activeRole === "OPDRACHTGEVER" && (
             <div className="text-center">
               <div className="space-y-8">
                 <div>

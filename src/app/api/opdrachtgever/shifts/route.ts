@@ -127,15 +127,15 @@ export async function GET(request: NextRequest) {
     // Filter by status
     if (status) {
       if (status === "open") {
-        where.status = { in: ["OPEN", "GEPUBLICEERD"] };
+        where.status = { in: ["OPEN", "URGENT"] };
       } else if (status === "active") {
-        where.status = { in: ["ACTIEF", "BEVESTIGD"] };
-        where.datum = {
+        where.status = { in: ["TOEGEWEZEN", "BEZIG"] };
+        where.startDatum = {
           gte: new Date(new Date().setHours(0, 0, 0, 0)),
           lte: new Date(new Date().setHours(23, 59, 59, 999)),
         };
       } else if (status === "completed") {
-        where.status = "VOLTOOID";
+        where.status = "AFGEROND";
       } else if (status === "cancelled") {
         where.status = "GEANNULEERD";
       }
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
           include: {
             sollicitaties: {
               include: {
-                beveiliger: {
+                zzp: {
                   include: {
                     user: {
                       select: {
@@ -159,17 +159,18 @@ export async function GET(request: NextRequest) {
                     },
                   },
                 },
-              },
-            },
-            acceptedBeveiliger: {
-              include: {
-                user: {
+                bedrijf: {
                   select: {
-                    name: true,
-                    email: true,
-                    phone: true,
+                    bedrijfsnaam: true,
+                    kvkNummer: true,
                   },
                 },
+              },
+            },
+            acceptedBedrijf: {
+              select: {
+                id: true,
+                bedrijfsnaam: true,
               },
             },
             werkuren: {
@@ -205,9 +206,9 @@ export async function GET(request: NextRequest) {
         description: shift.beschrijving,
         location: shift.locatie,
         address: shift.adres,
-        date: shift.datum,
-        startTime: shift.startTijd,
-        endTime: shift.eindTijd,
+        date: shift.startDatum,
+        startTime: shift.startDatum,
+        endTime: shift.eindDatum,
         status: shift.status,
         budget: shift.budget,
         hourlyRate: shift.uurtarief,
@@ -221,21 +222,19 @@ export async function GET(request: NextRequest) {
         applications: shift.sollicitaties.length,
         applicants: shift.sollicitaties.map((sol) => ({
           id: sol.id,
-          beveiligerId: sol.beveiligerId,
-          name: sol.beveiliger.user.name,
-          email: sol.beveiliger.user.email,
+          beveiligerId: sol.zzpId || sol.bedrijfId,
+          name: sol.zzp?.user.name || sol.bedrijf?.bedrijfsnaam || "Unknown",
+          email: sol.zzp?.user.email || "",
           status: sol.status,
-          appliedAt: sol.createdAt,
+          appliedAt: sol.sollicitatiedatum,
           motivatie: sol.motivatie,
         })),
 
-        // Accepted beveiliger info
-        acceptedBeveiliger: shift.acceptedBeveiliger
+        // Accepted bedrijf info
+        acceptedBedrijf: shift.acceptedBedrijf
           ? {
-              id: shift.acceptedBeveiliger.id,
-              name: shift.acceptedBeveiliger.user.name,
-              email: shift.acceptedBeveiliger.user.email,
-              phone: shift.acceptedBeveiliger.user.phone,
+              id: shift.acceptedBedrijf.id,
+              name: shift.acceptedBedrijf.bedrijfsnaam,
             }
           : null,
 
@@ -244,12 +243,13 @@ export async function GET(request: NextRequest) {
         feedback: shift.feedback,
 
         // Progress indicators
-        filled: shift.acceptedBeveiliger ? 1 : 0,
-        isCompleted: shift.status === "VOLTOOID",
+        filled: shift.acceptedBedrijf ? 1 : 0,
+        isCompleted: shift.status === "AFGEROND",
         isActive: shift.status === "ACTIEF",
         needsAttention:
           shift.status === "OPEN" &&
-          new Date(shift.datum) < new Date(Date.now() + 24 * 60 * 60 * 1000),
+          new Date(shift.startDatum) <
+            new Date(Date.now() + 24 * 60 * 60 * 1000),
 
         createdAt: shift.createdAt,
         updatedAt: shift.updatedAt,
@@ -362,9 +362,8 @@ export async function POST(request: NextRequest) {
           beschrijving: validatedData.beschrijving,
           locatie: validatedData.locatie,
           adres: validatedData.adres,
-          datum: validatedData.datum,
-          startTijd: validatedData.startTijd,
-          eindTijd: validatedData.eindTijd,
+          startDatum: validatedData.datum,
+          eindDatum: validatedData.datum,
           aantalBeveiligers: validatedData.aantalBeveiligers,
           uurtarief: validatedData.uurtarief,
           budget: calculatedBudget,
@@ -381,7 +380,7 @@ export async function POST(request: NextRequest) {
           creatorId: opdrachtgeverProfile.id,
 
           // Initial status
-          status: validatedData.isDirectBooking ? "OPEN" : "GEPUBLICEERD",
+          status: validatedData.isUrgent ? "URGENT" : "OPEN",
         },
         include: {
           opdrachtgever: {
@@ -420,7 +419,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );

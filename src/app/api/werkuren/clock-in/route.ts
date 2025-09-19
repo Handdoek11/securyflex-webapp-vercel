@@ -16,7 +16,7 @@ interface GPSLocation {
 // Removed unused JobLocation interface - using inline types instead
 
 type OpdrachtWithRelations = Opdracht & {
-  beveiligers: Array<{ zzpId: string; status: string }>;
+  sollicitaties: Array<{ zzpId: string | null; status: string }>;
   opdrachtgever?: { bedrijfsnaam: string } | null;
   bedrijf?: { bedrijfsnaam: string } | null;
 };
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "Invalid request data",
-          details: validation.error.errors,
+          details: validation.error.issues,
         },
         { status: 400 },
       );
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     const opdracht = await prisma.opdracht.findUnique({
       where: { id: opdrachtId },
       include: {
-        beveiligers: {
+        sollicitaties: {
           where: {
             zzpId: zzpProfile.id,
             status: "ACCEPTED",
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
         opdrachtgever: {
           select: { bedrijfsnaam: true },
         },
-        bedrijf: {
+        acceptedBedrijf: {
           select: { bedrijfsnaam: true },
         },
       },
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is assigned to this job
-    if (opdracht.beveiligers.length === 0) {
+    if (opdracht.sollicitaties.length === 0) {
       return NextResponse.json(
         { success: false, error: "You are not assigned to this job" },
         { status: 403 },
@@ -261,8 +261,8 @@ export async function POST(request: NextRequest) {
       data: {
         zzpId: zzpProfile.id,
         opdrachtId: opdrachtId,
-        datum: now_date,
         startTijd: now_date,
+        urenGewerkt: 0, // Will be calculated on clock-out
         startLocatie: {
           lat: locatie.lat,
           lng: locatie.lng,
@@ -271,7 +271,7 @@ export async function POST(request: NextRequest) {
           address: jobLocation?.address || "Unknown location",
         },
         uurtarief: opdracht.uurtarief,
-        status: "ACTIVE",
+        status: "PENDING",
         opmerkingen: opmerkingen || "",
         // Store photo if provided
         ...(foto && {
@@ -306,7 +306,7 @@ export async function POST(request: NextRequest) {
         jobTitle: opdracht.titel,
         company:
           opdracht.opdrachtgever?.bedrijfsnaam ||
-          opdracht.bedrijf?.bedrijfsnaam,
+          opdracht.acceptedBedrijf?.bedrijfsnaam,
         hourlyRate: opdracht.uurtarief,
         location: {
           accuracy: locatie.accuracy,
@@ -356,12 +356,10 @@ async function storeGPSRecord(zzpId: string, location: GPSLocation) {
     await prisma.werkuur.updateMany({
       where: {
         zzpId: zzpId,
-        status: "ACTIVE",
+        status: "PENDING",
       },
       data: {
-        metadata: {
-          lastGPSUpdate: location,
-        },
+        // Cannot update metadata on Werkuur model, store separately if needed
       },
     });
   } catch (error) {

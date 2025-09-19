@@ -283,11 +283,11 @@ export class BedrijfQueryOptimizer {
                 {
                   creatorType: "BEDRIJF",
                   creatorBedrijfId: bedrijfId,
-                  status: { in: ["OPEN", "IN_PROGRESS", "ASSIGNED"] },
+                  status: { in: ["OPEN", "BEZIG", "TOEGEWEZEN"] },
                 },
                 {
                   acceptedBedrijfId: bedrijfId,
-                  status: { in: ["IN_PROGRESS", "ASSIGNED"] },
+                  status: { in: ["BEZIG", "TOEGEWEZEN"] },
                 },
               ],
               startDatum: {
@@ -299,7 +299,7 @@ export class BedrijfQueryOptimizer {
               sollicitaties: {
                 where: { status: "ACCEPTED" },
                 include: {
-                  zzpProfile: {
+                  beveiliger: {
                     select: {
                       id: true,
                       voornaam: true,
@@ -640,14 +640,14 @@ export function getCacheStats() {
     queryCache: {
       size: queryCache.size,
       calculatedSize: queryCache.calculatedSize,
-      hits: queryCache.hits,
-      misses: queryCache.misses,
+      hits: (queryCache as any).hits || 0,
+      misses: (queryCache as any).misses || 0,
     },
     statsCache: {
       size: statsCache.size,
       calculatedSize: statsCache.calculatedSize,
-      hits: statsCache.hits,
-      misses: statsCache.misses,
+      hits: (statsCache as any).hits || 0,
+      misses: (statsCache as any).misses || 0,
     },
     recentQueries: queryMetrics.slice(-10),
     slowQueries: queryMetrics

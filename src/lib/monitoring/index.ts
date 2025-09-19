@@ -5,7 +5,7 @@ export {
   ApiErrorBoundary,
   DashboardErrorBoundary,
   default as ErrorBoundary,
-} from "../components/monitoring/ErrorBoundary";
+} from "../../components/monitoring/ErrorBoundary";
 
 // API middleware
 export {
@@ -28,6 +28,9 @@ export {
 } from "./component-monitoring";
 // Core Sentry utilities
 export { SecuryFlexMonitoring } from "./sentry";
+
+// Import setupGlobalErrorHandling for internal use
+import { setupGlobalErrorHandling } from "./component-monitoring";
 
 // Setup function for application initialization
 export function initializeMonitoring() {

@@ -1,7 +1,9 @@
 // Integration example showing how to use validation schemas with API helpers
 // This demonstrates production-ready API validation patterns
 
+import type { User } from "@prisma/client";
 import type { NextRequest } from "next/server";
+import { z } from "zod";
 import {
   errorResponse,
   parseJsonBody,
@@ -13,6 +15,7 @@ import {
   opdrachtCreateSchema,
   reviewSchema,
   validateApiRequest,
+  validateBatch,
   zzpProfileSchema,
 } from "./schemas";
 
@@ -21,7 +24,7 @@ import {
  * Shows validation + auth + rate limiting integration
  */
 export const createOpdrachtHandler = withAuthAndRateLimit(
-  async (req: NextRequest, user: any) => {
+  async (req: NextRequest, user: User) => {
     // 1. Validate request body with sanitization
     const { data: body, error: parseError } = await parseJsonBody(req);
     if (parseError) return parseError;
@@ -59,7 +62,7 @@ export const createOpdrachtHandler = withAuthAndRateLimit(
  * Shows different validation patterns for different user types
  */
 export const updateProfileHandler = withAuthAndRateLimit(
-  async (req: NextRequest, user: any) => {
+  async (req: NextRequest, user: User) => {
     const { data: body, error: parseError } = await parseJsonBody(req);
     if (parseError) return parseError;
 
@@ -95,7 +98,7 @@ export const updateProfileHandler = withAuthAndRateLimit(
  * Shows validation with business logic integration
  */
 export const submitReviewHandler = withAuthAndRateLimit(
-  async (req: NextRequest, user: any) => {
+  async (req: NextRequest, user: User) => {
     const { data: body, error: parseError } = await parseJsonBody(req);
     if (parseError) return parseError;
 
@@ -138,7 +141,7 @@ export const submitReviewHandler = withAuthAndRateLimit(
  * Shows how to validate URL parameters and query strings
  */
 export const getOpdrachtListHandler = withAuthAndRateLimit(
-  async (req: NextRequest, _user: any) => {
+  async (req: NextRequest, _user: User) => {
     // Validate query parameters
     const queryValidator = apiValidationMiddleware.validateQuery(
       // Custom schema for opdracht listing
@@ -190,11 +193,11 @@ export const getOpdrachtListHandler = withAuthAndRateLimit(
  * Shows how to validate multiple items at once
  */
 export const bulkUpdateHandler = withAuthAndRateLimit(
-  async (req: NextRequest, user: any) => {
+  async (req: NextRequest, user: User) => {
     const { data: body, error: parseError } = await parseJsonBody(req);
     if (parseError) return parseError;
 
-    if (!Array.isArray(body.items)) {
+    if (!body || typeof body !== "object" || !Array.isArray(body.items)) {
       return errorResponse("Items must be an array");
     }
 
@@ -205,7 +208,7 @@ export const bulkUpdateHandler = withAuthAndRateLimit(
         status: z.enum(["APPROVED", "REJECTED"]),
         comment: z.string().max(500).optional(),
       }),
-      body.items,
+      body.items as unknown[],
       { stopOnFirstError: false },
     );
 
@@ -228,6 +231,4 @@ export const bulkUpdateHandler = withAuthAndRateLimit(
   },
 );
 
-// Import statement that would be needed
-import { z } from "zod";
-import { validateBatch } from "./schemas";
+// End of integration examples

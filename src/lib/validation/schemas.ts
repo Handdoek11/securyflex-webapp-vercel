@@ -83,7 +83,7 @@ export const zzpProfileSchema = z.object({
     .max(50, "Maximaal 50 jaar ervaring")
     .optional(),
   rijbewijs: z.boolean().default(false),
-  autoDescikbaar: z.boolean().default(false),
+  autoBeschikbaar: z.boolean().default(false),
 
   // ND-nummer compliance (optional)
   ndNummer: baseValidations.ndNummer.optional(),
@@ -861,8 +861,8 @@ export function validateField<T>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       // Find the most specific error, prioritizing custom refine errors
-      const customError = error.errors?.find((err) => err.code === "custom");
-      const firstError = customError || error.errors?.[0];
+      const customError = error.issues?.find((err) => err.code === "custom");
+      const firstError = customError || error.issues?.[0];
       return { success: false, error: firstError?.message || "Validatiefout" };
     }
     return { success: false, error: "Onbekende validatiefout" };
@@ -879,7 +879,7 @@ export function validatePartial<T>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         if (err.path.length > 0) {
           errors[err.path.join(".")] = err.message;
         }
@@ -906,10 +906,15 @@ export function validateApiRequest<T>(
   error?: string;
 } {
   try {
-    const parseMethod = options.allowPartial
-      ? schema.partial().parse
-      : schema.parse;
-    let result = parseMethod(data);
+    // For partial validation, we need to check if it's a ZodObject
+    let result: T;
+    if (options.allowPartial && "partial" in schema) {
+      // Type assertion for schemas that support partial
+      const partialSchema = schema as z.ZodObject<any>;
+      result = partialSchema.partial().parse(data) as T;
+    } else {
+      result = schema.parse(data);
+    }
 
     // Basic sanitization if requested
     if (options.sanitize && typeof result === "object" && result !== null) {
@@ -920,7 +925,7 @@ export function validateApiRequest<T>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         if (err.path.length > 0) {
           errors[err.path.join(".")] = err.message;
         }
@@ -935,7 +940,7 @@ export function validateApiRequest<T>(
       return {
         success: false,
         errors,
-        error: error.errors?.[0]?.message || "Validatiefout",
+        error: error.issues?.[0]?.message || "Validatiefout",
       };
     }
 
@@ -973,7 +978,7 @@ function sanitizeObject<T>(obj: T): T {
     }
   }
 
-  return sanitized;
+  return sanitized as T;
 }
 
 // Batch validation for multiple items
@@ -1058,16 +1063,20 @@ export const apiValidationMiddleware = {
   validateQuery:
     <T>(schema: z.ZodSchema<T>) =>
     (
-      req: Request,
+      req: Request & { query?: unknown },
     ): { success: boolean; data?: T; errors?: Record<string, string> } => {
-      return validateApiRequest(schema, req.query, { allowPartial: true });
+      const queryReq = req as Request & { query?: unknown };
+      return validateApiRequest(schema, queryReq.query || {}, {
+        allowPartial: true,
+      });
     },
 
   validateParams:
     <T>(schema: z.ZodSchema<T>) =>
     (
-      req: Request,
+      req: Request & { params?: unknown },
     ): { success: boolean; data?: T; errors?: Record<string, string> } => {
-      return validateApiRequest(schema, req.params);
+      const paramsReq = req as Request & { params?: unknown };
+      return validateApiRequest(schema, paramsReq.params || {});
     },
 };

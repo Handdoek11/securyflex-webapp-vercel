@@ -74,11 +74,13 @@ export function EarningsCalculator() {
       <CardContent>
         <div className="grid md:grid-cols-2 gap-8">
           {/* Input Section */}
-          <div className="space-y-6">
+          <div className="space-y-6 text-center md:text-left">
             <h3 className="text-lg font-semibold">VOER IN:</h3>
 
             <div className="space-y-2">
-              <Label htmlFor="hours">Uren per week</Label>
+              <Label htmlFor="hours" className="block">
+                Uren per week
+              </Label>
               <Select
                 value={hoursPerWeek.toString()}
                 onValueChange={(v) => setHoursPerWeek(Number(v))}
@@ -99,7 +101,9 @@ export function EarningsCalculator() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="rate">Basisarief</Label>
+              <Label htmlFor="rate" className="block">
+                Basisarief
+              </Label>
               <Select
                 value={baseRate.toString()}
                 onValueChange={(v) => setBaseRate(Number(v))}
@@ -120,7 +124,9 @@ export function EarningsCalculator() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="weeks">Weken per maand</Label>
+              <Label htmlFor="weeks" className="block">
+                Weken per maand
+              </Label>
               <Select
                 value={weeks.toString()}
                 onValueChange={(v) => setWeeks(Number(v))}
@@ -137,26 +143,31 @@ export function EarningsCalculator() {
             </div>
 
             <div className="space-y-3">
-              <Label>Specialisaties:</Label>
-              {specializations.map((spec) => (
-                <div key={spec.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={spec.id}
-                    checked={selectedSpecializations.includes(spec.id)}
-                    onCheckedChange={(checked) =>
-                      handleSpecializationChange(spec.id, checked as boolean)
-                    }
-                  />
-                  <Label htmlFor={spec.id} className="cursor-pointer">
-                    {spec.name} (+€{spec.bonus}/u)
-                  </Label>
-                </div>
-              ))}
+              <Label className="block">Specialisaties:</Label>
+              <div className="space-y-2">
+                {specializations.map((spec) => (
+                  <div
+                    key={spec.id}
+                    className="flex items-center justify-center md:justify-start space-x-2"
+                  >
+                    <Checkbox
+                      id={spec.id}
+                      checked={selectedSpecializations.includes(spec.id)}
+                      onCheckedChange={(checked) =>
+                        handleSpecializationChange(spec.id, checked as boolean)
+                      }
+                    />
+                    <Label htmlFor={spec.id} className="cursor-pointer">
+                      {spec.name} (+€{spec.bonus}/u)
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Results Section */}
-          <div className="space-y-6">
+          <div className="space-y-6 text-center md:text-left">
             <h3 className="text-lg font-semibold">JE VERDIENT:</h3>
 
             <div className="space-y-4 p-4 bg-secondary/50 rounded-lg">
@@ -203,7 +214,7 @@ export function EarningsCalculator() {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 flex flex-col items-center md:items-start">
               <Badge variant="outline" className="text-xs">
                 🏆 Top verdieners: €68/uur
               </Badge>

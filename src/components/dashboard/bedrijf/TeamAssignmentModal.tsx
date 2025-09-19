@@ -12,7 +12,7 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -74,14 +74,7 @@ export function TeamAssignmentModal({
   const [assigning, setAssigning] = useState(false);
   const [currentAssignments, setCurrentAssignments] = useState(0);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchTeamMembers();
-      fetchCurrentAssignments();
-    }
-  }, [isOpen, fetchCurrentAssignments, fetchTeamMembers]);
-
-  const fetchTeamMembers = async () => {
+  const fetchTeamMembers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/bedrijf/team");
@@ -102,9 +95,9 @@ export function TeamAssignmentModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchCurrentAssignments = async () => {
+  const fetchCurrentAssignments = useCallback(async () => {
     try {
       const response = await fetch(
         `/api/bedrijf/team/assign?opdrachtId=${opdracht.id}`,
@@ -119,7 +112,14 @@ export function TeamAssignmentModal({
     } catch (error) {
       console.error("Error fetching assignments:", error);
     }
-  };
+  }, [opdracht.id]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchTeamMembers();
+      fetchCurrentAssignments();
+    }
+  }, [isOpen, fetchTeamMembers, fetchCurrentAssignments]);
 
   const handleMemberToggle = (memberId: string) => {
     setSelectedMembers((prev) => {

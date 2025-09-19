@@ -92,7 +92,7 @@ export const opdrachtgeverRegistrationSchema = z
     ...baseRegistrationFields,
     role: z.literal(UserRole.OPDRACHTGEVER),
     type: z.enum(["BEDRIJF", "PARTICULIER"], {
-      required_error: "Selecteer of je een bedrijf of particulier bent",
+      message: "Selecteer of je een bedrijf of particulier bent",
     }),
     bedrijfsnaam: z.string().optional(),
   })

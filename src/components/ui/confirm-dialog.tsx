@@ -42,7 +42,7 @@ interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   variant?: ConfirmVariant;
-  icon?: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
   onConfirm: () => void | Promise<void>;
   onCancel?: () => void;
   loading?: boolean;
@@ -138,7 +138,9 @@ export function ConfirmDialog({
               variant === "security" && "bg-purple-100 dark:bg-purple-900/20",
             )}
           >
-            <IconComponent className={cn("h-5 w-5", config.iconClass)} />
+            {IconComponent && (
+              <IconComponent className={cn("h-5 w-5", config.iconClass)} />
+            )}
           </div>
           <AlertDialogTitle className="text-left">{title}</AlertDialogTitle>
         </div>

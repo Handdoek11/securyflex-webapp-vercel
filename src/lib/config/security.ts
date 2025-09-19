@@ -175,7 +175,9 @@ export const PerformanceConfig = {
 
 // Environment-specific overrides
 export const getSecurityConfig = () => {
-  const config = { ...SecurityConfig };
+  const config = JSON.parse(
+    JSON.stringify(SecurityConfig),
+  ) as typeof SecurityConfig;
 
   if (process.env.NODE_ENV === "development") {
     // Relax some restrictions for development
@@ -195,7 +197,9 @@ export const getSecurityConfig = () => {
 };
 
 export const getPerformanceConfig = () => {
-  const config = { ...PerformanceConfig };
+  const config = JSON.parse(
+    JSON.stringify(PerformanceConfig),
+  ) as typeof PerformanceConfig;
 
   if (process.env.NODE_ENV === "development") {
     // Longer timeouts for development/debugging

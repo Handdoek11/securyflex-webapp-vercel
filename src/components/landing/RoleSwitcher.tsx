@@ -2,6 +2,7 @@
 
 import { Building2, Factory, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { roleToast } from "@/components/ui/toast";
 import { useRole } from "@/contexts/RoleContext";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,19 @@ export function RoleSwitcher({ variant = "default" }: RoleSwitcherProps) {
     roleId: "ZZP_BEVEILIGER" | "BEDRIJF" | "OPDRACHTGEVER",
   ) => {
     setActiveRole(roleId);
+
+    // Show toast notification based on role
+    switch (roleId) {
+      case "ZZP_BEVEILIGER":
+        roleToast.switchToBeveiliger();
+        break;
+      case "BEDRIJF":
+        roleToast.switchToBedrijf();
+        break;
+      case "OPDRACHTGEVER":
+        roleToast.switchToOpdrachtgever();
+        break;
+    }
 
     // Update URL with appropriate parameter
     const roleParam =
@@ -73,8 +87,8 @@ export function RoleSwitcher({ variant = "default" }: RoleSwitcherProps) {
                 "px-3 py-1.5 rounded-full transition-all duration-200",
                 "text-xs font-medium",
                 isActive
-                  ? "bg-white dark:bg-gray-900 text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-white dark:bg-gray-900 text-primary shadow-md shadow-primary/15 ring-1 ring-primary/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/30",
               )}
             >
               {role.shortLabel}
@@ -100,8 +114,8 @@ export function RoleSwitcher({ variant = "default" }: RoleSwitcherProps) {
               "px-4 py-2 rounded-full transition-all duration-200 flex items-center gap-2",
               "text-sm font-medium",
               isActive
-                ? "bg-white dark:bg-gray-900 text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-white dark:bg-gray-900 text-primary shadow-lg shadow-primary/20 ring-2 ring-primary/10 scale-105"
+                : "text-muted-foreground hover:text-foreground hover:bg-white/50 hover:shadow-md hover:scale-102",
             )}
           >
             <Icon className="h-4 w-4" />

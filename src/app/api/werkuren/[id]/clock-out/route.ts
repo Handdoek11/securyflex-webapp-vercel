@@ -1,5 +1,5 @@
 import type {
-  Bedrijf,
+  BedrijfProfile,
   Opdracht,
   Opdrachtgever,
   User,
@@ -76,7 +76,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         {
           success: false,
           error: "Invalid request data",
-          details: validation.error.errors,
+          details: validation.error.issues,
         },
         { status: 400 },
       );
@@ -107,7 +107,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             opdrachtgever: {
               select: { bedrijfsnaam: true },
             },
-            bedrijf: {
+            acceptedBedrijf: {
               select: { bedrijfsnaam: true },
             },
           },
@@ -123,7 +123,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Verify ownership
-    if (werkuur.beveiligerId !== zzpProfile.id) {
+    if (werkuur.zzpId !== zzpProfile.id) {
       return NextResponse.json(
         { success: false, error: "Not authorized for this work hour record" },
         { status: 403 },
@@ -262,23 +262,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       data: {
         eindTijd: now_date,
         eindLocatie: clockOutLocation,
-        totaleUren: Number(workedHours.toFixed(2)),
-        pauzetijd: breakMinutes,
-        brutoBedrag: Number(grossEarnings.toFixed(2)),
-        platformKosten: Number(totalPlatformFee.toFixed(2)),
-        nettoBedrag: Number(netEarnings.toFixed(2)),
+        urenGewerkt: Number(workedHours.toFixed(2)),
         status:
-          incidentsData && incidentsData.length > 0
-            ? "UNDER_REVIEW"
-            : "COMPLETED",
-        opmerkingen: [werkuur.opmerkingen, opmerkingen]
-          .filter(Boolean)
-          .join("\n\n---\n\n"),
-        metadata: {
-          ...((werkuur.metadata as Record<string, unknown>) || {}),
+          incidentsData && incidentsData.length > 0 ? "DISPUTED" : "PENDING",
+        // Store additional data in startLocatie as metadata since that's the only Json field available
+        startLocatie: {
+          ...(werkuur.startLocatie as Record<string, unknown>),
           clockOutPhoto: foto,
           clockOutTime: now_date.toISOString(),
           incidents: incidentsData,
+          opmerkingen: [opmerkingen].filter(Boolean).join("\n\n---\n\n"),
           workSummary: {
             totalMinutes,
             breakMinutes,
@@ -292,15 +285,40 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     });
 
+    // Re-fetch werkuur with opdracht included for payment and notifications
+    const werkuurWithOpdracht = await prisma.werkuur.findUnique({
+      where: { id: werkuurId },
+      include: {
+        opdracht: {
+          include: {
+            opdrachtgever: {
+              select: { bedrijfsnaam: true },
+            },
+            acceptedBedrijf: {
+              select: { bedrijfsnaam: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!werkuurWithOpdracht) {
+      throw new Error("Failed to fetch updated werkuur");
+    }
+
     // Create payment record
-    await createPaymentRecord(updatedWerkuur, zzpProfile);
+    await createPaymentRecord(werkuurWithOpdracht, zzpProfile);
 
     // Send notifications
-    await sendClockOutNotifications(updatedWerkuur, zzpProfile, incidentsData);
+    await sendClockOutNotifications(
+      werkuurWithOpdracht,
+      zzpProfile,
+      incidentsData,
+    );
 
     // Prepare response data
     const workSummary = {
-      workDate: werkuur.datum.toLocaleDateString("nl-NL"),
+      workDate: werkuur.startTijd.toLocaleDateString("nl-NL"),
       clockInTime: werkuur.startTijd.toLocaleTimeString("nl-NL"),
       clockOutTime: now_date.toLocaleTimeString("nl-NL"),
       totalDuration: formatDuration(totalMinutes),
@@ -311,10 +329,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       grossEarnings: Number(grossEarnings.toFixed(2)),
       platformFee: Number(totalPlatformFee.toFixed(2)),
       netEarnings: Number(netEarnings.toFixed(2)),
-      jobTitle: werkuur.opdracht.titel,
+      jobTitle: werkuurWithOpdracht!.opdracht.titel,
       company:
-        werkuur.opdracht.opdrachtgever?.bedrijfsnaam ||
-        werkuur.opdracht.bedrijf?.bedrijfsnaam,
+        werkuurWithOpdracht!.opdracht.opdrachtgever?.bedrijfsnaam ||
+        werkuurWithOpdracht!.opdracht.bedrijf?.bedrijfsnaam,
       incidents: incidentsData?.length || 0,
     };
 
@@ -326,8 +344,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         status: updatedWerkuur.status,
         workSummary,
         nextSteps: {
-          paymentProcessing: updatedWerkuur.status === "COMPLETED",
-          reviewRequired: updatedWerkuur.status === "UNDER_REVIEW",
+          paymentProcessing: updatedWerkuur.status === "PENDING",
+          reviewRequired: updatedWerkuur.status === "DISPUTED",
           estimatedPaymentDate: getEstimatedPaymentDate(),
         },
       },
@@ -343,22 +361,32 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 // Create payment record
 async function createPaymentRecord(
-  werkuur: WerkuurWithOpdracht,
+  werkuur: Werkuur & {
+    opdracht: Opdracht & {
+      opdrachtgever?: { bedrijfsnaam: string } | null;
+      bedrijf?: { bedrijfsnaam: string } | null;
+    };
+  },
   beveiliger: ZZPProfileWithUser,
 ) {
   try {
+    // Calculate values since they're not stored in Werkuur anymore
+    const grossAmount = Number(werkuur.urenGewerkt) * Number(werkuur.uurtarief);
+    const platformFee = Math.ceil(Number(werkuur.urenGewerkt)) * 2.99;
+    const netAmount = grossAmount - platformFee;
+
     await prisma.betaling.create({
       data: {
-        bedrag: werkuur.nettoBedrag,
+        bedrag: netAmount,
         status: "PENDING",
-        type: "WERKUUR_BETALING",
-        beschrijving: `Payment for work on ${werkuur.datum.toLocaleDateString("nl-NL")} - ${werkuur.opdracht.titel}`,
+        type: "DIRECT_PAYMENT",
+        beschrijving: `Payment for work on ${werkuur.startTijd.toLocaleDateString("nl-NL")} - ${werkuur.opdracht.titel}`,
         metadata: {
           werkuurId: werkuur.id,
           beveiligerId: beveiliger.id,
-          grossAmount: werkuur.brutoBedrag,
-          platformFee: werkuur.platformKosten,
-          hoursWorked: werkuur.totaleUren,
+          grossAmount: grossAmount,
+          platformFee: platformFee,
+          hoursWorked: Number(werkuur.urenGewerkt),
         },
         // Note: Add recipient/sender IDs based on your payment model
       },
@@ -370,7 +398,12 @@ async function createPaymentRecord(
 
 // Send clock-out notifications
 async function sendClockOutNotifications(
-  werkuur: WerkuurWithOpdracht,
+  werkuur: Werkuur & {
+    opdracht: Opdracht & {
+      opdrachtgever?: { bedrijfsnaam: string } | null;
+      bedrijf?: { bedrijfsnaam: string } | null;
+    };
+  },
   beveiliger: ZZPProfileWithUser,
   incidents: IncidentData[],
 ) {
@@ -394,8 +427,11 @@ async function sendClockOutNotifications(
     }
 
     // Send payment confirmation to beveiliger
+    const netAmount =
+      Number(werkuur.urenGewerkt) * Number(werkuur.uurtarief) -
+      Math.ceil(Number(werkuur.urenGewerkt)) * 2.99;
     console.log(
-      `Payment notification: €${werkuur.nettoBedrag} payment initiated for ${beveiliger.user.name}`,
+      `Payment notification: €${netAmount.toFixed(2)} payment initiated for ${beveiliger.user.name}`,
     );
   } catch (error) {
     console.error("Failed to send clock-out notifications:", error);

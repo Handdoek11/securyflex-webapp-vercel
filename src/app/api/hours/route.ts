@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       const workHours = await prisma.werkuur.findMany({
         where: {
           zzpId: zzpProfile.id,
-          datum: {
+          startTijd: {
             gte: startDate,
             lte: endDate,
           },
@@ -136,7 +136,12 @@ export async function GET(request: NextRequest) {
                   bedrijfsnaam: true,
                 },
               },
-              bedrijf: {
+              creatorBedrijf: {
+                select: {
+                  bedrijfsnaam: true,
+                },
+              },
+              acceptedBedrijf: {
                 select: {
                   bedrijfsnaam: true,
                 },
@@ -145,22 +150,23 @@ export async function GET(request: NextRequest) {
           },
         },
         orderBy: {
-          datum: "asc",
+          startTijd: "asc",
         },
       });
 
       // Transform database work hours to frontend format
       timeEntries = workHours.map((wh) => {
-        const date = new Date(wh.datum);
+        const date = new Date(wh.startTijd);
         const dayNames = ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"];
 
         return {
           id: wh.id,
-          date: wh.datum,
+          date: wh.startTijd,
           dayName: dayNames[date.getDay()],
           company:
             wh.opdracht.opdrachtgever?.bedrijfsnaam ||
-            wh.opdracht.bedrijf?.bedrijfsnaam ||
+            wh.opdracht.creatorBedrijf?.bedrijfsnaam ||
+            wh.opdracht.acceptedBedrijf?.bedrijfsnaam ||
             "Onbekend",
           project: wh.opdracht.titel,
           startTime: wh.startTijd
@@ -175,10 +181,12 @@ export async function GET(request: NextRequest) {
                 minute: "2-digit",
               })
             : "",
-          breakTime: wh.pauzetijd || 0,
-          totalHours: wh.totaleUren || 0,
+          breakTime: 0, // Not stored in current Werkuur model
+          totalHours: Number(wh.urenGewerkt) || 0,
           hourlyRate: Number(wh.uurtarief) || 0,
-          totalEarned: wh.nettoBedrag || 0,
+          totalEarned:
+            Number(wh.urenGewerkt) * Number(wh.uurtarief) -
+            Number(wh.platformFee),
           status: wh.status || "PENDING",
           isGPSVerified: !!(wh.startLocatie && wh.eindLocatie),
           location: wh.opdracht.locatie || "",
@@ -197,7 +205,7 @@ export async function GET(request: NextRequest) {
           0,
         ),
         approvedEarnings: timeEntries
-          .filter((entry) => entry.status === "COMPLETED")
+          .filter((entry) => entry.status === "PAID")
           .reduce((sum, entry) => sum + entry.totalEarned, 0),
         pendingEarnings: timeEntries
           .filter((entry) => entry.status === "PENDING")
@@ -364,18 +372,13 @@ export async function POST(request: NextRequest) {
       data: {
         zzpId: zzpProfile.id,
         opdrachtId,
-        datum: new Date(datum),
         startTijd: start,
         eindTijd: end,
-        totaleUren: Number(workHours.toFixed(2)),
-        pauzetijd: pauzetijd || 0,
+        urenGewerkt: Number(workHours.toFixed(2)),
         uurtarief: opdracht.uurtarief,
-        brutoBedrag: Number(grossEarnings.toFixed(2)),
-        platformKosten: Number(platformFee.toFixed(2)),
-        nettoBedrag: Number(netEarnings.toFixed(2)),
+        platformFee: Number(platformFee.toFixed(2)),
         status: "PENDING", // Manual entries need approval
-        opmerkingen: opmerkingen || null,
-        metadata: {
+        startLocatie: {
           type: "MANUAL_ENTRY",
           createdAt: new Date().toISOString(),
           requiresApproval: true,

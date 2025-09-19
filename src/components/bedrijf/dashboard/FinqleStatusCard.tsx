@@ -263,7 +263,7 @@ export function FinqleStatusCard({
                 <Badge
                   variant={
                     transaction.status === "completed"
-                      ? "success"
+                      ? "default"
                       : transaction.status === "pending"
                         ? "secondary"
                         : "destructive"

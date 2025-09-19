@@ -1,47 +1,39 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 
+function getClientIP(req: NextRequest): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+  const realIP = req.headers.get("x-real-ip");
+  if (realIP) {
+    return realIP;
+  }
+  // Fallback for development/testing
+  return "127.0.0.1";
+}
+
 // Memory-based rate limiters for development/single instance
 const apiLimiter = new RateLimiterMemory({
-  keyGen: (req: NextRequest) => {
-    // Use IP address or fallback to a default key
-    const forwarded = req.headers.get("x-forwarded-for");
-    const ip = forwarded ? forwarded.split(",")[0] : req.ip;
-    return ip || "anonymous";
-  },
   points: 100, // Number of requests
   duration: 60, // Per 60 seconds
   blockDuration: 60, // Block for 60 seconds if limit exceeded
 });
 
 const authLimiter = new RateLimiterMemory({
-  keyGen: (req: NextRequest) => {
-    const forwarded = req.headers.get("x-forwarded-for");
-    const ip = forwarded ? forwarded.split(",")[0] : req.ip;
-    return `auth_${ip || "anonymous"}`;
-  },
   points: 5, // 5 login attempts
   duration: 60 * 15, // Per 15 minutes
   blockDuration: 60 * 15, // Block for 15 minutes
 });
 
 const strictLimiter = new RateLimiterMemory({
-  keyGen: (req: NextRequest) => {
-    const forwarded = req.headers.get("x-forwarded-for");
-    const ip = forwarded ? forwarded.split(",")[0] : req.ip;
-    return `strict_${ip || "anonymous"}`;
-  },
   points: 10, // 10 requests
   duration: 60, // Per minute
   blockDuration: 60 * 5, // Block for 5 minutes
 });
 
 const uploadLimiter = new RateLimiterMemory({
-  keyGen: (req: NextRequest) => {
-    const forwarded = req.headers.get("x-forwarded-for");
-    const ip = forwarded ? forwarded.split(",")[0] : req.ip;
-    return `upload_${ip || "anonymous"}`;
-  },
   points: 5, // 5 uploads
   duration: 60 * 10, // Per 10 minutes
   blockDuration: 60 * 10, // Block for 10 minutes
@@ -54,13 +46,19 @@ export async function checkRateLimit(
   req: NextRequest,
   limiter: RateLimiterMemory,
   points: number = 1,
+  customKey?: string,
 ): Promise<NextResponse | null> {
   try {
-    await limiter.consume(req, points);
+    const key = customKey || getClientIP(req);
+    await limiter.consume(key, points);
     return null; // No rate limit hit
-  } catch (rejRes: any) {
+  } catch (rejRes: unknown) {
     // Rate limit exceeded
-    const secs = Math.round(rejRes.msBeforeNext / 1000) || 1;
+    const rateLimitRes = rejRes as {
+      msBeforeNext?: number;
+      remainingPoints?: number;
+    };
+    const secs = Math.round((rateLimitRes.msBeforeNext || 0) / 1000) || 1;
 
     return NextResponse.json(
       {
@@ -73,9 +71,9 @@ export async function checkRateLimit(
         headers: {
           "Retry-After": String(secs),
           "X-RateLimit-Limit": String(limiter.points),
-          "X-RateLimit-Remaining": String(rejRes.remainingPoints || 0),
+          "X-RateLimit-Remaining": String(rateLimitRes.remainingPoints || 0),
           "X-RateLimit-Reset": String(
-            new Date(Date.now() + rejRes.msBeforeNext),
+            new Date(Date.now() + (rateLimitRes.msBeforeNext || 0)),
           ),
         },
       },
@@ -164,7 +162,32 @@ export async function rateLimitMiddleware(
   }
 
   const limiter = getRateLimiter(pathname);
-  return await checkRateLimit(req, limiter);
+  const ip = getClientIP(req);
+
+  // Generate appropriate key based on limiter type
+  let key = ip;
+  if (
+    pathname.startsWith("/api/auth") ||
+    pathname.includes("/login") ||
+    pathname.includes("/register")
+  ) {
+    key = `auth_${ip}`;
+  } else if (
+    pathname.includes("/upload") ||
+    pathname.includes("/files") ||
+    pathname.includes("/images")
+  ) {
+    key = `upload_${ip}`;
+  } else if (
+    pathname.includes("/admin") ||
+    pathname.includes("/payment") ||
+    pathname.includes("/finqle") ||
+    pathname.includes("/webhook")
+  ) {
+    key = `strict_${ip}`;
+  }
+
+  return await checkRateLimit(req, limiter, 1, key);
 }
 
 /**
@@ -177,12 +200,6 @@ export function createCustomRateLimiter(options: {
   keyPrefix?: string;
 }) {
   return new RateLimiterMemory({
-    keyGen: (req: NextRequest) => {
-      const forwarded = req.headers.get("x-forwarded-for");
-      const ip = forwarded ? forwarded.split(",")[0] : req.ip;
-      const prefix = options.keyPrefix ? `${options.keyPrefix}_` : "";
-      return `${prefix}${ip || "anonymous"}`;
-    },
     points: options.points,
     duration: options.duration,
     blockDuration: options.blockDuration || options.duration,
@@ -203,13 +220,42 @@ export async function checkUserActionLimit(
   },
 ): Promise<NextResponse | null> {
   const limiter = new RateLimiterMemory({
-    keyGen: () => `user_${userId}_${action}`,
     points: options.points,
     duration: options.duration,
     blockDuration: options.blockDuration || options.duration,
   });
 
-  return await checkRateLimit(req, limiter);
+  // Use user-specific key instead of IP
+  try {
+    const key = `user_${userId}_${action}`;
+    await limiter.consume(key, 1);
+    return null;
+  } catch (rejRes: unknown) {
+    const rateLimitRes = rejRes as {
+      msBeforeNext?: number;
+      remainingPoints?: number;
+    };
+    const secs = Math.round((rateLimitRes.msBeforeNext || 0) / 1000) || 1;
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Te veel verzoeken. Probeer het over enkele minuten opnieuw.",
+        retryAfter: secs,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(secs),
+          "X-RateLimit-Limit": String(limiter.points),
+          "X-RateLimit-Remaining": String(rateLimitRes.remainingPoints || 0),
+          "X-RateLimit-Reset": String(
+            new Date(Date.now() + (rateLimitRes.msBeforeNext || 0)),
+          ),
+        },
+      },
+    );
+  }
 }
 
 /**
@@ -223,10 +269,9 @@ export function isTrustedSource(req: NextRequest): boolean {
     // Add other trusted service IPs
   ];
 
-  const forwarded = req.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0] : req.ip;
+  const ip = getClientIP(req);
 
-  return trustedIPs.includes(ip || "");
+  return trustedIPs.includes(ip);
 }
 
 /**

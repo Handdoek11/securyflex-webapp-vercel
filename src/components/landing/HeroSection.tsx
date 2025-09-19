@@ -89,7 +89,8 @@ export function HeroSection() {
     },
   };
 
-  const content = roleContent[activeRole || "null"];
+  const content =
+    roleContent[activeRole || ("null" as keyof typeof roleContent)];
 
   return (
     <section className="relative min-h-[600px] lg:min-h-[700px] flex items-center bg-gradient-to-br from-primary/5 to-primary/10">
@@ -132,10 +133,13 @@ export function HeroSection() {
               {/* Benefits Card */}
               <div className="bg-white rounded-xl p-8 shadow-lg">
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {content.benefits.map((benefit, index) => (
-                    <div key={index} className="flex items-start space-x-3">
+                  {content.benefits.map((benefit: string, index: number) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-center sm:justify-start sm:items-start space-x-3"
+                    >
                       <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-left">{benefit}</span>
+                      <span className="text-sm">{benefit}</span>
                     </div>
                   ))}
                 </div>

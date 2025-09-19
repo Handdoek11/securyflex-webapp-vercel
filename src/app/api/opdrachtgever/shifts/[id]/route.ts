@@ -30,8 +30,8 @@ const updateShiftSchema = z.object({
       "OPEN",
       "GEPUBLICEERD",
       "BEVESTIGD",
-      "ACTIEF",
-      "VOLTOOID",
+      "BEZIG",
+      "AFGEROND",
       "GEANNULEERD",
     ])
     .optional(),
@@ -74,7 +74,7 @@ export async function GET(
         include: {
           sollicitaties: {
             include: {
-              beveiliger: {
+              zzp: {
                 include: {
                   user: {
                     select: {
@@ -87,23 +87,12 @@ export async function GET(
               },
             },
             orderBy: {
-              createdAt: "desc",
-            },
-          },
-          acceptedBeveiliger: {
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  email: true,
-                  phone: true,
-                },
-              },
+              appliedAt: "desc",
             },
           },
           werkuren: {
             include: {
-              beveiliger: {
+              zzp: {
                 include: {
                   user: {
                     select: {
@@ -114,7 +103,7 @@ export async function GET(
               },
             },
             orderBy: {
-              datum: "desc",
+              startTijd: "desc",
             },
           },
           feedback: true,
@@ -140,72 +129,70 @@ export async function GET(
         title: shift.titel,
         description: shift.beschrijving,
         location: shift.locatie,
-        address: shift.adres,
-        date: shift.datum,
-        startTime: shift.startTijd,
-        endTime: shift.eindTijd,
+        address: shift.locatie,
+        date: shift.startDatum,
+        startTime: shift.startDatum.toLocaleTimeString("nl-NL", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        endTime: shift.eindDatum.toLocaleTimeString("nl-NL", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         status: shift.status,
-        budget: shift.budget,
+        budget: null,
         hourlyRate: shift.uurtarief,
         requiredBeveiligers: shift.aantalBeveiligers,
         requirements: shift.vereisten || [],
-        specialization: shift.specialisatie,
-        isUrgent: shift.isUrgent,
-        directBooking: shift.isDirectBooking,
+        specialization: null,
+        isUrgent: shift.status === "URGENT",
+        directBooking: shift.directZZPAllowed,
         targetAudience: shift.targetAudience,
 
         // Application details
-        applications: shift.sollicitaties.map((sol) => ({
+        applications: shift.sollicitaties.map((sol: any) => ({
           id: sol.id,
-          beveiligerId: sol.beveiligerId,
-          name: sol.beveiliger.user.name,
-          email: sol.beveiliger.user.email,
-          phone: sol.beveiliger.user.phone,
+          beveiligerId: sol.zzpId,
+          name: sol.zzp?.user?.name || "Onbekend",
+          email: sol.zzp?.user?.email || "Onbekend",
+          phone: sol.zzp?.user?.phone || "Onbekend",
           status: sol.status,
-          appliedAt: sol.createdAt,
+          appliedAt: sol.appliedAt,
           motivatie: sol.motivatie,
-          rating: sol.beveiliger.rating,
+          rating: sol.zzp?.rating || 0,
           profileData: {
-            specialisaties: sol.beveiliger.specialisaties,
-            certificaten: sol.beveiliger.certificaten,
-            totalReviews: sol.beveiliger.totalReviews,
+            specialisaties: sol.zzp?.specialisaties || [],
+            certificaten: sol.zzp?.certificaten || [],
+            totalReviews: 0,
           },
         })),
 
         // Accepted beveiliger
-        acceptedBeveiliger: shift.acceptedBeveiliger
-          ? {
-              id: shift.acceptedBeveiliger.id,
-              name: shift.acceptedBeveiliger.user.name,
-              email: shift.acceptedBeveiliger.user.email,
-              phone: shift.acceptedBeveiliger.user.phone,
-              rating: shift.acceptedBeveiliger.rating,
-            }
-          : null,
+        acceptedBeveiliger: null,
 
         // Work hours tracking
-        workHours: shift.werkuren.map((wu) => ({
+        workHours: shift.werkuren.map((wu: any) => ({
           id: wu.id,
-          beveiligerId: wu.beveiligerId,
-          beveiligernaam: wu.beveiliger.user.name,
-          datum: wu.datum,
+          beveiligerId: wu.zzpId,
+          beveiligernaam: wu.zzp?.user?.name || "Onbekend",
+          datum: wu.startTijd,
           startTijd: wu.startTijd,
           eindTijd: wu.eindTijd,
-          pauze: wu.pauze,
+          pauze: 0,
           urenGewerkt: wu.urenGewerkt,
           uurtarief: wu.uurtarief,
-          totaalBedrag: wu.totaalBedrag,
+          totaalBedrag: Number(wu.urenGewerkt) * Number(wu.uurtarief),
           status: wu.status,
-          opmerking: wu.opmerking,
+          opmerking: null,
         })),
 
         // Feedback
-        feedback: shift.feedback,
+        feedback: null,
 
         // Company info
         company: {
-          name: shift.opdrachtgever.bedrijfsnaam,
-          contact: shift.opdrachtgever.contactpersoon,
+          name: shift.opdrachtgever?.bedrijfsnaam || "Onbekend",
+          contact: shift.opdrachtgever?.contactpersoon || "Onbekend",
         },
 
         // Metadata
@@ -283,7 +270,7 @@ export async function PUT(
 
       // Check if shift can be updated (not if it's completed or cancelled)
       if (
-        existingShift.status === "VOLTOOID" ||
+        existingShift.status === "AFGEROND" ||
         existingShift.status === "GEANNULEERD"
       ) {
         return NextResponse.json(
@@ -328,7 +315,7 @@ export async function PUT(
         include: {
           sollicitaties: {
             include: {
-              beveiliger: {
+              zzp: {
                 include: {
                   user: {
                     select: {
@@ -371,7 +358,7 @@ export async function PUT(
         {
           success: false,
           error: "Validation error",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );
@@ -434,14 +421,14 @@ export async function DELETE(
       }
 
       // Check if shift can be cancelled
-      if (existingShift.status === "VOLTOOID") {
+      if (existingShift.status === "AFGEROND") {
         return NextResponse.json(
           { success: false, error: "Cannot cancel completed shifts" },
           { status: 400 },
         );
       }
 
-      if (existingShift.status === "ACTIEF") {
+      if (existingShift.status === "BEZIG") {
         return NextResponse.json(
           {
             success: false,
@@ -468,7 +455,7 @@ export async function DELETE(
             status: "PENDING",
           },
           data: {
-            status: "AFGEWEZEN",
+            status: "REJECTED",
             updatedAt: new Date(),
           },
         });

@@ -294,7 +294,7 @@ function getClientIP(request: NextRequest, headersList: Headers): string {
   if (xRealIP) return xRealIP;
   if (xClientIP) return xClientIP;
 
-  return request.ip || "unknown";
+  return "127.0.0.1";
 }
 
 function getRateLimiter(type: SecurityConfig["rateLimiter"]) {

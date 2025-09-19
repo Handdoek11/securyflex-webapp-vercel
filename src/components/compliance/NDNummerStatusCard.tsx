@@ -9,7 +9,7 @@ import {
   ShieldCheckIcon,
   XCircleIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -120,7 +120,7 @@ export function NDNummerStatusCard({
   const [isLoading, setIsLoading] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(
@@ -139,7 +139,7 @@ export function NDNummerStatusCard({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [profileType]);
 
   const handleVerify = async () => {
     if (!status?.profile.ndNummer) {
@@ -221,9 +221,10 @@ export function NDNummerStatusCard({
   }
 
   const { profile, compliance } = status;
-  const statusInfo = profile.ndNummerStatus
-    ? statusConfig[profile.ndNummerStatus]
-    : statusConfig.NIET_GEREGISTREERD;
+  const statusInfo =
+    profile.ndNummerStatus && profile.ndNummerStatus in statusConfig
+      ? statusConfig[profile.ndNummerStatus as keyof typeof statusConfig]
+      : statusConfig.NIET_GEREGISTREERD;
   const StatusIcon = statusInfo.icon;
 
   return (

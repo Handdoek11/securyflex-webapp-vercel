@@ -67,11 +67,12 @@ interface DocumentDetails {
   }>;
 }
 
-export default function DocumentReviewDetailPage({
+export default async function DocumentReviewDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const { data: session, status } = useSession();
   const router = useRouter();
   const [document, setDocument] = useState<DocumentDetails | null>(null);
@@ -96,7 +97,7 @@ export default function DocumentReviewDetailPage({
   const fetchDocument = useCallback(async () => {
     try {
       setError(null);
-      const response = await fetch(`/api/documents/${params.id}`, {
+      const response = await fetch(`/api/documents/${id}`, {
         method: "GET",
         credentials: "include",
         headers: {
@@ -132,7 +133,7 @@ export default function DocumentReviewDetailPage({
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [id]);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -162,7 +163,7 @@ export default function DocumentReviewDetailPage({
         externalRef: externalRef || null,
       };
 
-      const response = await fetch(`/api/documents/${params.id}`, {
+      const response = await fetch(`/api/documents/${id}`, {
         method: "PATCH",
         credentials: "include",
         headers: {

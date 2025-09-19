@@ -43,20 +43,20 @@ export function DynamicMetadata() {
 
       // Add OG tags
       const ogTitle = document.createElement("meta");
-      ogTitle.property = "og:title";
+      ogTitle.setAttribute("property", "og:title");
       ogTitle.content = "ZZP Beveiliger Worden | €28+/uur | WPBR Platform";
       ogTitle.setAttribute("data-dynamic", "true");
       head.appendChild(ogTitle);
 
       const ogDescription = document.createElement("meta");
-      ogDescription.property = "og:description";
+      ogDescription.setAttribute("property", "og:description");
       ogDescription.content =
         "🔥 Word ZZP beveiliger! WPBR platform, GPS check-in, 24u betaling. 2.847+ beveiligers verdienen €28+/uur. Start vandaag!";
       ogDescription.setAttribute("data-dynamic", "true");
       head.appendChild(ogDescription);
 
       const ogUrl = document.createElement("meta");
-      ogUrl.property = "og:url";
+      ogUrl.setAttribute("property", "og:url");
       ogUrl.content = "https://securyflex.nl/?role=beveiligers";
       ogUrl.setAttribute("data-dynamic", "true");
       head.appendChild(ogUrl);
@@ -75,21 +75,21 @@ export function DynamicMetadata() {
 
       // Add OG tags
       const ogTitle = document.createElement("meta");
-      ogTitle.property = "og:title";
+      ogTitle.setAttribute("property", "og:title");
       ogTitle.content =
         "Beveiligingsbedrijf Platform | Toegang tot 2847+ Beveiligers";
       ogTitle.setAttribute("data-dynamic", "true");
       head.appendChild(ogTitle);
 
       const ogDescription = document.createElement("meta");
-      ogDescription.property = "og:description";
+      ogDescription.setAttribute("property", "og:description");
       ogDescription.content =
         "🚀 Groei uw beveiligingsbedrijf! Toegang tot 2847+ WPBR beveiligers, automatische planning, live tracking. Demo aanvragen!";
       ogDescription.setAttribute("data-dynamic", "true");
       head.appendChild(ogDescription);
 
       const ogUrl = document.createElement("meta");
-      ogUrl.property = "og:url";
+      ogUrl.setAttribute("property", "og:url");
       ogUrl.content = "https://securyflex.nl/?role=beveiligingsbedrijven";
       ogUrl.setAttribute("data-dynamic", "true");
       head.appendChild(ogUrl);
@@ -108,20 +108,20 @@ export function DynamicMetadata() {
 
       // Add OG tags
       const ogTitle = document.createElement("meta");
-      ogTitle.property = "og:title";
+      ogTitle.setAttribute("property", "og:title");
       ogTitle.content = "Beveiliging Inhuren | Binnen 5 Min | Live Tracking";
       ogTitle.setAttribute("data-dynamic", "true");
       head.appendChild(ogTitle);
 
       const ogDescription = document.createElement("meta");
-      ogDescription.property = "og:description";
+      ogDescription.setAttribute("property", "og:description");
       ogDescription.content =
         "⚡ Professionele beveiliging binnen 5 minuten! WPBR gecertificeerd, transparante prijzen, live GPS tracking.";
       ogDescription.setAttribute("data-dynamic", "true");
       head.appendChild(ogDescription);
 
       const ogUrl = document.createElement("meta");
-      ogUrl.property = "og:url";
+      ogUrl.setAttribute("property", "og:url");
       ogUrl.content = "https://securyflex.nl/?role=opdrachtgevers";
       ogUrl.setAttribute("data-dynamic", "true");
       head.appendChild(ogUrl);

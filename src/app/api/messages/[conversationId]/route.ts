@@ -245,7 +245,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         {
           success: false,
           error: "Invalid message data",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );
@@ -335,7 +335,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     console.error("Error updating message:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid update data", details: error.errors },
+        { success: false, error: "Invalid update data", details: error.issues },
         { status: 400 },
       );
     }

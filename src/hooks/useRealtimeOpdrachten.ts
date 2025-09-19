@@ -34,7 +34,7 @@ export function useRealtimeOpdrachten(
         case "UPDATE":
           setOpdrachten((prev) =>
             prev.map((opdracht) =>
-              opdracht.id === payload.new.id
+              opdracht.id === (payload.new as Opdracht).id
                 ? (payload.new as Opdracht)
                 : opdracht,
             ),
@@ -42,7 +42,9 @@ export function useRealtimeOpdrachten(
           break;
         case "DELETE":
           setOpdrachten((prev) =>
-            prev.filter((opdracht) => opdracht.id !== payload.old.id),
+            prev.filter(
+              (opdracht) => opdracht.id !== (payload.old as Opdracht).id,
+            ),
           );
           break;
       }
@@ -93,11 +95,14 @@ export function useRealtimeOpdracht(opdrachtId: string | undefined) {
 
     // Subscribe to updates for this specific opdracht
     const subscription = subscribeToOpdrachtUpdates({}, (payload) => {
-      if (payload.new?.id === opdrachtId || payload.old?.id === opdrachtId) {
+      const newOpdracht = payload.new as Opdracht | null;
+      const oldOpdracht = payload.old as Opdracht | null;
+
+      if (newOpdracht?.id === opdrachtId || oldOpdracht?.id === opdrachtId) {
         if (payload.eventType === "DELETE") {
           setOpdracht(null);
-        } else if (payload.eventType === "UPDATE") {
-          setOpdracht(payload.new as Opdracht);
+        } else if (payload.eventType === "UPDATE" && newOpdracht) {
+          setOpdracht(newOpdracht);
         }
       }
     });

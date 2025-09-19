@@ -18,8 +18,8 @@ async function migrateLocationData() {
     // Get all Opdrachten to ensure they have the required locatie field
     const opdrachten = await prisma.opdracht.findMany({
       where: {
-        NOT: {
-          locatie: null,
+        locatie: {
+          not: "",
         },
       },
       select: {

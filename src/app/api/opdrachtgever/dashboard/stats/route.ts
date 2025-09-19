@@ -73,7 +73,7 @@ export async function GET(_request: NextRequest) {
         prisma.opdracht.count({
           where: {
             opdrachtgeverId: opdrachtgeverProfile.id,
-            datum: {
+            startDatum: {
               gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
               lte: new Date(
                 now.getFullYear(),
@@ -89,7 +89,7 @@ export async function GET(_request: NextRequest) {
         prisma.opdracht.count({
           where: {
             opdrachtgeverId: opdrachtgeverProfile.id,
-            datum: { gte: weekStart },
+            startDatum: { gte: weekStart },
             status: { not: "GEANNULEERD" },
           },
         }),
@@ -98,7 +98,7 @@ export async function GET(_request: NextRequest) {
         prisma.opdracht.count({
           where: {
             opdrachtgeverId: opdrachtgeverProfile.id,
-            datum: { gte: monthStart },
+            startDatum: { gte: monthStart },
             status: { not: "GEANNULEERD" },
           },
         }),
@@ -115,8 +115,8 @@ export async function GET(_request: NextRequest) {
         prisma.opdracht.count({
           where: {
             opdrachtgeverId: opdrachtgeverProfile.id,
-            datum: { gte: monthStart },
-            status: "VOLTOOID",
+            startDatum: { gte: monthStart },
+            status: "AFGEROND",
           },
         }),
       ]);
@@ -125,7 +125,7 @@ export async function GET(_request: NextRequest) {
       const urgentShifts = await prisma.opdracht.count({
         where: {
           opdrachtgeverId: opdrachtgeverProfile.id,
-          datum: {
+          startDatum: {
             gte: now,
             lte: new Date(now.getTime() + 24 * 60 * 60 * 1000), // Next 24 hours
           },
@@ -133,28 +133,32 @@ export async function GET(_request: NextRequest) {
         },
       });
 
-      // Get total amount spent (from completed shifts)
-      const totalSpentResult = await prisma.opdracht.aggregate({
+      // Get total amount spent (calculated from completed shifts)
+      const completedOpdrachten = await prisma.opdracht.findMany({
         where: {
           opdrachtgeverId: opdrachtgeverProfile.id,
-          status: "VOLTOOID",
+          status: "AFGEROND",
         },
-        _sum: {
-          budget: true,
+        select: {
+          uurtarief: true,
+          aantalBeveiligers: true,
+          startDatum: true,
+          eindDatum: true,
         },
       });
 
-      // Get unique beveiligers count (who worked for this opdrachtgever)
-      const uniqueBeveiligers = await prisma.opdracht.findMany({
+      // Get unique beveiligers count (from werkuren - actual workers)
+      const uniqueBeveiligers = await prisma.werkuur.findMany({
         where: {
-          opdrachtgeverId: opdrachtgeverProfile.id,
-          status: { in: ["VOLTOOID", "ACTIEF"] },
-          acceptedBeveiligerId: { not: null },
+          opdracht: {
+            opdrachtgeverId: opdrachtgeverProfile.id,
+          },
+          zzpId: { not: null },
         },
         select: {
-          acceptedBeveiligerId: true,
+          zzpId: true,
         },
-        distinct: ["acceptedBeveiligerId"],
+        distinct: ["zzpId"],
       });
 
       // Get average rating (from opdrachtfeedback)
@@ -184,7 +188,18 @@ export async function GET(_request: NextRequest) {
         weeklyShifts,
         monthlyShifts,
         totalShifts,
-        totalSpent: Number(totalSpentResult._sum.budget) || 0,
+        totalSpent: completedOpdrachten.reduce((sum, opdracht) => {
+          // Calculate estimated cost: hours * rate * people
+          const estimatedHours =
+            (opdracht.eindDatum.getTime() - opdracht.startDatum.getTime()) /
+            (1000 * 60 * 60);
+          return (
+            sum +
+            estimatedHours *
+              Number(opdracht.uurtarief) *
+              opdracht.aantalBeveiligers
+          );
+        }, 0),
         avgRating: Number(ratingResult._avg.ratingBeveiliger) || 0,
         beveiligerCount: uniqueBeveiligers.length,
         urgentShifts,

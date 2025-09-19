@@ -1,11 +1,11 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import {
-  PrismaClient,
-  type UserRole,
-  type User,
-  type ZZPProfile,
   type BedrijfProfile,
   type Opdrachtgever,
+  PrismaClient,
+  type User,
+  type UserRole,
+  type ZZPProfile,
 } from "@prisma/client";
 import bcryptjs from "bcryptjs";
 import NextAuth from "next-auth";
@@ -182,15 +182,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   pages: {
     signIn: "/auth/login",
-    signUp: "/auth/register",
+    // signUp is not a valid NextAuth page option - registration is handled separately
     error: "/auth/error",
   },
   events: {
     async signIn({ user, isNewUser }) {
       console.log("User signed in:", user.email, "New user:", isNewUser);
     },
-    async signOut({ token }) {
-      console.log("User signed out:", token?.email);
+    async signOut(params) {
+      // Check if params has token property
+      if ("token" in params && params.token) {
+        console.log("User signed out:", params.token.email);
+      } else if ("session" in params && params.session) {
+        console.log("User signed out", params.session);
+      }
     },
   },
   debug: process.env.NODE_ENV === "development",

@@ -19,7 +19,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BedrijfDashboardLayout } from "@/components/dashboard/BedrijfDashboardLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ComponentErrorBoundary,
+  PageErrorBoundary,
+} from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -41,6 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TeamMember {
   id: string;
@@ -79,6 +84,8 @@ export default function BedrijfTeamPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [documentFilter, setDocumentFilter] = useState("all");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Mock data
   const teamMembers: TeamMember[] = [
@@ -219,402 +226,526 @@ export default function BedrijfTeamPage() {
     return Object.values(availability).filter(Boolean).length;
   };
 
-  return (
-    <BedrijfDashboardLayout
-      title="Team Management"
-      subtitle="Beheer je team zonder administratieve complexiteit"
-      headerActions={
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Upload className="h-4 w-4 mr-2" />
-            Bulk Import
-          </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Teamlid Toevoegen
-          </Button>
-        </div>
+  // Simulate data loading
+  useEffect(() => {
+    const loadTeamData = async () => {
+      setLoading(true);
+      try {
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        // In real app, this would be: const data = await fetchTeamMembers();
+      } catch (error) {
+        console.error("Failed to load team data:", error);
+      } finally {
+        setLoading(false);
       }
-    >
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Totaal Team</p>
-              <p className="text-2xl font-semibold">{teamMembers.length}</p>
-            </div>
-            <Users className="h-8 w-8 text-muted-foreground" />
-          </div>
-        </Card>
+    };
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Actief</p>
-              <p className="text-2xl font-semibold">
-                {teamMembers.filter((m) => m.status === "actief").length}
-              </p>
-            </div>
-            <UserCheck className="h-8 w-8 text-green-600" />
-          </div>
-        </Card>
+    loadTeamData();
+  }, []);
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Documenten Alert</p>
-              <p className="text-2xl font-semibold">
-                {
-                  teamMembers.filter((m) =>
-                    m.documents.some((d) => d.status !== "geldig"),
-                  ).length
-                }
-              </p>
-            </div>
-            <AlertCircle className="h-8 w-8 text-orange-600" />
-          </div>
-        </Card>
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Simulate refresh API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // In real app: await fetchTeamMembers();
+    } catch (error) {
+      console.error("Failed to refresh team data:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Finqle Ready</p>
-              <p className="text-2xl font-semibold">
-                {
-                  teamMembers.filter((m) => m.finqleStatus === "onboarded")
-                    .length
-                }
-              </p>
-            </div>
-            <CheckCircle className="h-8 w-8 text-blue-600" />
-          </div>
-        </Card>
-      </div>
-
-      {/* Filters and Search */}
-      <Card className="p-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Zoek op naam of email..."
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+  return (
+    <PageErrorBoundary>
+      <BedrijfDashboardLayout
+        title="Team Management"
+        subtitle="Beheer je team zonder administratieve complexiteit"
+        headerActions={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <TrendingUp
+                className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`}
               />
-            </div>
-          </div>
-
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle Statussen</SelectItem>
-              <SelectItem value="actief">Actief</SelectItem>
-              <SelectItem value="inactief">Inactief</SelectItem>
-              <SelectItem value="verlof">Verlof</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={documentFilter} onValueChange={setDocumentFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Document filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle Documenten</SelectItem>
-              <SelectItem value="expired">Verlopen</SelectItem>
-              <SelectItem value="expiring">Verloopt Binnenkort</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {selectedMembers.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Bulk Acties ({selectedMembers.length})
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => handleBulkAction("export")}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Exporteer naar Finqle
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBulkAction("invite")}>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Stuur Finqle Uitnodiging
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => handleBulkAction("deactivate")}
-                >
-                  Deactiveer Geselecteerde
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </Card>
-
-      {/* Team Members List */}
-      <div className="space-y-4">
-        {filteredMembers.map((member) => (
-          <Card key={member.id} className="p-6">
-            <div className="space-y-4">
-              {/* Header */}
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedMembers.includes(member.id)}
-                    onChange={() => handleSelectMember(member.id)}
-                    className="mt-1"
-                  />
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={member.avatar} />
-                    <AvatarFallback>
-                      {member.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">{member.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {member.role}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {member.email} • {member.phone}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={
-                      member.status === "actief"
-                        ? "success"
-                        : member.status === "verlof"
-                          ? "warning"
-                          : "secondary"
-                    }
-                  >
-                    {member.status}
-                  </Badge>
-                  {getFinqleStatusBadge(member.finqleStatus)}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Bekijk Profiel
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Planning Bekijken
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Open in Finqle
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600">
-                        Deactiveer
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-
-              {/* Content Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Documents */}
-                <div className="space-y-2">
-                  <p className="text-sm font-medium flex items-center gap-1">
-                    <FileText className="h-4 w-4" />
-                    Documenten
-                  </p>
-                  <div className="space-y-1">
-                    {member.documents.slice(0, 3).map((doc, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-2 text-xs"
-                      >
-                        {doc.status === "geldig" ? (
-                          <CheckCircle className="h-3 w-3 text-green-600" />
-                        ) : doc.status === "verloopt" ? (
-                          <AlertCircle className="h-3 w-3 text-orange-600" />
-                        ) : (
-                          <XCircle className="h-3 w-3 text-red-600" />
-                        )}
-                        <span
-                          className={
-                            doc.status !== "geldig"
-                              ? "text-muted-foreground"
-                              : ""
-                          }
-                        >
-                          {doc.type}
-                        </span>
-                      </div>
-                    ))}
-                    {member.documents.length > 3 && (
-                      <p className="text-xs text-muted-foreground">
-                        +{member.documents.length - 3} meer
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Skills */}
-                <div className="space-y-2">
-                  <p className="text-sm font-medium flex items-center gap-1">
-                    <Award className="h-4 w-4" />
-                    Vaardigheden
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {member.skills.map((skill) => (
-                      <Badge key={skill} variant="outline" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Performance */}
-                <div className="space-y-2">
-                  <p className="text-sm font-medium flex items-center gap-1">
-                    <TrendingUp className="h-4 w-4" />
-                    Prestaties
-                  </p>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Star className="h-3 w-3 text-yellow-500" />
-                      <span className="text-sm font-medium">
-                        {member.performance.rating}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        / 5.0
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {member.performance.completedShifts} shifts •{" "}
-                      {member.performance.hoursWorked} uur
-                    </p>
-                    {member.performance.lastShift && (
-                      <p className="text-xs text-muted-foreground">
-                        Laatste:{" "}
-                        {new Date(
-                          member.performance.lastShift,
-                        ).toLocaleDateString("nl-NL")}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Availability */}
-                <div className="space-y-2">
-                  <p className="text-sm font-medium flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    Beschikbaarheid
-                  </p>
-                  <div className="space-y-1">
-                    <Progress
-                      value={
-                        (getAvailabilityCount(member.availability) / 7) * 100
-                      }
-                      className="h-2"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {getAvailabilityCount(member.availability)} dagen per week
-                    </p>
-                    <div className="flex gap-1">
-                      {Object.entries(member.availability).map(
-                        ([day, available]) => (
-                          <div
-                            key={day}
-                            className={`w-4 h-4 rounded-full text-xs flex items-center justify-center ${
-                              available
-                                ? "bg-green-100 text-green-600"
-                                : "bg-gray-100 text-gray-400"
-                            }`}
-                            title={day}
-                          >
-                            {day[0].toUpperCase()}
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Bar */}
-              {member.finqleStatus === "not_started" && (
-                <div className="pt-3 border-t">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      Dit teamlid moet nog worden uitgenodigd voor Finqle direct
-                      payment
-                    </p>
-                    <Button size="sm" variant="outline">
-                      <Mail className="h-4 w-4 mr-2" />
-                      Stuur Finqle Uitnodiging
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {member.documents.some((d) => d.status !== "geldig") && (
-                <div className="pt-3 border-t">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-orange-600 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" />
-                      {
-                        member.documents.filter((d) => d.status === "verlopen")
-                          .length
-                      }{" "}
-                      document(en) verlopen,{" "}
-                      {
-                        member.documents.filter((d) => d.status === "verloopt")
-                          .length
-                      }{" "}
-                      verloopt binnenkort
-                    </p>
-                    <Button size="sm" variant="outline">
-                      Herinner Teamlid
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {filteredMembers.length === 0 && (
-        <Card className="p-12">
-          <div className="text-center space-y-3">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto" />
-            <h3 className="text-lg font-semibold">Geen teamleden gevonden</h3>
-            <p className="text-muted-foreground">
-              Pas je filters aan of voeg nieuwe teamleden toe
-            </p>
+              {refreshing ? "Vernieuwen..." : "Vernieuwen"}
+            </Button>
+            <Button variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              Bulk Import
+            </Button>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Teamlid Toevoegen
             </Button>
           </div>
-        </Card>
-      )}
-    </BedrijfDashboardLayout>
+        }
+      >
+        {/* Quick Stats */}
+        <ComponentErrorBoundary>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              {[...Array(4)].map((_, i) => (
+                <Card key={i} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-8 w-12" />
+                    </div>
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Totaal Team</p>
+                    <p className="text-2xl font-semibold">
+                      {teamMembers.length}
+                    </p>
+                  </div>
+                  <Users className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Actief</p>
+                    <p className="text-2xl font-semibold">
+                      {teamMembers.filter((m) => m.status === "actief").length}
+                    </p>
+                  </div>
+                  <UserCheck className="h-8 w-8 text-green-600" />
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Documenten Alert
+                    </p>
+                    <p className="text-2xl font-semibold">
+                      {
+                        teamMembers.filter((m) =>
+                          m.documents.some((d) => d.status !== "geldig"),
+                        ).length
+                      }
+                    </p>
+                  </div>
+                  <AlertCircle className="h-8 w-8 text-orange-600" />
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Finqle Ready
+                    </p>
+                    <p className="text-2xl font-semibold">
+                      {
+                        teamMembers.filter(
+                          (m) => m.finqleStatus === "onboarded",
+                        ).length
+                      }
+                    </p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-blue-600" />
+                </div>
+              </Card>
+            </div>
+          )}
+        </ComponentErrorBoundary>
+
+        {/* Filters and Search */}
+        <ComponentErrorBoundary>
+          <Card className="p-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Zoek op naam of email..."
+                    className="pl-9"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Status filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle Statussen</SelectItem>
+                  <SelectItem value="actief">Actief</SelectItem>
+                  <SelectItem value="inactief">Inactief</SelectItem>
+                  <SelectItem value="verlof">Verlof</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={documentFilter} onValueChange={setDocumentFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Document filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle Documenten</SelectItem>
+                  <SelectItem value="expired">Verlopen</SelectItem>
+                  <SelectItem value="expiring">Verloopt Binnenkort</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {selectedMembers.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      Bulk Acties ({selectedMembers.length})
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      onClick={() => handleBulkAction("export")}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Exporteer naar Finqle
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleBulkAction("invite")}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Stuur Finqle Uitnodiging
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleBulkAction("deactivate")}
+                    >
+                      Deactiveer Geselecteerde
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </Card>
+        </ComponentErrorBoundary>
+
+        {/* Team Members List */}
+        <ComponentErrorBoundary>
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="p-6">
+                  <div className="space-y-4">
+                    {/* Header skeleton */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-5 w-32" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Skeleton className="h-6 w-16" />
+                        <Skeleton className="h-6 w-20" />
+                        <Skeleton className="h-8 w-8" />
+                      </div>
+                    </div>
+
+                    {/* Content grid skeleton */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      {[...Array(4)].map((_, j) => (
+                        <div key={j} className="space-y-2">
+                          <Skeleton className="h-4 w-20" />
+                          <div className="space-y-1">
+                            <Skeleton className="h-3 w-16" />
+                            <Skeleton className="h-3 w-12" />
+                            <Skeleton className="h-3 w-14" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredMembers.map((member) => (
+                <Card key={member.id} className="p-6">
+                  <div className="space-y-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedMembers.includes(member.id)}
+                          onChange={() => handleSelectMember(member.id)}
+                          className="mt-1"
+                        />
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={member.avatar} />
+                          <AvatarFallback>
+                            {member.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold">{member.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {member.role}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {member.email} • {member.phone}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            member.status === "actief"
+                              ? "default"
+                              : member.status === "verlof"
+                                ? "warning"
+                                : "secondary"
+                          }
+                        >
+                          {member.status}
+                        </Badge>
+                        {getFinqleStatusBadge(member.finqleStatus)}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Bekijk Profiel
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Calendar className="h-4 w-4 mr-2" />
+                              Planning Bekijken
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Open in Finqle
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-600">
+                              Deactiveer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    {/* Content Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      {/* Documents */}
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium flex items-center gap-1">
+                          <FileText className="h-4 w-4" />
+                          Documenten
+                        </p>
+                        <div className="space-y-1">
+                          {member.documents.slice(0, 3).map((doc, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 text-xs"
+                            >
+                              {doc.status === "geldig" ? (
+                                <CheckCircle className="h-3 w-3 text-green-600" />
+                              ) : doc.status === "verloopt" ? (
+                                <AlertCircle className="h-3 w-3 text-orange-600" />
+                              ) : (
+                                <XCircle className="h-3 w-3 text-red-600" />
+                              )}
+                              <span
+                                className={
+                                  doc.status !== "geldig"
+                                    ? "text-muted-foreground"
+                                    : ""
+                                }
+                              >
+                                {doc.type}
+                              </span>
+                            </div>
+                          ))}
+                          {member.documents.length > 3 && (
+                            <p className="text-xs text-muted-foreground">
+                              +{member.documents.length - 3} meer
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Skills */}
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium flex items-center gap-1">
+                          <Award className="h-4 w-4" />
+                          Vaardigheden
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {member.skills.map((skill) => (
+                            <Badge
+                              key={skill}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Performance */}
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium flex items-center gap-1">
+                          <TrendingUp className="h-4 w-4" />
+                          Prestaties
+                        </p>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Star className="h-3 w-3 text-yellow-500" />
+                            <span className="text-sm font-medium">
+                              {member.performance.rating}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              / 5.0
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {member.performance.completedShifts} shifts •{" "}
+                            {member.performance.hoursWorked} uur
+                          </p>
+                          {member.performance.lastShift && (
+                            <p className="text-xs text-muted-foreground">
+                              Laatste:{" "}
+                              {new Date(
+                                member.performance.lastShift,
+                              ).toLocaleDateString("nl-NL")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Availability */}
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          Beschikbaarheid
+                        </p>
+                        <div className="space-y-1">
+                          <Progress
+                            value={
+                              (getAvailabilityCount(member.availability) / 7) *
+                              100
+                            }
+                            className="h-2"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {getAvailabilityCount(member.availability)} dagen
+                            per week
+                          </p>
+                          <div className="flex gap-1">
+                            {Object.entries(member.availability).map(
+                              ([day, available]) => (
+                                <div
+                                  key={day}
+                                  className={`w-4 h-4 rounded-full text-xs flex items-center justify-center ${
+                                    available
+                                      ? "bg-green-100 text-green-600"
+                                      : "bg-gray-100 text-gray-400"
+                                  }`}
+                                  title={day}
+                                >
+                                  {day[0].toUpperCase()}
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Bar */}
+                    {member.finqleStatus === "not_started" && (
+                      <div className="pt-3 border-t">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-muted-foreground">
+                            Dit teamlid moet nog worden uitgenodigd voor Finqle
+                            direct payment
+                          </p>
+                          <Button size="sm" variant="outline">
+                            <Mail className="h-4 w-4 mr-2" />
+                            Stuur Finqle Uitnodiging
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {member.documents.some((d) => d.status !== "geldig") && (
+                      <div className="pt-3 border-t">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-orange-600 flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4" />
+                            {
+                              member.documents.filter(
+                                (d) => d.status === "verlopen",
+                              ).length
+                            }{" "}
+                            document(en) verlopen,{" "}
+                            {
+                              member.documents.filter(
+                                (d) => d.status === "verloopt",
+                              ).length
+                            }{" "}
+                            verloopt binnenkort
+                          </p>
+                          <Button size="sm" variant="outline">
+                            Herinner Teamlid
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </ComponentErrorBoundary>
+
+        {/* Empty State */}
+        {filteredMembers.length === 0 && (
+          <Card className="p-12">
+            <div className="text-center space-y-3">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto" />
+              <h3 className="text-lg font-semibold">Geen teamleden gevonden</h3>
+              <p className="text-muted-foreground">
+                Pas je filters aan of voeg nieuwe teamleden toe
+              </p>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Teamlid Toevoegen
+              </Button>
+            </div>
+          </Card>
+        )}
+      </BedrijfDashboardLayout>
+    </PageErrorBoundary>
   );
 }

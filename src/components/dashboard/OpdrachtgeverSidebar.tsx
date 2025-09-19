@@ -36,7 +36,7 @@ interface NavItem {
     | "secondary"
     | "destructive"
     | "outline"
-    | "success";
+    | "warning";
 }
 
 const navItems: NavItem[] = [
@@ -278,7 +278,7 @@ export function OpdrachtgeverSidebar({ className }: OpdrachtgeverSidebarProps) {
           )}
         >
           <Avatar className="h-9 w-9">
-            <AvatarImage src={session?.user?.image || undefined} />
+            <AvatarImage src={session?.user?.image as string | undefined} />
             <AvatarFallback>{userInitials}</AvatarFallback>
           </Avatar>
           {!effectiveCollapsed && (

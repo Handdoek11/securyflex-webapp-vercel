@@ -148,8 +148,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Send real-time notification via Supabase
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = createClient();
+    const { createSupabaseServerClient } = await import(
+      "@/lib/supabase/server"
+    );
+    const supabase = createSupabaseServerClient();
 
     await supabase.channel(`user:${validatedData.recipientId}`).send({
       type: "broadcast",
@@ -168,7 +170,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "Invalid notification data",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );
@@ -243,7 +245,7 @@ export async function PATCH(request: NextRequest) {
     console.error("Error updating notifications:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid update data", details: error.errors },
+        { success: false, error: "Invalid update data", details: error.issues },
         { status: 400 },
       );
     }

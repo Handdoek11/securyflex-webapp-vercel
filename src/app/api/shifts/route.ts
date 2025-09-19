@@ -72,7 +72,7 @@ const mockShifts = {
       startTime: "09:00",
       endTime: "17:00",
       hourlyRate: 24.0,
-      status: "VOLTOOID",
+      status: "AFGEROND",
       hoursWorked: 8,
       totalEarned: 192.0,
       rating: 5,
@@ -87,7 +87,7 @@ const mockShifts = {
       startTime: "12:00",
       endTime: "18:00",
       hourlyRate: 30.0,
-      status: "VOLTOOID",
+      status: "AFGEROND",
       hoursWorked: 6,
       totalEarned: 180.0,
       rating: 4,
@@ -148,7 +148,14 @@ export async function GET(request: NextRequest) {
                   telefoonnummer: true,
                 },
               },
-              bedrijf: {
+              creatorBedrijf: {
+                select: {
+                  bedrijfsnaam: true,
+                  contactpersoon: true,
+                  telefoonnummer: true,
+                },
+              },
+              acceptedBedrijf: {
                 select: {
                   bedrijfsnaam: true,
                   contactpersoon: true,
@@ -157,10 +164,10 @@ export async function GET(request: NextRequest) {
               },
               werkuren: {
                 where: {
-                  beveiligerId: zzpProfile.id,
+                  zzpId: zzpProfile.id,
                 },
                 orderBy: {
-                  datum: "desc",
+                  startTijd: "desc",
                 },
               },
             },
@@ -189,11 +196,14 @@ export async function GET(request: NextRequest) {
 
         // Calculate total hours and earnings from completed work sessions
         const totalHours = completedWorkHours.reduce(
-          (sum, wh) => sum + (wh.totaleUren || 0),
+          (sum, wh) => sum + (wh.urenGewerkt || 0),
           0,
         );
         const totalEarnings = completedWorkHours.reduce(
-          (sum, wh) => sum + (wh.nettoBedrag || 0),
+          (sum, wh) =>
+            sum +
+            ((wh.urenGewerkt || 0) * Number(wh.uurtarief) -
+              (wh.platformFee || 0)),
           0,
         );
 
@@ -203,7 +213,8 @@ export async function GET(request: NextRequest) {
           description: job.beschrijving,
           company:
             job.opdrachtgever?.bedrijfsnaam ||
-            job.bedrijf?.bedrijfsnaam ||
+            job.creatorBedrijf?.bedrijfsnaam ||
+            job.acceptedBedrijf?.bedrijfsnaam ||
             "Onbekend",
           location: job.locatie,
           date: startDate,
@@ -218,11 +229,13 @@ export async function GET(request: NextRequest) {
           hourlyRate: Number(job.uurtarief),
           contactPerson:
             job.opdrachtgever?.contactpersoon ||
-            job.bedrijf?.contactpersoon ||
+            job.creatorBedrijf?.contactpersoon ||
+            job.acceptedBedrijf?.contactpersoon ||
             "Contactpersoon",
           contactPhone:
             job.opdrachtgever?.telefoonnummer ||
-            job.bedrijf?.telefoonnummer ||
+            job.creatorBedrijf?.telefoonnummer ||
+            job.acceptedBedrijf?.telefoonnummer ||
             "Niet beschikbaar",
           address: job.locatie,
           instructions: job.instructies || null,
@@ -258,7 +271,7 @@ export async function GET(request: NextRequest) {
           // Completed shifts
           shifts.historie.push({
             ...shift,
-            status: completedWorkHours.length > 0 ? "VOLTOOID" : "GEMIST",
+            status: completedWorkHours.length > 0 ? "AFGEROND" : "GEANNULEERD",
             rating: 4, // Would get from reviews table
             paymentStatus: "PAID", // Would get from payment records
           });

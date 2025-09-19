@@ -66,7 +66,7 @@ export async function GET(
     const fileBuffer = await readFile(filePath);
 
     // Return file with appropriate headers
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(fileBuffer as BodyInit, {
       headers: {
         "Content-Type": document.mimeType,
         "Content-Disposition": `inline; filename="${document.originalFileName}"`,
@@ -129,7 +129,6 @@ export async function PATCH(
 
     // Get client IP and User Agent
     const ipAddress =
-      request.ip ||
       request.headers.get("x-forwarded-for") ||
       request.headers.get("x-real-ip") ||
       "unknown";
@@ -188,7 +187,12 @@ export async function PATCH(
       await prisma.documentVerificationHistory.create({
         data: {
           documentId: documentId,
-          action: actionMap[status] || "UPDATED",
+          action: (actionMap[status] || "UPDATED") as
+            | "REVIEW_STARTED"
+            | "APPROVED"
+            | "REJECTED"
+            | "INFO_REQUESTED"
+            | "UPDATED",
           oldStatus: currentDocument.status,
           newStatus: status,
           adminNotes: adminNotes || null,
@@ -228,8 +232,8 @@ export async function PATCH(
             documentType: updatedDocument.documentType,
             originalFileName: updatedDocument.originalFileName,
             status: updatedDocument.status,
-            rejectionReason: updatedDocument.rejectionReason,
-            adminNotes: updatedDocument.adminNotes,
+            rejectionReason: updatedDocument.rejectionReason || undefined,
+            adminNotes: updatedDocument.adminNotes || undefined,
           },
           adminName: session.user.name || session.user.email,
         };
@@ -297,7 +301,6 @@ export async function DELETE(
 
     // Get client IP and User Agent
     const ipAddress =
-      request.ip ||
       request.headers.get("x-forwarded-for") ||
       request.headers.get("x-real-ip") ||
       "unknown";

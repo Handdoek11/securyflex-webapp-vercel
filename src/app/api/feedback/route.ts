@@ -1,4 +1,4 @@
-import type { Assignment, Opdracht, User } from "@prisma/client";
+import type { Opdracht, OpdrachtAssignment, User } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         ...(requiresAction && { requiresAction: true }),
         OR: [
           { opdracht: { opdrachtgeverId: session.user.id } },
-          { opdracht: { bedrijf: { userId: session.user.id } } },
+          { opdracht: { acceptedBedrijf: { userId: session.user.id } } },
           { authorId: session.user.id },
         ],
       },
@@ -141,7 +141,8 @@ export async function POST(request: NextRequest) {
       where: { id: validatedData.opdrachtId },
       include: {
         opdrachtgever: true,
-        bedrijf: true,
+        acceptedBedrijf: true,
+        creatorBedrijf: true,
         assignments: {
           include: {
             teamLid: {
@@ -171,10 +172,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get full user data for validation
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "User not found" },
+        { status: 404 },
+      );
+    }
+
     // Validate feedback type based on user role
     const isValidFeedbackType = validateFeedbackType(
-      session.user,
-      opdracht,
+      user,
+      opdracht as any, // Type mismatch between Prisma and function signature
       validatedData.type,
     );
 
@@ -232,8 +245,11 @@ export async function POST(request: NextRequest) {
     // Determine recipient for notification
     let recipientId: string | null = null;
 
-    if (validatedData.type === "OPDRACHTGEVER_TO_BEDRIJF" && opdracht.bedrijf) {
-      recipientId = opdracht.bedrijf.userId;
+    if (
+      validatedData.type === "OPDRACHTGEVER_TO_BEDRIJF" &&
+      opdracht.acceptedBedrijf
+    ) {
+      recipientId = opdracht.acceptedBedrijf.userId;
     } else if (validatedData.type === "BEDRIJF_TO_OPDRACHTGEVER") {
       recipientId = opdracht.opdrachtgeverId;
     }
@@ -275,7 +291,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "Invalid feedback data",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );
@@ -314,7 +330,7 @@ export async function PATCH(request: NextRequest) {
         id: validatedData.feedbackId,
         OR: [
           { opdracht: { opdrachtgeverId: session.user.id } },
-          { opdracht: { bedrijf: { userId: session.user.id } } },
+          { opdracht: { acceptedBedrijf: { userId: session.user.id } } },
         ],
       },
     });
@@ -362,7 +378,7 @@ export async function PATCH(request: NextRequest) {
     console.error("Error updating feedback:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid update data", details: error.errors },
+        { success: false, error: "Invalid update data", details: error.issues },
         { status: 400 },
       );
     }
@@ -378,8 +394,8 @@ function validateFeedbackType(
   user: User & { role: string },
   opdracht: Opdracht & {
     opdrachtgeverId?: string;
-    bedrijf?: { userId: string } | null;
-    assignments?: Assignment[];
+    acceptedBedrijf?: { userId: string } | null;
+    assignments?: OpdrachtAssignment[];
   },
   type: string,
 ): boolean {
@@ -392,15 +408,19 @@ function validateFeedbackType(
       );
 
     case "BEDRIJF_TO_OPDRACHTGEVER":
-      return userRole === "BEDRIJF" && opdracht.bedrijf?.userId === user.id;
+      return (
+        userRole === "BEDRIJF" && opdracht.acceptedBedrijf?.userId === user.id
+      );
 
     case "BEDRIJF_TO_ZZP":
-      return userRole === "BEDRIJF" && opdracht.bedrijf?.userId === user.id;
+      return (
+        userRole === "BEDRIJF" && opdracht.acceptedBedrijf?.userId === user.id
+      );
 
     case "ZZP_TO_BEDRIJF": {
       // Check if ZZP was assigned to this opdracht
       const assignment = opdracht.assignments?.find(
-        (a: Assignment & { teamLid?: { zzp?: { userId: string } } }) =>
+        (a: OpdrachtAssignment & { teamLid?: { zzp?: { userId: string } } }) =>
           a.teamLid?.zzp?.userId === user.id,
       );
       return userRole === "ZZP_BEVEILIGER" && !!assignment;

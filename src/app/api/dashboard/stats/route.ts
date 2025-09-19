@@ -69,7 +69,7 @@ export async function GET(_request: NextRequest) {
         prisma.werkuur.aggregate({
           where: {
             zzpId: zzpProfile.id,
-            datum: { gte: monthStart },
+            startTijd: { gte: monthStart },
             status: { in: ["PENDING", "APPROVED"] },
           },
           _sum: {
@@ -96,8 +96,8 @@ export async function GET(_request: NextRequest) {
       // Get unique jobs count for total shifts
       const totalShifts = await prisma.werkuur.findMany({
         where: {
-          beveiligerId: zzpProfile.id,
-          status: { in: ["PENDING", "COMPLETED"] },
+          zzpId: zzpProfile.id,
+          status: { in: ["PENDING", "APPROVED", "PAID"] },
         },
         select: {
           opdrachtId: true,
@@ -110,17 +110,17 @@ export async function GET(_request: NextRequest) {
 
       stats = {
         thisWeek: {
-          hours: Number(weekHours._sum.urenGewerkt) || 0,
+          hours: Number(weekHours._sum?.urenGewerkt) || 0,
           earnings: 0, // TODO: Calculate from urenGewerkt * uurtarief
           shifts: weekHours._count || 0,
         },
         thisMonth: {
-          hours: Number(monthHours._sum.urenGewerkt) || 0,
+          hours: Number(monthHours._sum?.urenGewerkt) || 0,
           earnings: 0, // TODO: Calculate from urenGewerkt * uurtarief
-          shifts: monthHours._count || 0,
+          shifts: Number(monthHours._count) || 0,
         },
         total: {
-          hours: Number(totalHours._sum.urenGewerkt) || 0,
+          hours: Number(totalHours._sum?.urenGewerkt) || 0,
           earnings: 0, // TODO: Calculate from urenGewerkt * uurtarief
           shifts: totalShifts.length || 0,
           rating: avgRating,

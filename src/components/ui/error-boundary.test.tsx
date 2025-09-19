@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   APIError,
   ErrorBoundary,
@@ -84,7 +84,11 @@ describe("ErrorBoundary", () => {
 
   it("should show error details in development", () => {
     const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    // Use Object.defineProperty to avoid readonly error
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "development",
+      writable: true,
+    });
 
     render(
       <ErrorBoundary>
@@ -94,12 +98,18 @@ describe("ErrorBoundary", () => {
 
     expect(screen.getByText(/Error: Test error message/)).toBeInTheDocument();
 
-    process.env.NODE_ENV = originalEnv;
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: originalEnv,
+      writable: true,
+    });
   });
 
   it("should hide error details in production", () => {
     const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "production",
+      writable: true,
+    });
 
     render(
       <ErrorBoundary>
@@ -111,7 +121,10 @@ describe("ErrorBoundary", () => {
       screen.queryByText(/Error: Test error message/),
     ).not.toBeInTheDocument();
 
-    process.env.NODE_ENV = originalEnv;
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: originalEnv,
+      writable: true,
+    });
   });
 
   it("should reset error when reset button is clicked", () => {

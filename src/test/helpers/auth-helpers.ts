@@ -1,8 +1,13 @@
 import type { UserRole } from "@prisma/client";
 import { NextRequest } from "next/server";
+import { expect, vi } from "vitest";
+import * as authModule from "@/lib/auth";
 
 // Mock user factory
-export function createMockUser(role: UserRole, additionalData: any = {}) {
+export function createMockUser(
+  role: UserRole,
+  additionalData: Record<string, unknown> = {},
+) {
   const baseUser = {
     id: `user-${role.toLowerCase()}-${Date.now()}`,
     email: `test-${role.toLowerCase()}@example.com`,
@@ -23,34 +28,39 @@ export function createMockUser(role: UserRole, additionalData: any = {}) {
 export function createMockRequest(
   method: string,
   url: string,
-  body?: any,
+  body?: unknown,
   headers: Record<string, string> = {},
 ): NextRequest {
   const fullUrl = url.startsWith("http") ? url : `http://localhost:3000${url}`;
 
-  const requestInit: RequestInit = {
+  const requestHeaders = new Headers({
+    "Content-Type": "application/json",
+    ...headers,
+  });
+
+  const requestInit: Record<string, unknown> = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-    },
+    headers: requestHeaders,
   };
 
   if (body && (method === "POST" || method === "PUT" || method === "PATCH")) {
     requestInit.body = JSON.stringify(body);
   }
 
-  return new NextRequest(fullUrl, requestInit);
+  // Cast to unknown first to avoid type issues with Next.js RequestInit
+  return new NextRequest(fullUrl, requestInit as unknown as RequestInit);
 }
 
 // Helper for testing authenticated routes
 export async function testWithAuth<T>(
-  user: any,
+  user: Record<string, unknown>,
   testFn: () => Promise<T>,
 ): Promise<T> {
   // Mock authentication to return the provided user
-  const mockAuth = require("@/lib/auth").auth;
-  mockAuth.mockResolvedValue({ user });
+  const mockAuth = vi.spyOn(authModule, "auth");
+  mockAuth.mockResolvedValue({ user } as unknown as ReturnType<
+    typeof authModule.auth
+  >);
 
   try {
     return await testFn();
@@ -60,7 +70,7 @@ export async function testWithAuth<T>(
 }
 
 // Create mock session data
-export function createMockSession(user: any) {
+export function createMockSession(user: Record<string, unknown>) {
   return {
     user,
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
@@ -195,7 +205,11 @@ export const mockDatabaseResponses = {
 
 // Validation helpers
 export function expectValidApiResponse(
-  responseData: any,
+  responseData: {
+    success: boolean;
+    data?: Record<string, unknown>;
+    error?: string;
+  },
   expectedProperties: string[] = [],
 ) {
   expect(responseData).toBeDefined();
@@ -211,30 +225,46 @@ export function expectValidApiResponse(
   }
 }
 
-export function expectValidPaginatedResponse(responseData: any) {
+export function expectValidPaginatedResponse(responseData: {
+  success: boolean;
+  data?: {
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+    [key: string]: unknown;
+  };
+  error?: string;
+}) {
   expectValidApiResponse(responseData);
 
   if (responseData.success && responseData.data) {
     expect(responseData.data).toHaveProperty("pagination");
     const pagination = responseData.data.pagination;
 
-    expect(pagination).toHaveProperty("page");
-    expect(pagination).toHaveProperty("limit");
-    expect(pagination).toHaveProperty("total");
-    expect(pagination).toHaveProperty("totalPages");
-    expect(pagination).toHaveProperty("hasNext");
-    expect(pagination).toHaveProperty("hasPrev");
+    if (pagination) {
+      expect(pagination).toHaveProperty("page");
+      expect(pagination).toHaveProperty("limit");
+      expect(pagination).toHaveProperty("total");
+      expect(pagination).toHaveProperty("totalPages");
+      expect(pagination).toHaveProperty("hasNext");
+      expect(pagination).toHaveProperty("hasPrev");
 
-    expect(typeof pagination.page).toBe("number");
-    expect(typeof pagination.limit).toBe("number");
-    expect(typeof pagination.total).toBe("number");
-    expect(typeof pagination.totalPages).toBe("number");
-    expect(typeof pagination.hasNext).toBe("boolean");
-    expect(typeof pagination.hasPrev).toBe("boolean");
+      expect(typeof pagination.page).toBe("number");
+      expect(typeof pagination.limit).toBe("number");
+      expect(typeof pagination.total).toBe("number");
+      expect(typeof pagination.totalPages).toBe("number");
+      expect(typeof pagination.hasNext).toBe("boolean");
+      expect(typeof pagination.hasPrev).toBe("boolean");
+    }
   }
 }
 
-export function expectValidJobData(job: any) {
+export function expectValidJobData(job: Record<string, unknown>) {
   const requiredFields = [
     "id",
     "title",
@@ -262,7 +292,7 @@ export function expectValidJobData(job: any) {
   expect(job.spotsRemaining).toBeGreaterThanOrEqual(0);
 }
 
-export function expectValidOpdrachtData(opdracht: any) {
+export function expectValidOpdrachtData(opdracht: Record<string, unknown>) {
   const requiredFields = [
     "id",
     "titel",
@@ -287,7 +317,7 @@ export function expectValidOpdrachtData(opdracht: any) {
 }
 
 // Test data cleanup helpers
-export function resetAllMocks(mocks: any[]) {
+export function resetAllMocks(mocks: Array<{ mockReset?: () => void }>) {
   mocks.forEach((mock) => {
     if (mock && typeof mock.mockReset === "function") {
       mock.mockReset();

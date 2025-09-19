@@ -1,10 +1,10 @@
 import type {
-  Assignment,
-  Bedrijf,
+  BedrijfProfile,
+  BedrijfTeamLid,
   Opdracht,
+  OpdrachtAssignment,
   Opdrachtgever,
   Prisma,
-  TeamLid,
   User,
   ZZPProfile,
 } from "@prisma/client";
@@ -16,18 +16,19 @@ import prisma from "@/lib/prisma";
 // Type definitions
 type OpdrachtWithRelations = Opdracht & {
   opdrachtgever?: Opdrachtgever | null;
-  bedrijf?: Bedrijf | null;
+  creatorBedrijf?: BedrijfProfile | null;
+  acceptedBedrijf?: BedrijfProfile | null;
   assignments: Array<
-    Assignment & {
-      teamLid: TeamLid & {
+    OpdrachtAssignment & {
+      teamLid: BedrijfTeamLid & {
         zzp?: ZZPProfile | null;
       };
     }
   >;
 };
 
-type AssignmentWithTeamLid = Assignment & {
-  teamLid: TeamLid & {
+type AssignmentWithTeamLid = OpdrachtAssignment & {
+  teamLid: BedrijfTeamLid & {
     zzp?: (ZZPProfile & { userId: string }) | null;
   };
   status: string;
@@ -195,7 +196,8 @@ export async function POST(request: NextRequest) {
       where: { id: validatedData.opdrachtId },
       include: {
         opdrachtgever: true,
-        bedrijf: true,
+        creatorBedrijf: true,
+        acceptedBedrijf: true,
         assignments: {
           include: {
             teamLid: true,
@@ -213,8 +215,8 @@ export async function POST(request: NextRequest) {
 
     // Validate review relationship
     const canReview = validateReviewPermission(
-      session.user,
-      opdracht,
+      { id: session.user.id, role: session.user.role } as User,
+      opdracht as OpdrachtWithRelations,
       validatedData.reviewedId,
     );
 
@@ -297,7 +299,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating review:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid review data", details: error.errors },
+        { success: false, error: "Invalid review data", details: error.issues },
         { status: 400 },
       );
     }
@@ -373,7 +375,7 @@ export async function PATCH(request: NextRequest) {
         {
           success: false,
           error: "Invalid response data",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );
@@ -391,27 +393,28 @@ function validateReviewPermission(
   opdracht: OpdrachtWithRelations,
   reviewedId: string,
 ): boolean {
-  // Opdrachtgever can review Bedrijf
+  // Opdrachtgever can review accepted Bedrijf
+  const acceptedBedrijfUserId = opdracht.acceptedBedrijf?.userId;
   if (
-    user.id === opdracht.opdrachtgeverId &&
-    reviewedId === opdracht.bedrijf?.userId
+    opdracht.opdrachtgever?.userId === user.id &&
+    reviewedId === acceptedBedrijfUserId
   ) {
     return true;
   }
 
   // Bedrijf can review Opdrachtgever
   if (
-    user.id === opdracht.bedrijf?.userId &&
-    reviewedId === opdracht.opdrachtgeverId
+    user.id === acceptedBedrijfUserId &&
+    reviewedId === opdracht.opdrachtgever?.userId
   ) {
     return true;
   }
 
   // Bedrijf can review assigned ZZP
-  if (user.id === opdracht.bedrijf?.userId) {
+  if (user.id === acceptedBedrijfUserId) {
     const assignedZzp = opdracht.assignments.find(
       (a: AssignmentWithTeamLid) =>
-        a.teamLid.zzp?.userId === reviewedId && a.status === "COMPLETED",
+        a.teamLid.zzp?.userId === reviewedId && a.status === "CONFIRMED",
     );
     if (assignedZzp) return true;
   }
@@ -419,9 +422,9 @@ function validateReviewPermission(
   // ZZP can review Bedrijf they worked for
   const userAssignment = opdracht.assignments.find(
     (a: AssignmentWithTeamLid) =>
-      a.teamLid.zzp?.userId === user.id && a.status === "COMPLETED",
+      a.teamLid.zzp?.userId === user.id && a.status === "CONFIRMED",
   );
-  if (userAssignment && reviewedId === opdracht.bedrijf?.userId) {
+  if (userAssignment && reviewedId === acceptedBedrijfUserId) {
     return true;
   }
 

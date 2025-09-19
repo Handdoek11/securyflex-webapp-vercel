@@ -301,7 +301,7 @@ export default function BedrijfOpdrachtSolliciterenPage() {
                 id="direct-payment"
                 checked={showOnlyDirectPayment}
                 onCheckedChange={(checked) =>
-                  setShowOnlyDirectPayment(checked as boolean)
+                  setShowOnlyDirectPayment(checked === true)
                 }
               />
               <Label htmlFor="direct-payment" className="cursor-pointer">
@@ -493,7 +493,7 @@ export default function BedrijfOpdrachtSolliciterenPage() {
                       <Checkbox
                         checked={selectedTeamMembers.includes(member.id)}
                         onCheckedChange={(checked) => {
-                          if (checked) {
+                          if (checked === true) {
                             setSelectedTeamMembers([
                               ...selectedTeamMembers,
                               member.id,

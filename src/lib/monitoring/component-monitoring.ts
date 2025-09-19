@@ -38,7 +38,7 @@ export function useComponentPerformance(componentName: string) {
  */
 export function useInteractionTracking(componentName: string) {
   const trackClick = useCallback(
-    (action: string, details?: Record<string, any>) => {
+    (action: string, details?: Record<string, unknown>) => {
       SecuryFlexMonitoring.trackBusinessEvent("user_interaction", {
         component: componentName,
         action,
@@ -87,7 +87,7 @@ export function useInteractionTracking(componentName: string) {
   );
 
   const trackPageView = useCallback(
-    (page: string, metadata?: Record<string, any>) => {
+    (page: string, metadata?: Record<string, unknown>) => {
       SecuryFlexMonitoring.trackBusinessEvent("page_view", {
         component: componentName,
         page,
@@ -123,17 +123,15 @@ export function useApiCallTracking(componentName: string) {
     async <T>(
       endpoint: string,
       apiCall: () => Promise<T>,
-      metadata?: Record<string, any>,
+      metadata?: Record<string, unknown>,
     ): Promise<T> => {
       const startTime = performance.now();
-      const transaction = Sentry.startTransaction({
-        name: `API Call: ${endpoint}`,
-        op: "http.client",
-        tags: {
-          component: componentName,
-          endpoint,
-        },
-      });
+      const transaction = SecuryFlexMonitoring.createTransaction(
+        `API Call: ${endpoint}`,
+        "http.client",
+      );
+      transaction.setTag("component", componentName);
+      transaction.setTag("endpoint", endpoint);
 
       try {
         const result = await apiCall();
@@ -287,7 +285,7 @@ export function useZZPEventTracking() {
  */
 export function useSecurityEventTracking() {
   const trackSuspiciousActivity = useCallback(
-    (activity: string, details?: Record<string, any>) => {
+    (activity: string, details?: Record<string, unknown>) => {
       SecuryFlexMonitoring.trackSecurityEvent("suspicious_activity", "high", {
         activity,
         timestamp: new Date().toISOString(),
@@ -300,7 +298,7 @@ export function useSecurityEventTracking() {
   const trackAuthenticationEvent = useCallback(
     (
       event: "login" | "logout" | "failed_login",
-      details?: Record<string, any>,
+      details?: Record<string, unknown>,
     ) => {
       const eventMap = {
         login: "login_success",
@@ -355,44 +353,80 @@ export function useSecurityEventTracking() {
   };
 }
 
+// Track global error handlers to prevent duplicate registration
+let globalErrorHandlersRegistered = false;
+let unhandledRejectionHandler: ((event: PromiseRejectionEvent) => void) | null =
+  null;
+let globalErrorHandler: ((event: ErrorEvent) => void) | null = null;
+
 /**
  * Global error handler for unhandled promise rejections
+ * Returns cleanup function to prevent memory leaks
  */
-export function setupGlobalErrorHandling() {
-  if (typeof window !== "undefined") {
-    // Handle unhandled promise rejections
-    window.addEventListener("unhandledrejection", (event) => {
-      SecuryFlexMonitoring.captureError(
-        new Error(`Unhandled Promise Rejection: ${event.reason}`),
-        {
-          tags: {
-            error_type: "unhandled_promise_rejection",
-            global_handler: "true",
-          },
-          extra: {
-            reason: event.reason,
-            promise: event.promise,
-          },
-        },
-      );
-    });
+export function setupGlobalErrorHandling(): (() => void) | null {
+  if (typeof window === "undefined" || globalErrorHandlersRegistered) {
+    return null; // Already registered or not in browser environment
+  }
 
-    // Handle global JavaScript errors
-    window.addEventListener("error", (event) => {
-      SecuryFlexMonitoring.captureError(
-        event.error || new Error(event.message),
-        {
-          tags: {
-            error_type: "javascript_error",
-            global_handler: "true",
-          },
-          extra: {
-            filename: event.filename,
-            lineno: event.lineno,
-            colno: event.colno,
-          },
+  // Handle unhandled promise rejections
+  unhandledRejectionHandler = (event: PromiseRejectionEvent) => {
+    SecuryFlexMonitoring.captureError(
+      new Error(`Unhandled Promise Rejection: ${event.reason}`),
+      {
+        tags: {
+          error_type: "unhandled_promise_rejection",
+          global_handler: "true",
         },
-      );
+        extra: {
+          reason: event.reason,
+          promise: event.promise,
+        },
+      },
+    );
+  };
+
+  // Handle global JavaScript errors
+  globalErrorHandler = (event: ErrorEvent) => {
+    SecuryFlexMonitoring.captureError(event.error || new Error(event.message), {
+      tags: {
+        error_type: "javascript_error",
+        global_handler: "true",
+      },
+      extra: {
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+      },
     });
+  };
+
+  window.addEventListener("unhandledrejection", unhandledRejectionHandler);
+  window.addEventListener("error", globalErrorHandler);
+
+  globalErrorHandlersRegistered = true;
+
+  // Return cleanup function
+  return cleanupGlobalErrorHandling;
+}
+
+/**
+ * Cleanup function to remove global error handlers
+ */
+export function cleanupGlobalErrorHandling() {
+  if (typeof window !== "undefined" && globalErrorHandlersRegistered) {
+    if (unhandledRejectionHandler) {
+      window.removeEventListener(
+        "unhandledrejection",
+        unhandledRejectionHandler,
+      );
+      unhandledRejectionHandler = null;
+    }
+
+    if (globalErrorHandler) {
+      window.removeEventListener("error", globalErrorHandler);
+      globalErrorHandler = null;
+    }
+
+    globalErrorHandlersRegistered = false;
   }
 }

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "biome check .",
@@ -82,6 +82,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cron": "^4.3.3",
+    "framer-motion": "^12.23.15",
     "helmet": "^8.1.0",
     "iron-session": "^8.0.4",
     "jsonwebtoken": "^9.0.2",

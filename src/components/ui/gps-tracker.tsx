@@ -87,7 +87,33 @@ export function GPSTracker({
   // Check if geolocation is supported
   const isGeolocationSupported = "geolocation" in navigator;
 
-  // Get current location
+  // Handle geolocation errors - Define this first to avoid temporal dead zone
+  const handleGeolocationError = useCallback(
+    (error: GeolocationPositionError) => {
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          setStatus("denied");
+          gpsToast.locationRequired();
+          break;
+        case error.POSITION_UNAVAILABLE:
+          setStatus("unavailable");
+          toast.error("GPS locatie niet beschikbaar");
+          break;
+        case error.TIMEOUT:
+          setStatus("error");
+          toast.error("GPS timeout - probeer opnieuw");
+          break;
+        default:
+          setStatus("error");
+          gpsToast.locationError();
+          break;
+      }
+      onError?.(error);
+    },
+    [onError],
+  );
+
+  // Get current location - Now can safely reference handleGeolocationError
   const getCurrentLocation = useCallback(async (): Promise<GPSLocation> => {
     return new Promise((resolve, reject) => {
       if (!isGeolocationSupported) {
@@ -136,32 +162,6 @@ export function GPSTracker({
       );
     });
   }, [isGeolocationSupported, isOnline, handleGeolocationError]);
-
-  // Handle geolocation errors
-  const handleGeolocationError = useCallback(
-    (error: GeolocationPositionError) => {
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          setStatus("denied");
-          gpsToast.locationRequired();
-          break;
-        case error.POSITION_UNAVAILABLE:
-          setStatus("unavailable");
-          toast.error("GPS locatie niet beschikbaar");
-          break;
-        case error.TIMEOUT:
-          setStatus("error");
-          toast.error("GPS timeout - probeer opnieuw");
-          break;
-        default:
-          setStatus("error");
-          gpsToast.locationError();
-          break;
-      }
-      onError?.(error);
-    },
-    [onError],
-  );
 
   // Start continuous tracking
   const startTracking = useCallback(() => {

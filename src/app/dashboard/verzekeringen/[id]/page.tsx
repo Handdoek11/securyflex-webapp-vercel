@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  ComponentErrorBoundary,
+  PageErrorBoundary,
+} from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -156,11 +160,8 @@ export default function VerzekeringDetailPage() {
     akkoord: false,
   });
 
-  useEffect(() => {
-    loadProductDetail();
-  }, [loadProductDetail]);
-
-  const loadProductDetail = async () => {
+  // Define loadProductDetail before useEffect to avoid temporal dead zone
+  const loadProductDetail = useCallback(async () => {
     setLoading(true);
     try {
       // In production, fetch from API
@@ -169,7 +170,8 @@ export default function VerzekeringDetailPage() {
 
       // For now, use mock data
       const productData =
-        mockProductDetail[params.id as string] || mockProductDetail.p1;
+        mockProductDetail[params.id as keyof typeof mockProductDetail] ||
+        mockProductDetail.p1;
       setProduct(productData);
 
       // Pre-fill form with user data if available
@@ -186,7 +188,11 @@ export default function VerzekeringDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, session]);
+
+  useEffect(() => {
+    loadProductDetail();
+  }, [loadProductDetail]);
 
   const validateKortingCode = async () => {
     if (!kortingCode) {
@@ -314,489 +320,500 @@ export default function VerzekeringDetailPage() {
   const premie = calculatePremie();
 
   return (
-    <DashboardLayout title={product.naam} subtitle={product.korteBeschrijving}>
-      <div className="p-4 space-y-6">
-        {/* Back button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/dashboard/verzekeringen")}
-          className="mb-4"
-        >
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Terug naar overzicht
-        </Button>
+    <PageErrorBoundary>
+      <DashboardLayout
+        title={product.naam}
+        subtitle={product.korteBeschrijving}
+      >
+        <div className="p-4 space-y-6">
+          {/* Back button */}
+          <Button
+            variant="ghost"
+            onClick={() => router.push("/dashboard/verzekeringen")}
+            className="mb-4"
+          >
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Terug naar overzicht
+          </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main content */}
-          <div className="lg:col-span-2 space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overzicht">Overzicht</TabsTrigger>
-                <TabsTrigger value="dekking">Dekking</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              </TabsList>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main content */}
+            <div className="lg:col-span-2 space-y-6">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="overzicht">Overzicht</TabsTrigger>
+                  <TabsTrigger value="dekking">Dekking</TabsTrigger>
+                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="overzicht" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Over deze verzekering</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">
-                      {product.volledigeBeschrijving}
-                    </p>
+                <TabsContent value="overzicht" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Over deze verzekering</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-muted-foreground">
+                        {product.volledigeBeschrijving}
+                      </p>
 
-                    <div className="space-y-3">
-                      <h4 className="font-semibold">
-                        Belangrijkste kenmerken:
-                      </h4>
+                      <div className="space-y-3">
+                        <h4 className="font-semibold">
+                          Belangrijkste kenmerken:
+                        </h4>
+                        <ul className="space-y-2">
+                          {product.features.map(
+                            (feature: string, idx: number) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                <span className="text-sm">{feature}</span>
+                              </li>
+                            ),
+                          )}
+                        </ul>
+                      </div>
+
+                      <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>Verzekeraar</AlertTitle>
+                        <AlertDescription>
+                          {product.verzekeraar}: {product.verzekeraarInfo}
+                        </AlertDescription>
+                      </Alert>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Vereisten</CardTitle>
+                      <CardDescription>
+                        Om deze verzekering af te sluiten moet je aan de
+                        volgende voorwaarden voldoen:
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
                       <ul className="space-y-2">
-                        {product.features.map(
-                          (feature: string, idx: number) => (
+                        {product.vereisten.map(
+                          (vereiste: string, idx: number) => (
                             <li key={idx} className="flex items-start gap-2">
-                              <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                              <span className="text-sm">{feature}</span>
+                              <Info className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm">{vereiste}</span>
                             </li>
                           ),
                         )}
                       </ul>
-                    </div>
+                    </CardContent>
+                  </Card>
 
-                    <Alert>
-                      <Info className="h-4 w-4" />
-                      <AlertTitle>Verzekeraar</AlertTitle>
-                      <AlertDescription>
-                        {product.verzekeraar}: {product.verzekeraarInfo}
-                      </AlertDescription>
-                    </Alert>
-                  </CardContent>
-                </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Documenten</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {product.documenten.map((doc: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-3 border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {doc.naam}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {doc.size}
+                                </p>
+                              </div>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              Download
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Vereisten</CardTitle>
-                    <CardDescription>
-                      Om deze verzekering af te sluiten moet je aan de volgende
-                      voorwaarden voldoen:
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {product.vereisten.map(
-                        (vereiste: string, idx: number) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <Info className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{vereiste}</span>
-                          </li>
-                        ),
-                      )}
-                    </ul>
-                  </CardContent>
-                </Card>
+                <TabsContent value="dekking" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Dekkingsoverzicht</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {product.dekkingen.map((dekking: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="flex justify-between py-2 border-b last:border-0"
+                          >
+                            <span className="text-sm font-medium">
+                              {dekking.naam}
+                            </span>
+                            <span className="text-sm font-semibold text-green-600">
+                              {dekking.waarde}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Documenten</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {product.documenten.map((doc: any, idx: number) => (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Uitsluitingen</CardTitle>
+                      <CardDescription>
+                        De volgende zaken zijn niet gedekt door deze
+                        verzekering:
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        {product.uitsluitingen.map(
+                          (uitsluiting: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm">{uitsluiting}</span>
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="reviews" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <div className="flex justify-between items-center">
+                        <CardTitle>Klantbeoordelingen</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                          <span className="font-semibold">
+                            {product.rating}
+                          </span>
+                          <span className="text-muted-foreground">
+                            ({product.aantalReviews} reviews)
+                          </span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {product.reviews.map((review: any, idx: number) => (
                         <div
                           key={idx}
-                          className="flex items-center justify-between p-3 border rounded-lg"
+                          className="space-y-2 pb-4 border-b last:border-0"
                         >
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex justify-between items-start">
                             <div>
-                              <p className="text-sm font-medium">{doc.naam}</p>
+                              <p className="font-semibold">{review.naam}</p>
                               <p className="text-xs text-muted-foreground">
-                                {doc.size}
+                                {new Date(review.datum).toLocaleDateString(
+                                  "nl-NL",
+                                )}
                               </p>
                             </div>
+                            <div className="flex gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-3 w-3 ${
+                                    i < review.rating
+                                      ? "text-yellow-500 fill-yellow-500"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
+                            </div>
                           </div>
-                          <Button variant="outline" size="sm">
-                            Download
-                          </Button>
+                          <p className="text-sm text-muted-foreground">
+                            {review.comment}
+                          </p>
                         </div>
                       ))}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Price card */}
+              <Card className="sticky top-4">
+                <CardHeader>
+                  <CardTitle>Premie berekening</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Basispremie</span>
+                      <span className="text-sm">€{premie.basis}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="dekking" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Dekkingsoverzicht</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {product.dekkingen.map((dekking: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className="flex justify-between py-2 border-b last:border-0"
-                        >
-                          <span className="text-sm font-medium">
-                            {dekking.naam}
-                          </span>
-                          <span className="text-sm font-semibold text-green-600">
-                            {dekking.waarde}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Uitsluitingen</CardTitle>
-                    <CardDescription>
-                      De volgende zaken zijn niet gedekt door deze verzekering:
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {product.uitsluitingen.map(
-                        (uitsluiting: string, idx: number) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{uitsluiting}</span>
-                          </li>
-                        ),
-                      )}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="reviews" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle>Klantbeoordelingen</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                        <span className="font-semibold">{product.rating}</span>
-                        <span className="text-muted-foreground">
-                          ({product.aantalReviews} reviews)
+                    {product.platformKorting > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span className="text-sm">
+                          Platform korting (-{product.platformKorting}%)
+                        </span>
+                        <span className="text-sm">
+                          -€{premie.platformKorting}
                         </span>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {product.reviews.map((review: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="space-y-2 pb-4 border-b last:border-0"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-semibold">{review.naam}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(review.datum).toLocaleDateString(
-                                "nl-NL",
-                              )}
-                            </p>
-                          </div>
-                          <div className="flex gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-3 w-3 ${
-                                  i < review.rating
-                                    ? "text-yellow-500 fill-yellow-500"
-                                    : "text-gray-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
+                    )}
+                    {kortingValid && (
+                      <div className="flex justify-between text-green-600">
+                        <span className="text-sm">Kortingscode</span>
+                        <span className="text-sm">-€{premie.codeKorting}</span>
+                      </div>
+                    )}
+                    <div className="pt-2 border-t">
+                      <div className="flex justify-between items-baseline">
+                        <span className="font-semibold">Totaal per maand</span>
+                        <div>
+                          <span className="text-2xl font-bold">
+                            €{premie.finaal}
+                          </span>
+                          {premie.totaalKorting &&
+                            Number(premie.totaalKorting) > 0 && (
+                              <Badge variant="default" className="ml-2">
+                                {premie.totaalKorting}% korting
+                              </Badge>
+                            )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {review.comment}
-                        </p>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Price card */}
-            <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle>Premie berekening</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Basispremie</span>
-                    <span className="text-sm">€{premie.basis}</span>
-                  </div>
-                  {product.platformKorting > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span className="text-sm">
-                        Platform korting (-{product.platformKorting}%)
-                      </span>
-                      <span className="text-sm">
-                        -€{premie.platformKorting}
-                      </span>
-                    </div>
-                  )}
-                  {kortingValid && (
-                    <div className="flex justify-between text-green-600">
-                      <span className="text-sm">Kortingscode</span>
-                      <span className="text-sm">-€{premie.codeKorting}</span>
-                    </div>
-                  )}
-                  <div className="pt-2 border-t">
-                    <div className="flex justify-between items-baseline">
-                      <span className="font-semibold">Totaal per maand</span>
-                      <div>
-                        <span className="text-2xl font-bold">
-                          €{premie.finaal}
-                        </span>
-                        {premie.totaalKorting > 0 && (
-                          <Badge variant="default" className="ml-2">
-                            {premie.totaalKorting}% korting
-                          </Badge>
-                        )}
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Discount code input */}
-                <div className="space-y-2">
-                  <Label>Kortingscode</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="CODE"
-                      value={kortingCode}
-                      onChange={(e) =>
-                        setKortingCode(e.target.value.toUpperCase())
-                      }
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={validateKortingCode}
-                      disabled={!kortingCode || kortingValid}
-                    >
-                      {kortingValid ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        "Toepassen"
-                      )}
-                    </Button>
-                  </div>
-                  {kortingValid && kortingData && (
-                    <p className="text-xs text-green-600">
-                      {kortingData.naam} toegepast!
-                    </p>
-                  )}
-                </div>
-
-                <Dialog
-                  open={showAanvraagDialog}
-                  onOpenChange={setShowAanvraagDialog}
-                >
-                  <DialogTrigger asChild>
-                    <Button className="w-full" size="lg">
-                      Direct aanvragen
-                      <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Verzekering aanvragen</DialogTitle>
-                      <DialogDescription>
-                        Vul je gegevens in voor de aanvraag van {product.naam}
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4 py-4">
-                      <div>
-                        <Label htmlFor="naam">Naam *</Label>
-                        <Input
-                          id="naam"
-                          value={aanvraagForm.naam}
-                          onChange={(e) =>
-                            setAanvraagForm({
-                              ...aanvraagForm,
-                              naam: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={aanvraagForm.email}
-                          onChange={(e) =>
-                            setAanvraagForm({
-                              ...aanvraagForm,
-                              email: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="telefoon">Telefoon *</Label>
-                        <Input
-                          id="telefoon"
-                          value={aanvraagForm.telefoon}
-                          onChange={(e) =>
-                            setAanvraagForm({
-                              ...aanvraagForm,
-                              telefoon: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="kvk">KvK nummer</Label>
-                        <Input
-                          id="kvk"
-                          value={aanvraagForm.kvkNummer}
-                          onChange={(e) =>
-                            setAanvraagForm({
-                              ...aanvraagForm,
-                              kvkNummer: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="startdatum">
-                          Gewenste ingangsdatum
-                        </Label>
-                        <Input
-                          id="startdatum"
-                          type="date"
-                          value={aanvraagForm.startDatum}
-                          onChange={(e) =>
-                            setAanvraagForm({
-                              ...aanvraagForm,
-                              startDatum: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="opmerkingen">Opmerkingen</Label>
-                        <Textarea
-                          id="opmerkingen"
-                          value={aanvraagForm.opmerkingen}
-                          onChange={(e) =>
-                            setAanvraagForm({
-                              ...aanvraagForm,
-                              opmerkingen: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div className="flex items-start space-x-2">
-                        <Checkbox
-                          id="akkoord"
-                          checked={aanvraagForm.akkoord}
-                          onCheckedChange={(checked) =>
-                            setAanvraagForm({
-                              ...aanvraagForm,
-                              akkoord: checked as boolean,
-                            })
-                          }
-                        />
-                        <label htmlFor="akkoord" className="text-sm">
-                          Ik ga akkoord met de voorwaarden en geef toestemming
-                          voor het verwerken van mijn gegevens
-                        </label>
-                      </div>
-                    </div>
-
-                    <DialogFooter>
+                  {/* Discount code input */}
+                  <div className="space-y-2">
+                    <Label>Kortingscode</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="CODE"
+                        value={kortingCode}
+                        onChange={(e) =>
+                          setKortingCode(e.target.value.toUpperCase())
+                        }
+                        className="flex-1"
+                      />
                       <Button
                         variant="outline"
-                        onClick={() => setShowAanvraagDialog(false)}
+                        onClick={validateKortingCode}
+                        disabled={!kortingCode || kortingValid}
                       >
-                        Annuleren
+                        {kortingValid ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          "Toepassen"
+                        )}
                       </Button>
-                      <Button onClick={handleAanvraag}>
-                        Aanvraag indienen
+                    </div>
+                    {kortingValid && kortingData && (
+                      <p className="text-xs text-green-600">
+                        {kortingData.naam} toegepast!
+                      </p>
+                    )}
+                  </div>
+
+                  <Dialog
+                    open={showAanvraagDialog}
+                    onOpenChange={setShowAanvraagDialog}
+                  >
+                    <DialogTrigger asChild>
+                      <Button className="w-full" size="lg">
+                        Direct aanvragen
+                        <ChevronRight className="h-4 w-4 ml-2" />
                       </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Verzekering aanvragen</DialogTitle>
+                        <DialogDescription>
+                          Vul je gegevens in voor de aanvraag van {product.naam}
+                        </DialogDescription>
+                      </DialogHeader>
 
-                <p className="text-xs text-muted-foreground text-center">
-                  Direct online afsluiten • Geen verplichtingen
-                </p>
-              </CardContent>
-            </Card>
+                      <div className="space-y-4 py-4">
+                        <div>
+                          <Label htmlFor="naam">Naam *</Label>
+                          <Input
+                            id="naam"
+                            value={aanvraagForm.naam}
+                            onChange={(e) =>
+                              setAanvraagForm({
+                                ...aanvraagForm,
+                                naam: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
 
-            {/* Contact card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Hulp nodig?</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <a
-                  href="tel:0612345678"
-                  className="flex items-center gap-2 text-sm hover:text-primary"
-                >
-                  <Phone className="h-4 w-4" />
-                  06-12345678
-                </a>
-                <a
-                  href="mailto:verzekeringen@securyflex.nl"
-                  className="flex items-center gap-2 text-sm hover:text-primary"
-                >
-                  <Mail className="h-4 w-4" />
-                  verzekeringen@securyflex.nl
-                </a>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  Ma-Vr 9:00-17:00
-                </div>
-              </CardContent>
-            </Card>
+                        <div>
+                          <Label htmlFor="email">Email *</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={aanvraagForm.email}
+                            onChange={(e) =>
+                              setAanvraagForm({
+                                ...aanvraagForm,
+                                email: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
 
-            {/* Trust signals */}
-            <Card>
-              <CardContent className="pt-6 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    {product.aantalAanvragen} beveiligers hebben deze
-                    verzekering
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Gecertificeerde verzekeraar</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    Exclusief voor SecuryFlex leden
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+                        <div>
+                          <Label htmlFor="telefoon">Telefoon *</Label>
+                          <Input
+                            id="telefoon"
+                            value={aanvraagForm.telefoon}
+                            onChange={(e) =>
+                              setAanvraagForm({
+                                ...aanvraagForm,
+                                telefoon: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="kvk">KvK nummer</Label>
+                          <Input
+                            id="kvk"
+                            value={aanvraagForm.kvkNummer}
+                            onChange={(e) =>
+                              setAanvraagForm({
+                                ...aanvraagForm,
+                                kvkNummer: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="startdatum">
+                            Gewenste ingangsdatum
+                          </Label>
+                          <Input
+                            id="startdatum"
+                            type="date"
+                            value={aanvraagForm.startDatum}
+                            onChange={(e) =>
+                              setAanvraagForm({
+                                ...aanvraagForm,
+                                startDatum: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="opmerkingen">Opmerkingen</Label>
+                          <Textarea
+                            id="opmerkingen"
+                            value={aanvraagForm.opmerkingen}
+                            onChange={(e) =>
+                              setAanvraagForm({
+                                ...aanvraagForm,
+                                opmerkingen: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div className="flex items-start space-x-2">
+                          <Checkbox
+                            id="akkoord"
+                            checked={aanvraagForm.akkoord}
+                            onCheckedChange={(checked) =>
+                              setAanvraagForm({
+                                ...aanvraagForm,
+                                akkoord: checked as boolean,
+                              })
+                            }
+                          />
+                          <label htmlFor="akkoord" className="text-sm">
+                            Ik ga akkoord met de voorwaarden en geef toestemming
+                            voor het verwerken van mijn gegevens
+                          </label>
+                        </div>
+                      </div>
+
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowAanvraagDialog(false)}
+                        >
+                          Annuleren
+                        </Button>
+                        <Button onClick={handleAanvraag}>
+                          Aanvraag indienen
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  <p className="text-xs text-muted-foreground text-center">
+                    Direct online afsluiten • Geen verplichtingen
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Contact card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Hulp nodig?</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <a
+                    href="tel:0612345678"
+                    className="flex items-center gap-2 text-sm hover:text-primary"
+                  >
+                    <Phone className="h-4 w-4" />
+                    06-12345678
+                  </a>
+                  <a
+                    href="mailto:verzekeringen@securyflex.nl"
+                    className="flex items-center gap-2 text-sm hover:text-primary"
+                  >
+                    <Mail className="h-4 w-4" />
+                    verzekeringen@securyflex.nl
+                  </a>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    Ma-Vr 9:00-17:00
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Trust signals */}
+              <Card>
+                <CardContent className="pt-6 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {product.aantalAanvragen} beveiligers hebben deze
+                      verzekering
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Gecertificeerde verzekeraar</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      Exclusief voor SecuryFlex leden
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
-      </div>
-    </DashboardLayout>
+      </DashboardLayout>
+    </PageErrorBoundary>
   );
 }

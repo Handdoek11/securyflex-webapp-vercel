@@ -1,12 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable Turbopack features for better performance
-  turbopack: {
-    rules: {
-      "*.svg": ["@svgr/webpack"],
-    },
-  },
+  // Disable Turbopack temporarily to fix EPERM issues on Windows
+  // turbopack: {
+  //   rules: {
+  //     "*.svg": ["@svgr/webpack"],
+  //   },
+  // },
 
   // Enable experimental features
   experimental: {
@@ -137,14 +137,14 @@ const nextConfig: NextConfig = {
     },
   }),
 
-  // TypeScript configuration
+  // TypeScript configuration - Enable proper error checking
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
-  // ESLint configuration
+  // ESLint configuration - Enable proper linting
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 
   // Environment variables validation

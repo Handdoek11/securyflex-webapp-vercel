@@ -193,7 +193,7 @@ export async function GET(request: NextRequest) {
           const totalCompletedShifts = await prisma.werkuur.count({
             where: {
               beveiligerId: beveiliger.id,
-              status: "COMPLETED",
+              status: "PAID",
             },
           });
 

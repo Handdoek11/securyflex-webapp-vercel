@@ -97,19 +97,26 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
             contactpersoon: true,
           },
         },
-        bedrijf: {
+        creatorBedrijf: {
           select: {
             id: true,
             bedrijfsnaam: true,
             teamSize: true,
           },
         },
-        beveiligers: {
+        acceptedBedrijf: {
           select: {
             id: true,
-            beveiligerId: true,
+            bedrijfsnaam: true,
+            teamSize: true,
+          },
+        },
+        sollicitaties: {
+          select: {
+            id: true,
+            zzpId: true,
             status: true,
-            beveiliger: {
+            zzp: {
               select: {
                 id: true,
                 user: {
@@ -182,8 +189,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       });
 
       if (zzpProfile) {
-        const application = job.beveiligers.find(
-          (b) => b.beveiligerId === zzpProfile.id,
+        const application = job.sollicitaties.find(
+          (s) => s.zzpId === zzpProfile.id,
         );
         applicationStatus = application?.status || null;
       }
@@ -196,14 +203,17 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       description: job.beschrijving,
       location: job.locatie,
       company: {
-        id: job.opdrachtgeverId || job.bedrijfId,
+        id:
+          job.opdrachtgeverId || job.creatorBedrijfId || job.acceptedBedrijfId,
         name:
           job.opdrachtgever?.bedrijfsnaam ||
-          job.bedrijf?.bedrijfsnaam ||
+          job.creatorBedrijf?.bedrijfsnaam ||
+          job.acceptedBedrijf?.bedrijfsnaam ||
           "Onbekend",
         contactPerson: job.opdrachtgever?.contactpersoon || null,
         description: null,
-        size: job.bedrijf?.teamSize || null,
+        size:
+          job.creatorBedrijf?.teamSize || job.acceptedBedrijf?.teamSize || null,
       },
       startDate: job.startDatum,
       endDate: job.eindDatum,
@@ -211,8 +221,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       spotsAvailable: job.aantalBeveiligers,
       spotsRemaining:
         job.aantalBeveiligers -
-        job.beveiligers.filter((b) => b.status === "ACCEPTED").length,
-      applicantCount: job.beveiligers.length,
+        (job.sollicitaties?.filter((s: any) => s.status === "ACCEPTED")
+          .length || 0),
+      applicantCount: job.sollicitaties?.length || 0,
       applicationStatus,
       status: job.status,
       isUrgent:
@@ -223,7 +234,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
           new Date(job.startDatum).getTime()) /
           (1000 * 60 * 60),
       ),
-      estimatedEarnings: null, // Will be calculated based on hours
+      estimatedEarnings: 0, // Will be calculated based on hours
     };
 
     // Calculate estimated earnings
@@ -263,7 +274,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       where: { id: jobId },
       include: {
         opdrachtgever: { select: { userId: true } },
-        bedrijf: { select: { userId: true } },
+        creatorBedrijf: { select: { userId: true } },
+        acceptedBedrijf: { select: { userId: true } },
       },
     });
 
@@ -276,7 +288,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const isOwner =
       job.opdrachtgever?.userId === session.user.id ||
-      job.bedrijf?.userId === session.user.id;
+      job.creatorBedrijf?.userId === session.user.id ||
+      job.acceptedBedrijf?.userId === session.user.id;
 
     if (!isOwner) {
       return NextResponse.json(
@@ -337,8 +350,9 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       where: { id: jobId },
       include: {
         opdrachtgever: { select: { userId: true } },
-        bedrijf: { select: { userId: true } },
-        beveiligers: true,
+        creatorBedrijf: { select: { userId: true } },
+        acceptedBedrijf: { select: { userId: true } },
+        sollicitaties: true,
       },
     });
 
@@ -351,7 +365,8 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     const isOwner =
       job.opdrachtgever?.userId === session.user.id ||
-      job.bedrijf?.userId === session.user.id;
+      job.creatorBedrijf?.userId === session.user.id ||
+      job.acceptedBedrijf?.userId === session.user.id;
 
     if (!isOwner) {
       return NextResponse.json(
@@ -364,7 +379,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if job has accepted applicants
-    if (job.beveiligers.some((b) => b.status === "ACCEPTED")) {
+    if (job.sollicitaties.some((s: any) => s.status === "ACCEPTED")) {
       return NextResponse.json(
         { success: false, error: "Cannot delete job with accepted applicants" },
         { status: 400 },
@@ -374,7 +389,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     // Update status to CANCELLED instead of deleting
     await prisma.opdracht.update({
       where: { id: jobId },
-      data: { status: "CANCELLED" },
+      data: { status: "GEANNULEERD" },
     });
 
     return NextResponse.json({

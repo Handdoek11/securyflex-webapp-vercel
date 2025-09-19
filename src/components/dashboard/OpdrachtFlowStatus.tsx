@@ -59,6 +59,12 @@ interface FinqleStatusData {
   totalAmount?: number;
   paidAmount?: number;
   lastUpdate?: Date;
+  stats?: {
+    paid?: number;
+    totalTransactions?: number;
+    totalAmount?: number;
+    directPayments?: number;
+  };
 }
 
 export function OpdrachtFlowStatus({
@@ -106,10 +112,76 @@ export function OpdrachtFlowStatus({
     }
   }, [opdrachtId]);
 
-  useEffect(() => {
-    fetchOpdrachtDetails();
-    fetchFinqleStatus();
-  }, [fetchOpdrachtDetails, fetchFinqleStatus]);
+  const getMatchingStatus = (
+    data: OpdrachtWithRelations,
+  ): FlowStep["status"] => {
+    if (data.bedrijf) return "completed";
+    if (data.beveiligers?.length > 0) return "active";
+    return "pending";
+  };
+
+  const getAssignmentStatus = (
+    data: OpdrachtWithRelations,
+  ): FlowStep["status"] => {
+    if (!data.bedrijf) return "pending";
+    const confirmedCount =
+      data.assignments?.filter((a) => a.status === "CONFIRMED").length || 0;
+    if (confirmedCount === data.aantalBeveiligers) return "completed";
+    if (confirmedCount > 0) return "active";
+    return "pending";
+  };
+
+  const getExecutionStatus = (
+    data: OpdrachtWithRelations,
+  ): FlowStep["status"] => {
+    if (data.status === "AFGEROND") return "completed";
+    if (data.status === "BEZIG") return "active";
+    return "pending";
+  };
+
+  const getVerificationStatus = (
+    data: OpdrachtWithRelations,
+  ): FlowStep["status"] => {
+    const approvedCount =
+      data.werkuren?.filter((w) => w.status === "APPROVED").length || 0;
+    const totalHours = data.werkuren?.length || 0;
+    if (totalHours === 0) return "pending";
+    if (approvedCount === totalHours) return "completed";
+    return "active";
+  };
+
+  const getPaymentStatus = (
+    _data: OpdrachtWithRelations,
+    finqle: FinqleStatusData | null,
+  ): FlowStep["status"] => {
+    if (!finqle) return "pending";
+    if (finqle.stats?.paid === finqle.stats?.totalTransactions)
+      return "completed";
+    if ((finqle.stats?.paid ?? 0) > 0) return "active";
+    return "pending";
+  };
+
+  const formatExecutionTime = (data: OpdrachtWithRelations) => {
+    if (data.status !== "BEZIG") return undefined;
+    const start = new Date(data.startDatum);
+    const end = new Date(data.eindDatum);
+    const now = new Date();
+    if (now < start) return "Start binnenkort";
+    if (now > end) return "Wacht op afronden";
+    const progress =
+      ((now.getTime() - start.getTime()) / (end.getTime() - start.getTime())) *
+      100;
+    return `${Math.round(progress)}% voltooid`;
+  };
+
+  const formatPaymentDetails = (finqle: FinqleStatusData) => {
+    const stats = finqle.stats;
+    if (!stats) return undefined;
+    const total = stats.totalAmount ?? 0;
+    const _paid = stats.paid ?? 0;
+    const directPayments = stats.directPayments ?? 0;
+    return `€${total.toFixed(2)} (${directPayments} direct)`;
+  };
 
   const updateFlowSteps = useCallback(
     (opdrachtData: OpdrachtWithRelations) => {
@@ -136,12 +208,12 @@ export function OpdrachtFlowStatus({
           label: "Bedrijf Accepteert",
           description: "Een bedrijf accepteert de opdracht",
           icon: Building2,
-          status: opdrachtData.bedrijfId
+          status: opdrachtData.bedrijf
             ? "completed"
             : opdrachtData.status === "OPEN"
               ? "active"
               : "pending",
-          timestamp: opdrachtData.bedrijfId
+          timestamp: opdrachtData.bedrijf
             ? new Date(opdrachtData.updatedAt)
             : undefined,
           details: opdrachtData.bedrijf?.bedrijfsnaam,
@@ -211,78 +283,10 @@ export function OpdrachtFlowStatus({
     ],
   );
 
-  const getMatchingStatus = (
-    data: OpdrachtWithRelations,
-  ): FlowStep["status"] => {
-    if (data.bedrijfId) return "completed";
-    if (data.beveiligers?.length > 0) return "active";
-    return "pending";
-  };
-
-  const getAssignmentStatus = (
-    data: OpdrachtWithRelations,
-  ): FlowStep["status"] => {
-    if (!data.bedrijfId) return "pending";
-    const confirmedCount =
-      data.assignments?.filter((a) => a.status === "CONFIRMED").length || 0;
-    if (confirmedCount === data.aantalBeveiligers) return "completed";
-    if (confirmedCount > 0) return "active";
-    return "pending";
-  };
-
-  const getExecutionStatus = (
-    data: OpdrachtWithRelations,
-  ): FlowStep["status"] => {
-    if (data.status === "AFGEROND") return "completed";
-    if (data.status === "BEZIG") return "active";
-    return "pending";
-  };
-
-  const getVerificationStatus = (
-    data: OpdrachtWithRelations,
-  ): FlowStep["status"] => {
-    const approvedCount =
-      data.werkuren?.filter((w) => w.status === "APPROVED").length || 0;
-    const totalHours = data.werkuren?.length || 0;
-    if (totalHours === 0) return "pending";
-    if (approvedCount === totalHours) return "completed";
-    return "active";
-  };
-
-  const getPaymentStatus = (
-    _data: OpdrachtWithRelations,
-    finqle: FinqleStatusData | null,
-  ): FlowStep["status"] => {
-    if (!finqle) return "pending";
-    if (
-      (finqle as any).stats?.paid === (finqle as any).stats?.totalTransactions
-    )
-      return "completed";
-    if ((finqle as any).stats?.paid > 0) return "active";
-    return "pending";
-  };
-
-  const formatExecutionTime = (data: OpdrachtWithRelations) => {
-    if (data.status !== "BEZIG") return undefined;
-    const start = new Date(data.startDatum);
-    const end = new Date(data.eindDatum);
-    const now = new Date();
-    if (now < start) return "Start binnenkort";
-    if (now > end) return "Wacht op afronden";
-    const progress =
-      ((now.getTime() - start.getTime()) / (end.getTime() - start.getTime())) *
-      100;
-    return `${Math.round(progress)}% voltooid`;
-  };
-
-  const formatPaymentDetails = (finqle: FinqleStatusData) => {
-    const stats = (finqle as any).stats;
-    if (!stats) return undefined;
-    const total = stats.totalAmount;
-    const _paid = stats.paid || 0;
-    const directPayments = stats.directPayments || 0;
-    return `€${total.toFixed(2)} (${directPayments} direct)`;
-  };
+  useEffect(() => {
+    fetchOpdrachtDetails();
+    fetchFinqleStatus();
+  }, [fetchOpdrachtDetails, fetchFinqleStatus]);
 
   const _getActiveStepIndex = () => {
     return flowSteps.findIndex((step) => step.status === "active");

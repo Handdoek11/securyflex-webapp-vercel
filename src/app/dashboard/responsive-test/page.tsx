@@ -78,7 +78,7 @@ export default function ResponsiveTestPage() {
                   Touch Device
                 </p>
                 <Badge
-                  variant={responsive.isTouch ? "success" : "secondary"}
+                  variant={responsive.isTouch ? "default" : "secondary"}
                   className="text-lg px-3 py-1"
                 >
                   {responsive.isTouch ? "Yes" : "No"}

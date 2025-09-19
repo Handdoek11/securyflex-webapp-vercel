@@ -26,7 +26,7 @@ interface UseApiDataReturn<T> {
  */
 export function useApiData<T = unknown>({
   endpoint,
-  fallbackData = null,
+  fallbackData = null as T | null,
   requireAuth = true,
   params = {},
   enabled = true,

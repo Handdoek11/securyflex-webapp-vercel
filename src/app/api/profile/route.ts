@@ -62,9 +62,9 @@ export async function GET(_request: NextRequest) {
             },
             werkuren: {
               where: {
-                status: "COMPLETED",
+                status: "PAID",
               },
-              orderBy: { datum: "desc" },
+              orderBy: { startTijd: "desc" },
               take: 10,
             },
           },
@@ -184,7 +184,7 @@ async function updateZZPProfile(
       {
         success: false,
         error: "Invalid profile data",
-        details: validation.error.errors,
+        details: validation.error.issues,
       },
       { status: 400 },
     );
@@ -195,7 +195,7 @@ async function updateZZPProfile(
   // Check for KvK number uniqueness if being updated
   if (
     validatedData.kvkNummer &&
-    validatedData.kvkNummer !== user.zzpProfile.kvkNummer
+    validatedData.kvkNummer !== user.zzpProfile?.kvkNummer
   ) {
     const existingProfile = await prisma.zZPProfile.findFirst({
       where: {
@@ -293,7 +293,7 @@ async function updateOpdrachtgeverProfile(
       {
         success: false,
         error: "Invalid profile data",
-        details: validation.error.errors,
+        details: validation.error.issues,
       },
       { status: 400 },
     );
@@ -304,7 +304,7 @@ async function updateOpdrachtgeverProfile(
   // Check for KvK number uniqueness if being updated
   if (
     validatedData.kvkNummer &&
-    validatedData.kvkNummer !== user.opdrachtgever.kvkNummer
+    validatedData.kvkNummer !== user.opdrachtgever?.kvkNummer
   ) {
     const existingProfile = await prisma.opdrachtgever.findFirst({
       where: {
@@ -331,9 +331,7 @@ async function updateOpdrachtgeverProfile(
     userUpdates.email = validatedData.email;
     userUpdates.emailVerified = null; // Reset email verification
   }
-  if (validatedData.phone && validatedData.phone !== user.phone) {
-    userUpdates.phone = validatedData.phone;
-  }
+  // Phone update removed - not in validatedData type
 
   if (Object.keys(userUpdates).length > 0) {
     await prisma.user.update({
@@ -366,7 +364,7 @@ async function updateOpdrachtgeverProfile(
     opdrachtgever: updatedProfile,
     name: userUpdates.name || user.name,
     email: userUpdates.email || user.email,
-    phone: userUpdates.phone || user.phone,
+    phone: user.phone,
   });
 
   return NextResponse.json({
@@ -389,9 +387,13 @@ function calculateProfileCompletion(
   },
 ): number {
   if (user.role === "ZZP_BEVEILIGER" && user.zzpProfile) {
-    return calculateZZPProfileCompletion(user);
+    return calculateZZPProfileCompletion(
+      user as User & { zzpProfile: ZZPProfile },
+    );
   } else if (user.role === "OPDRACHTGEVER" && user.opdrachtgever) {
-    return calculateOpdrachtgeverProfileCompletion(user);
+    return calculateOpdrachtgeverProfileCompletion(
+      user as User & { opdrachtgever: Opdrachtgever },
+    );
   }
   // Add other profile types as needed
   return 0;
@@ -402,29 +404,32 @@ function calculateZZPProfileCompletion(
 ): number {
   const profile = user.zzpProfile;
   let completed = 0;
-  const total = 15; // Total number of profile fields
+  const total = 10; // Adjusted total number of profile fields
 
   // Basic info (5 points)
   if (user.name) completed++;
   if (user.email) completed++;
-  if (profile.phone) completed++;
+  if (user.phone) completed++;
   if (user.image) completed++;
-  if (profile.beschrijving && profile.beschrijving.length >= 50) completed++;
+  // Bio/description field might not exist
+  // if (profile.beschrijving && profile.beschrijving.length >= 50) completed++;
 
   // Business info (3 points)
   if (profile.kvkNummer && profile.kvkNummer !== `TEMP_${user.id}`) completed++;
   if (profile.btwNummer) completed++;
-  if (profile.uurtarief && profile.uurtarief > 0) completed++;
+  if (profile.uurtarief && profile.uurtarief.toNumber() > 0) completed++;
 
   // Location info (3 points)
-  if (profile.adres) completed++;
-  if (profile.postcode) completed++;
-  if (profile.plaats) completed++;
+  // Address fields don't exist on ZZPProfile
+  // if (profile.adres) completed++;
+  // if (profile.postcode) completed++;
+  // if (profile.plaats) completed++;
 
   // Professional info (4 points)
   if (profile.specialisaties && profile.specialisaties.length > 0) completed++;
   if (profile.werkgebied && profile.werkgebied.length > 0) completed++;
-  if (profile.ervaring !== null) completed++;
+  // Ervaring field doesn't exist on ZZPProfile
+  // if (profile.ervaring !== null) completed++;
   if (
     profile.beschikbaarheid &&
     Object.keys(profile.beschikbaarheid).length > 0
@@ -435,9 +440,10 @@ function calculateZZPProfileCompletion(
 }
 
 function calculateOpdrachtgeverProfileCompletion(
-  user: User & { opdrachtgever: Opdrachtgever },
+  user: User & { opdrachtgever: Opdrachtgever | null },
 ): number {
   const profile = user.opdrachtgever;
+  if (!profile) return 0;
   let completed = 0;
   const total = 6; // Total number of profile fields
 
@@ -476,37 +482,38 @@ async function calculateUserStats(
       // Total completed shifts
       prisma.werkuur.count({
         where: {
-          beveiligerId: profileId,
-          status: "COMPLETED",
+          zzpId: profileId,
+          status: "PAID",
         },
       }),
 
       // Total hours worked
       prisma.werkuur.aggregate({
         where: {
-          beveiligerId: profileId,
-          status: "COMPLETED",
+          zzpId: profileId,
+          status: "PAID",
         },
         _sum: {
-          totaleUren: true,
+          urenGewerkt: true,
         },
       }),
 
-      // Total earnings
-      prisma.werkuur.aggregate({
+      // Total earnings (calculated from hours * rate)
+      prisma.werkuur.findMany({
         where: {
-          beveiligerId: profileId,
-          status: "COMPLETED",
+          zzpId: profileId,
+          status: "PAID",
         },
-        _sum: {
-          nettoBedrag: true,
+        select: {
+          urenGewerkt: true,
+          uurtarief: true,
         },
       }),
 
       // Average rating
       prisma.review.aggregate({
         where: {
-          beveiligerId: profileId,
+          reviewedId: user.id, // Reviews are linked to User, not ZZPProfile
         },
         _avg: {
           rating: true,
@@ -522,10 +529,15 @@ async function calculateUserStats(
       }),
     ]);
 
+    // Calculate total earnings from hours and rates
+    const calculatedEarnings = totalEarnings.reduce((sum, werkuur) => {
+      return sum + Number(werkuur.urenGewerkt) * Number(werkuur.uurtarief);
+    }, 0);
+
     return {
       totalShifts,
-      totalHours: totalHours._sum.totaleUren || 0,
-      totalEarnings: totalEarnings._sum.nettoBedrag || 0,
+      totalHours: totalHours._sum?.urenGewerkt || 0,
+      totalEarnings: calculatedEarnings,
       avgRating: avgRating._avg.rating || 0,
       activeApplications,
       joinDate: user.createdAt,

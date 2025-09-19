@@ -1,4 +1,4 @@
-import type { Prisma, VerificatieStatus, DocumentType } from "@prisma/client";
+import type { DocumentType, Prisma, VerificatieStatus } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
 import { isAdminEmail } from "@/lib/admin/auth";
 import { auth } from "@/lib/auth";

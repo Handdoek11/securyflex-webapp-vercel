@@ -9,7 +9,15 @@
 
 import { execSync } from "node:child_process";
 import { createCipher } from "node:crypto";
-import { createWriteStream, existsSync, mkdirSync, statSync } from "node:fs";
+import {
+  createReadStream,
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+} from "node:fs";
 import { join } from "node:path";
 import { createGzip } from "node:zlib";
 
@@ -184,14 +192,14 @@ class DatabaseBackup {
     return new Promise((resolve, reject) => {
       const outputPath = `${inputPath}.gz`;
       const gzip = createGzip({ level: 9 });
-      const input = require("node:fs").createReadStream(inputPath);
+      const input = createReadStream(inputPath);
       const output = createWriteStream(outputPath);
 
       input.pipe(gzip).pipe(output);
 
       output.on("close", () => {
         // Remove original uncompressed file
-        require("node:fs").unlinkSync(inputPath);
+        unlinkSync(inputPath);
         resolve(outputPath);
       });
 
@@ -211,14 +219,14 @@ class DatabaseBackup {
 
       const outputPath = `${inputPath}.enc`;
       const cipher = createCipher("aes-256-cbc", this.config.encryptionKey);
-      const input = require("node:fs").createReadStream(inputPath);
+      const input = createReadStream(inputPath);
       const output = createWriteStream(outputPath);
 
       input.pipe(cipher).pipe(output);
 
       output.on("close", () => {
         // Remove original unencrypted file
-        require("node:fs").unlinkSync(inputPath);
+        unlinkSync(inputPath);
         resolve(outputPath);
       });
 
@@ -250,8 +258,7 @@ class DatabaseBackup {
    * Remove old backups based on retention policy
    */
   private async cleanupOldBackups(): Promise<void> {
-    const fs = require("node:fs");
-    const files = fs.readdirSync(this.config.backupDir);
+    const files = readdirSync(this.config.backupDir);
     const backupFiles = files.filter(
       (file: string) =>
         file.startsWith("securyflex_backup_") &&
@@ -270,7 +277,7 @@ class DatabaseBackup {
       const stats = statSync(filePath);
 
       if (stats.mtime < cutoffDate) {
-        fs.unlinkSync(filePath);
+        unlinkSync(filePath);
         deletedCount++;
         console.log(`🗑️ Deleted old backup: ${file}`);
       }
@@ -291,7 +298,7 @@ class DatabaseBackup {
     if (!this.config.notifications) return;
 
     const message = success
-      ? `✅ SecuryFlex database backup completed successfully\n\nFile: ${details.filePath}\nSize: ${this.formatFileSize(details.fileSize)}\nCompressed: ${details.compressed ? "Yes" : "No"}\nEncrypted: ${details.encrypted ? "Yes" : "No"}`
+      ? `✅ SecuryFlex database backup completed successfully\n\nFile: ${details.filePath}\nSize: ${this.formatFileSize(details.fileSize || 0)}\nCompressed: ${details.compressed ? "Yes" : "No"}\nEncrypted: ${details.encrypted ? "Yes" : "No"}`
       : `❌ SecuryFlex database backup failed\n\nError: ${details.error}`;
 
     // Send webhook notification

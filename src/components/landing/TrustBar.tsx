@@ -43,13 +43,14 @@ export function TrustBar() {
     ],
   };
 
-  const signals = trustSignals[activeRole || "null"];
+  const signals =
+    trustSignals[activeRole || ("null" as keyof typeof trustSignals)];
 
   return (
     <section className="bg-primary/5 border-y">
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-wrap justify-center items-center gap-8 text-sm">
-          {signals.map((signal, index) => (
+          {signals.map((signal: any, index: number) => (
             <div
               key={`trust-signal-${signal.text.substring(0, 10)}-${index}`}
               className="flex items-center space-x-2"

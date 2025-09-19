@@ -58,26 +58,6 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const supabase = createSupabaseClient();
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchNotifications();
-    }
-    setupRealtimeSubscription();
-
-    return () => {
-      supabase.removeAllChannels();
-    };
-  }, [
-    isOpen,
-    fetchNotifications,
-    setupRealtimeSubscription,
-    supabase.removeAllChannels,
-  ]);
-
-  useEffect(() => {
-    fetchUnreadCount();
-  }, [fetchUnreadCount]);
-
   const fetchNotifications = async () => {
     try {
       setLoading(true);
@@ -267,6 +247,21 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         return "Alle";
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchNotifications();
+    }
+    setupRealtimeSubscription();
+
+    return () => {
+      supabase.removeAllChannels();
+    };
+  }, [isOpen, selectedCategory]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, []);
 
   const filteredNotifications =
     selectedCategory === "ALL"

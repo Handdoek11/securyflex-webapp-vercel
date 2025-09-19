@@ -62,14 +62,15 @@ export async function GET(request: NextRequest) {
         ndNummerExpiry = user.bedrijfProfile.ndNummerVervalDatum;
       }
 
-      ndNummerValid =
+      ndNummerValid = !!(
         ndNummerStatus === "ACTIEF" &&
         ndNummerExpiry &&
-        new Date(ndNummerExpiry) > new Date();
+        new Date(ndNummerExpiry) > new Date()
+      );
 
       // Calculate if warning should be shown (invalid ND-nummer or expiring soon)
       _shouldShowComplianceWarning =
-        !ndNummerValid ||
+        !(ndNummerValid ?? false) ||
         (ndNummerExpiry &&
           Math.ceil(
             (new Date(ndNummerExpiry).getTime() - Date.now()) /
@@ -147,11 +148,11 @@ export async function GET(request: NextRequest) {
 
     // Additional filters
     if (status) {
-      where.status = status;
+      where.status = status as any;
     }
 
     if (targetAudience) {
-      where.targetAudience = targetAudience;
+      where.targetAudience = targetAudience as any;
     }
 
     if (search) {
@@ -444,7 +445,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: "Invalid input", details: error.errors },
+        { success: false, error: "Invalid input", details: error.issues },
         { status: 400 },
       );
     }

@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useRole } from "@/contexts/RoleContext";
 import { cn } from "@/lib/utils";
 
+interface FAQ {
+  question: string;
+  answer: string;
+}
+
 const faqContent = {
   ZZP_BEVEILIGER: [
     {
@@ -111,7 +116,7 @@ export function FAQSection() {
   const { activeRole } = useRole();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
-  const faqs = faqContent[activeRole || "null"];
+  const faqs = faqContent[activeRole || ("null" as keyof typeof faqContent)];
 
   return (
     <section className="py-16 lg:py-24 bg-gray-50">
@@ -131,7 +136,7 @@ export function FAQSection() {
           </div>
 
           <div className="space-y-4">
-            {faqs.map((faq, index) => (
+            {faqs.map((faq: FAQ, index: number) => (
               <div
                 key={`faq-${faq.question.substring(0, 20)}-${index}`}
                 className="bg-white rounded-lg border overflow-hidden"

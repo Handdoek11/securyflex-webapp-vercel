@@ -77,7 +77,13 @@ export function VideoDemo({
       <CardContent className="p-4">
         <div className="relative aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg overflow-hidden mb-4">
           {thumbnail ? (
-            <Image src={thumbnail} alt={title} fill className="object-cover" />
+            <Image
+              src={thumbnail}
+              alt={title}
+              fill
+              className="object-cover"
+              loading="lazy"
+            />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">

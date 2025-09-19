@@ -96,7 +96,7 @@ export function BedrijfDashboardLayout({
       icon: CreditCard,
       active: pathname?.startsWith("/dashboard/bedrijf/finqle"),
       badge: "Live", // Finqle integratie status
-      badgeVariant: "success" as const,
+      badgeVariant: "default" as const,
     },
     {
       name: "Beheer",

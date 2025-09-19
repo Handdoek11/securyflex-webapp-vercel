@@ -93,14 +93,16 @@ export function FinqleStatusIndicator() {
     }
   };
 
-  const getStatusVariant = (): "success" | "warning" | "destructive" => {
+  const getStatusVariant = (): "default" | "warning" | "destructive" => {
     switch (status.apiStatus) {
       case "operational":
-        return "success";
+        return "default";
       case "degraded":
         return "warning";
       case "down":
         return "destructive";
+      default:
+        return "default";
     }
   };
 

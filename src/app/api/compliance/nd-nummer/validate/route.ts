@@ -79,10 +79,8 @@ async function createAuditLog(
   apiResponse: Prisma.JsonValue,
 ) {
   try {
-    const auditData = {
+    const auditData: any = {
       profileType: profileType as "ZZP" | "BEDRIJF",
-      zzpProfileId: profileType === "ZZP" ? profileId : undefined,
-      bedrijfProfileId: profileType === "BEDRIJF" ? profileId : undefined,
       ndNummer,
       previousStatus: previousStatus as NDNummerStatus | null,
       newStatus: newStatus as NDNummerStatus,
@@ -93,6 +91,12 @@ async function createAuditLog(
       userAgent,
       apiResponse,
     };
+
+    if (profileType === "ZZP") {
+      auditData.zzpProfileId = profileId;
+    } else {
+      auditData.bedrijfProfileId = profileId;
+    }
 
     await prisma.nDNummerAuditLog.create({
       data: auditData,
@@ -114,7 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get request headers for audit trail
-    const headersList = headers();
+    const headersList = await headers();
     const ipAddress =
       headersList.get("x-forwarded-for") ||
       headersList.get("x-real-ip") ||
@@ -135,7 +139,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { ndNummer, bedrijfsnaam, kvkNummer, profileType } = validation.data;
+    const { ndNummer, bedrijfsnaam, kvkNummer, profileType } = validation.data!;
 
     // Get user profile to verify permissions and get profile ID
     const user = await prisma.user.findUnique({
@@ -229,7 +233,12 @@ export async function POST(request: NextRequest) {
       session.user.id,
       ipAddress,
       userAgent,
-      justisResponse,
+      {
+        ...justisResponse,
+        expiryDate: justisResponse.expiryDate?.toISOString(),
+        registrationDate: justisResponse.registrationDate?.toISOString(),
+        lastVerified: justisResponse.lastVerified?.toISOString(),
+      },
     );
 
     // Return response
@@ -276,7 +285,9 @@ export async function POST(request: NextRequest) {
       {
         error: "Fout bij validatie van ND-nummer",
         details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development"
+            ? (error as Error).message
+            : undefined,
       },
       { status: 500 },
     );
@@ -389,7 +400,9 @@ export async function GET(request: NextRequest) {
       {
         error: "Fout bij ophalen ND-nummer status",
         details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development"
+            ? (error as Error).message
+            : undefined,
       },
       { status: 500 },
     );

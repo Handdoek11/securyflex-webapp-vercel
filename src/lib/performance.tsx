@@ -1,7 +1,18 @@
 // Performance optimization utilities for SecuryFlex
 
-import { debounce } from "lodash";
 import React from "react";
+
+// Custom debounce implementation
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number,
+): (...args: Parameters<T>) => void {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  return function (...args: Parameters<T>) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
 
 // Type definitions for browser-specific APIs
 interface PerformanceMemory {
@@ -129,8 +140,8 @@ export function OptimizedImage({
         width={width}
         height={height}
         className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? "opacity-100" : "opacity-0"}`}
-        onLoad={handleLoad}
-        onError={handleError}
+        onLoad={_handleLoad}
+        onError={_handleError}
         loading="lazy"
       />
     </div>
@@ -144,7 +155,7 @@ export function dedupedFetch<T>(
   url: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const key = `$url-$JSON.stringify(options)`;
+  const key = `${url}-${JSON.stringify(options)}`;
 
   const cached = requestCache.get(key);
   if (cached) {
@@ -240,10 +251,11 @@ export function usePerformanceMonitor(componentName: string) {
 
       return () => {
         const endTime = performance.now();
-        console.log(`$componentNamerender time: $endTime - startTimems`);
+        console.log(`${componentName} render time: ${endTime - startTime}ms`);
       };
     }
-  }, [componentName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }
 
 // Memoization helpers

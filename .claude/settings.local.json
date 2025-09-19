@@ -52,7 +52,13 @@
       "WebFetch(domain:www.hostnet.nl)",
       "Bash(code:*)",
       "Bash(npx biome migrate:*)",
-      "Bash(npx biome format:*)"
+      "Bash(npx biome format:*)",
+      "Bash(where biome)",
+      "Bash(dir node_modules.binbiome.exe)",
+      "Bash(rd:*)",
+      "Bash(cmd /c:*)",
+      "Bash(chmod:*)",
+      "Bash(npm run check:*)"
     ],
     "deny": [],
     "ask": []

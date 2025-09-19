@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       const workHours = await prisma.werkuur.findMany({
         where: {
           zzpId: zzpProfile.id,
-          datum: {
+          startTijd: {
             gte: startDate,
             lte: endDate,
           },
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       await prisma.werkuur.updateMany({
         where: {
           zzpId: zzpProfile.id,
-          datum: {
+          startTijd: {
             gte: startDate,
             lte: endDate,
           },
@@ -75,21 +75,17 @@ export async function POST(request: NextRequest) {
         },
         data: {
           status: "PENDING",
-          metadata: {
-            submittedAt: new Date().toISOString(),
-            submittedForApproval: true,
-            weekSubmission: true,
-          },
+          // Note: submission timestamp is tracked via updatedAt field
         },
       });
 
       // Calculate week totals
       const totalHours = workHours.reduce(
-        (sum, wh) => sum + (wh.totaleUren || 0),
+        (sum, wh) => sum + Number(wh.urenGewerkt || 0),
         0,
       );
       const totalEarnings = workHours.reduce(
-        (sum, wh) => sum + (wh.nettoBedrag || 0),
+        (sum, wh) => sum + (Number(wh.urenGewerkt || 0) * Number(wh.uurtarief || 0)),
         0,
       );
 

@@ -154,7 +154,7 @@ export async function PATCH(request: NextRequest) {
         {
           success: false,
           error: "Invalid settings data",
-          details: validation.error.errors,
+          details: validation.error.issues,
         },
         { status: 400 },
       );

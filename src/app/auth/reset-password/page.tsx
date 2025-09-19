@@ -51,16 +51,7 @@ function ResetPasswordForm() {
     resolver: zodResolver(resetPasswordSchema),
   });
 
-  useEffect(() => {
-    if (!token) {
-      setError("Geen reset token gevonden");
-      setIsValidating(false);
-      return;
-    }
-
-    validateToken(token);
-  }, [token, validateToken]);
-
+  // Define validateToken before useEffect to avoid temporal dead zone
   const validateToken = async (token: string) => {
     try {
       const response = await fetch(`/api/auth/reset-password?token=${token}`);
@@ -79,6 +70,16 @@ function ResetPasswordForm() {
       setIsValidating(false);
     }
   };
+
+  useEffect(() => {
+    if (!token) {
+      setError("Geen reset token gevonden");
+      setIsValidating(false);
+      return;
+    }
+
+    validateToken(token);
+  }, [token, validateToken]);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (!token) return;

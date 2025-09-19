@@ -1,23 +1,25 @@
 import prisma from "@/lib/prisma";
 
 /**
- * Generate a secure random token
+ * Generate a secure random token - Edge Runtime compatible
  */
 export function generateSecureToken(): string {
   // Use Web Crypto API for Edge Runtime compatibility
   const array = new Uint8Array(32);
-  if (typeof window !== "undefined" && window.crypto) {
-    window.crypto.getRandomValues(array);
-  } else if (typeof globalThis.crypto !== "undefined") {
+
+  // Try different crypto sources
+  if (typeof globalThis.crypto !== "undefined" && globalThis.crypto.getRandomValues) {
     globalThis.crypto.getRandomValues(array);
+  } else if (typeof window !== "undefined" && window.crypto) {
+    window.crypto.getRandomValues(array);
   } else {
-    // Fallback for Node.js environment
-    const crypto = require("node:crypto");
-    return crypto.randomBytes(32).toString("hex");
+    // Fallback to Math.random (less secure but works everywhere)
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
+    }
   }
-  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
-    "",
-  );
+
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 /**

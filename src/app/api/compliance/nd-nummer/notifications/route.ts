@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const notificationData = validation.data;
+    const notificationData = validation.data!;
 
     // Check if user has permission to send notifications
     const isAdmin = await checkAdminPermissions(session.user.id);
@@ -161,7 +161,11 @@ export async function POST(request: NextRequest) {
       {
         error: "Fout bij versturen notificatie",
         details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : undefined,
       },
       { status: 500 },
     );
@@ -219,7 +223,7 @@ export async function GET(request: NextRequest) {
       type: "SYSTEM_ANNOUNCEMENT",
       metadata: {
         path: ["category"],
-        equals: "ND_NUMMER",
+        equals: "SYSTEM",
       },
     };
 
@@ -262,27 +266,35 @@ export async function GET(request: NextRequest) {
     });
 
     // Format response
-    const formattedNotifications = notifications.map((notification) => ({
-      id: notification.id,
-      title: notification.title,
-      message: notification.message,
-      urgency: notification.metadata?.urgency || "MEDIUM",
-      notificationType: notification.metadata?.notificationType,
-      channels: notification.metadata?.channels || ["IN_APP"],
-      isRead: notification.isRead,
-      readAt: notification.readAt,
-      createdAt: notification.createdAt,
-      actionUrl: notification.actionUrl,
-      actionLabel: notification.actionLabel,
-      recipient: {
-        name: notification.user.name,
-        email: isAdmin ? notification.user.email : undefined,
-        ndNummer:
-          notification.user.zzpProfile?.ndNummer ||
-          notification.user.bedrijfProfile?.ndNummer,
-        bedrijfsnaam: notification.user.bedrijfProfile?.bedrijfsnaam,
-      },
-    }));
+    const formattedNotifications = notifications.map((notification) => {
+      const metadata = notification.metadata as {
+        urgency?: string;
+        notificationType?: string;
+        channels?: string[];
+      } | null;
+
+      return {
+        id: notification.id,
+        title: notification.title,
+        message: notification.message,
+        urgency: metadata?.urgency || "MEDIUM",
+        notificationType: metadata?.notificationType,
+        channels: metadata?.channels || ["IN_APP"],
+        isRead: notification.isRead,
+        readAt: notification.readAt,
+        createdAt: notification.createdAt,
+        actionUrl: notification.actionUrl,
+        actionLabel: notification.actionLabel,
+        recipient: {
+          name: notification.user.name,
+          email: isAdmin ? notification.user.email : undefined,
+          ndNummer:
+            notification.user.zzpProfile?.ndNummer ||
+            notification.user.bedrijfProfile?.ndNummer,
+          bedrijfsnaam: notification.user.bedrijfProfile?.bedrijfsnaam,
+        },
+      };
+    });
 
     return NextResponse.json({
       notifications: formattedNotifications,
@@ -300,7 +312,11 @@ export async function GET(request: NextRequest) {
       {
         error: "Fout bij ophalen notificaties",
         details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : undefined,
       },
       { status: 500 },
     );
@@ -347,7 +363,11 @@ export async function PUT(_request: NextRequest) {
       {
         error: "Fout bij uitvoeren handmatige controle",
         details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : undefined,
       },
       { status: 500 },
     );
@@ -416,7 +436,11 @@ export async function DELETE(request: NextRequest) {
       {
         error: "Fout bij markeren notificatie",
         details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : undefined,
       },
       { status: 500 },
     );

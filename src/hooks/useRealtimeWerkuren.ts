@@ -11,6 +11,27 @@ interface GPSLocation {
   timestamp?: Date;
 }
 
+// Type-safe interfaces for real-time payload
+interface RealtimePayload {
+  eventType: "INSERT" | "UPDATE" | "DELETE";
+  new?: Werkuur;
+  old?: Werkuur;
+}
+
+// Type guard for GPS location validation
+function isValidGPSLocation(
+  location: unknown,
+): location is Omit<GPSLocation, "timestamp"> {
+  return (
+    typeof location === "object" &&
+    location !== null &&
+    typeof (location as any).lat === "number" &&
+    typeof (location as any).lng === "number" &&
+    !isNaN((location as any).lat) &&
+    !isNaN((location as any).lng)
+  );
+}
+
 /**
  * Hook voor real-time GPS tracking en werkuren updates
  * Perfect voor clock-in/out functionaliteit
@@ -24,55 +45,75 @@ export function useRealtimeWerkuren(opdrachtId: string | undefined) {
     if (!opdrachtId) return;
 
     // Subscribe to werkuur updates for this opdracht
-    const subscription = subscribeToWerkuurUpdates(opdrachtId, (payload) => {
-      console.log("Werkuur update:", payload);
+    const subscription = subscribeToWerkuurUpdates(
+      opdrachtId,
+      (payload: RealtimePayload) => {
+        console.log("Werkuur update:", payload);
 
-      switch (payload.eventType) {
-        case "INSERT": {
-          const newWerkuur = payload.new as Werkuur;
-          setWerkuren((prev) => [...prev, newWerkuur]);
+        switch (payload.eventType) {
+          case "INSERT": {
+            const newWerkuur = payload.new;
+            if (!newWerkuur) return;
 
-          // If it's a clock-in (no eindTijd), set as active
-          if (!newWerkuur.eindTijd) {
-            setActiveWerkuur(newWerkuur);
-          }
-          break;
-        }
+            setWerkuren((prev) => [...prev, newWerkuur]);
 
-        case "UPDATE": {
-          const updatedWerkuur = payload.new as Werkuur;
-          setWerkuren((prev) =>
-            prev.map((w) => (w.id === updatedWerkuur.id ? updatedWerkuur : w)),
-          );
-
-          // Update active werkuur if it's the one being updated
-          if (activeWerkuur?.id === updatedWerkuur.id) {
-            if (updatedWerkuur.eindTijd) {
-              // Clock-out happened
-              setActiveWerkuur(null);
-            } else {
-              setActiveWerkuur(updatedWerkuur);
+            // If it's a clock-in (no eindTijd), set as active
+            if (!newWerkuur.eindTijd) {
+              setActiveWerkuur(newWerkuur);
             }
+            break;
           }
 
-          // Update GPS location if available
-          if (updatedWerkuur.eindLocatie) {
-            setLastGPSUpdate({
-              ...(updatedWerkuur.eindLocatie as any),
-              timestamp: new Date(),
-            });
+          case "UPDATE": {
+            const updatedWerkuur = payload.new;
+            if (!updatedWerkuur) return;
+
+            setWerkuren((prev) =>
+              prev.map((w) =>
+                w.id === updatedWerkuur.id ? updatedWerkuur : w,
+              ),
+            );
+
+            // Update active werkuur if it's the one being updated
+            if (activeWerkuur?.id === updatedWerkuur.id) {
+              if (updatedWerkuur.eindTijd) {
+                // Clock-out happened
+                setActiveWerkuur(null);
+              } else {
+                setActiveWerkuur(updatedWerkuur);
+              }
+            }
+
+            // Update GPS location if available - type-safe validation
+            if (
+              updatedWerkuur.eindLocatie &&
+              isValidGPSLocation(updatedWerkuur.eindLocatie)
+            ) {
+              setLastGPSUpdate({
+                lat: updatedWerkuur.eindLocatie.lat,
+                lng: updatedWerkuur.eindLocatie.lng,
+                accuracy: updatedWerkuur.eindLocatie.accuracy,
+                timestamp: new Date(),
+              });
+            }
+            break;
           }
-          break;
+
+          case "DELETE": {
+            const deletedWerkuur = payload.old;
+            if (!deletedWerkuur?.id) return;
+
+            setWerkuren((prev) =>
+              prev.filter((w) => w.id !== deletedWerkuur.id),
+            );
+            if (activeWerkuur?.id === deletedWerkuur.id) {
+              setActiveWerkuur(null);
+            }
+            break;
+          }
         }
-
-        case "DELETE":
-          setWerkuren((prev) => prev.filter((w) => w.id !== payload.old.id));
-          if (activeWerkuur?.id === payload.old.id) {
-            setActiveWerkuur(null);
-          }
-          break;
-      }
-    });
+      },
+    );
 
     return () => {
       subscription.unsubscribe();

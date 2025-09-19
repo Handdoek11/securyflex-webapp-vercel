@@ -145,18 +145,18 @@ async function storeFileMetadata(
     });
   }
 
-  // Store in documents table
-  return await prisma.document.create({
+  // Store in DocumentVerificatie table
+  return await prisma.documentVerificatie.create({
     data: {
       userId,
-      type: fileType,
-      filename,
-      originalName,
-      size,
+      documentType: fileType as any,
+      fileName: filename,
+      originalFileName: originalName,
+      fileSize: size,
       mimeType,
-      metadata,
-      status: "ACTIVE",
-      description,
+      fileUrl: `/uploads/${filename}`,
+      status: "PENDING",
+      adminNotes: description,
     },
   });
 }
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check user upload limits
-    const uploadCount = await prisma.document.count({
+    const uploadCount = await prisma.documentVerificatie.count({
       where: {
         userId: session.user.id,
         createdAt: {
@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
     // Process file based on type
     let processedBuffer = buffer;
     if (file.type.startsWith("image/")) {
-      processedBuffer = await processImage(buffer);
+      processedBuffer = (await processImage(buffer)) as Buffer;
     }
 
     // Generate secure filename
@@ -327,38 +327,38 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const type = url.searchParams.get("type");
 
-    const where: Prisma.DocumentWhereInput = {
+    const where: Prisma.DocumentVerificatieWhereInput = {
       userId: session.user.id,
-      status: "ACTIVE",
+      status: "APPROVED",
     };
 
     if (type) {
-      where.type = type;
+      where.documentType = type;
     }
 
-    const documents = await prisma.document.findMany({
+    const documents = await prisma.documentVerificatie.findMany({
       where,
       orderBy: {
         createdAt: "desc",
       },
       select: {
         id: true,
-        type: true,
-        filename: true,
-        originalName: true,
-        size: true,
+        documentType: true,
+        fileName: true,
+        originalFileName: true,
+        fileSize: true,
         mimeType: true,
-        description: true,
+        adminNotes: true,
         status: true,
         createdAt: true,
-        metadata: true,
+        fileUrl: true,
       },
     });
 
-    const formattedDocuments = documents.map((doc) => ({
+    const formattedDocuments = documents.map((doc: any) => ({
       ...doc,
-      url: `/uploads/${doc.filename}`,
-      sizeFormatted: formatFileSize(doc.size),
+      url: doc.fileUrl,
+      sizeFormatted: formatFileSize(doc.fileSize),
     }));
 
     return NextResponse.json({
@@ -400,11 +400,11 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Find and verify ownership
-    const document = await prisma.document.findFirst({
+    const document = await prisma.documentVerificatie.findFirst({
       where: {
         id: fileId,
         userId: session.user.id,
-        status: "ACTIVE",
+        status: "APPROVED",
       },
     });
 
@@ -415,12 +415,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Mark as deleted (soft delete)
-    await prisma.document.update({
+    // Mark as rejected (soft delete)
+    await prisma.documentVerificatie.update({
       where: { id: fileId },
       data: {
-        status: "DELETED",
-        deletedAt: new Date(),
+        status: "REJECTED",
+        rejectionReason: "Deleted by user",
       },
     });
 

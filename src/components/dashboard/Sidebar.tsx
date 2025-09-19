@@ -35,7 +35,7 @@ interface NavItem {
     | "secondary"
     | "destructive"
     | "outline"
-    | "success";
+    | "warning";
 }
 
 const navItems: NavItem[] = [
@@ -61,7 +61,7 @@ const navItems: NavItem[] = [
     label: "Verzekeringen",
     icon: Shield,
     badge: "NIEUW",
-    badgeVariant: "success",
+    badgeVariant: "default",
   },
   {
     href: "/dashboard/profile",
@@ -273,7 +273,7 @@ export function Sidebar({ className }: SidebarProps) {
           )}
         >
           <Avatar className="h-9 w-9">
-            <AvatarImage src={session?.user?.image || undefined} />
+            <AvatarImage src={session?.user?.image as string | undefined} />
             <AvatarFallback>{userInitials}</AvatarFallback>
           </Avatar>
           {!effectiveCollapsed && (

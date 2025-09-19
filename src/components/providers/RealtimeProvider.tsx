@@ -1,5 +1,6 @@
 "use client";
 
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useSession } from "next-auth/react";
 import {
   createContext,
@@ -13,7 +14,7 @@ import { supabase } from "@/lib/supabase";
 interface RealtimeContextType {
   isConnected: boolean;
   connectionStatus: "connecting" | "connected" | "disconnected";
-  subscriptions: Map<string, any>;
+  subscriptions: Map<string, RealtimeChannel>;
 }
 
 const RealtimeContext = createContext<RealtimeContextType>({
@@ -107,11 +108,7 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
       subscriptions.clear();
       channel.unsubscribe();
     };
-  }, [
-    session?.user,
-    subscriptions.clear, // Cleanup all subscriptions
-    subscriptions.forEach,
-  ]);
+  }, [session?.user, subscriptions]);
 
   return (
     <RealtimeContext.Provider

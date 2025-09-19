@@ -82,7 +82,7 @@ describe("Bedrijf Performance Tests", () => {
             directZZPAllowed: true,
             creatorType: "BEDRIJF",
             creatorBedrijfId: testBedrijfProfile.id,
-            status: ["OPEN", "ASSIGNED", "IN_PROGRESS", "COMPLETED"][i % 4],
+            status: ["OPEN", "TOEGEWEZEN", "BEZIG", "AFGEROND"][i % 4],
           },
         }),
       );

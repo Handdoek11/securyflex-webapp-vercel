@@ -444,7 +444,7 @@ describe("API Validation Middleware", () => {
     };
 
     const validator = apiValidationMiddleware.validateBody(registerSchema);
-    const result = validator(mockRequest);
+    const result = validator(mockRequest as any);
 
     expect(result.success).toBe(true);
     expect(result.data?.name).toBe("Test User");
@@ -460,7 +460,7 @@ describe("API Validation Middleware", () => {
     };
 
     const validator = apiValidationMiddleware.validateQuery(queryParamsSchema);
-    const result = validator(mockRequest);
+    const result = validator(mockRequest as any);
 
     expect(result.success).toBe(true);
     expect(result.data?.page).toBe(2);

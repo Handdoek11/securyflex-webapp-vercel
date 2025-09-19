@@ -8,6 +8,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { RoleSwitcher } from "@/components/landing/RoleSwitcher";
 import { Button } from "@/components/ui/button";
+import { roleToast } from "@/components/ui/toast";
 import { useRole } from "@/contexts/RoleContext";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,19 @@ export function Navigation({ className = "" }: NavigationProps) {
     roleId: "ZZP_BEVEILIGER" | "BEDRIJF" | "OPDRACHTGEVER",
   ) => {
     setActiveRole(roleId);
+
+    // Show toast notification based on role
+    switch (roleId) {
+      case "ZZP_BEVEILIGER":
+        roleToast.switchToBeveiliger();
+        break;
+      case "BEDRIJF":
+        roleToast.switchToBedrijf();
+        break;
+      case "OPDRACHTGEVER":
+        roleToast.switchToOpdrachtgever();
+        break;
+    }
 
     // Update URL with appropriate parameter
     const roleParam =
@@ -82,8 +96,8 @@ export function Navigation({ className = "" }: NavigationProps) {
                 "text-center transition-all duration-300 ease-in-out relative",
                 "flex flex-col items-center justify-center",
                 activeRole === role.id
-                  ? "bg-primary text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50",
+                  ? "bg-primary text-white shadow-lg shadow-primary/25 ring-2 ring-primary/20"
+                  : "bg-white text-gray-600 hover:bg-gray-50 hover:shadow-md hover:scale-105",
               )}
             >
               <div
@@ -105,7 +119,7 @@ export function Navigation({ className = "" }: NavigationProps) {
                 {role.label}
               </span>
               {activeRole === role.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white opacity-50"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white opacity-80 shadow-lg shadow-white/50"></div>
               )}
             </button>
           ))}
@@ -127,6 +141,7 @@ export function Navigation({ className = "" }: NavigationProps) {
               className="flex items-center"
               onClick={() => {
                 setActiveRole(null);
+                roleToast.resetToHome();
                 router.push("/");
               }}
             >

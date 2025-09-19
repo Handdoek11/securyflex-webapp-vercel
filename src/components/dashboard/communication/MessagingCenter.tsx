@@ -16,7 +16,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,41 +100,7 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const supabase = createSupabaseClient();
 
-  useEffect(() => {
-    fetchConversations();
-    setupRealtimeSubscriptions();
-
-    return () => {
-      // Cleanup subscriptions
-      supabase.removeAllChannels();
-    };
-  }, [
-    fetchConversations,
-    setupRealtimeSubscriptions, // Cleanup subscriptions
-    supabase.removeAllChannels,
-  ]);
-
-  useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages(selectedConversation.id);
-      markAsRead(selectedConversation.id);
-      subscribeToConversation(selectedConversation.id);
-    }
-  }, [
-    selectedConversation,
-    fetchMessages,
-    markAsRead,
-    subscribeToConversation,
-  ]);
-
-  useEffect(() => {
-    // Scroll to bottom when new messages arrive
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, []);
-
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/messages/conversations");
@@ -149,9 +115,9 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchMessages = async (conversationId: string) => {
+  const fetchMessages = useCallback(async (conversationId: string) => {
     try {
       const response = await fetch(`/api/messages/${conversationId}`);
       const data = await response.json();
@@ -163,18 +129,18 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
       console.error("Error fetching messages:", error);
       toast.error("Kon berichten niet laden");
     }
-  };
+  }, []);
 
-  const markAsRead = async (conversationId: string) => {
+  const markAsRead = useCallback(async (conversationId: string) => {
     // Mark conversation as read locally
     setConversations((prev) =>
       prev.map((conv) =>
         conv.id === conversationId ? { ...conv, unreadCount: 0 } : conv,
       ),
     );
-  };
+  }, []);
 
-  const setupRealtimeSubscriptions = () => {
+  const setupRealtimeSubscriptions = useCallback(() => {
     // Subscribe to new conversations
     supabase
       .channel(`user:${userId}:conversations`)
@@ -182,7 +148,7 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
         setConversations((prev) => [payload, ...prev]);
       })
       .subscribe();
-  };
+  }, [supabase, userId]);
 
   const subscribeToConversation = useCallback(
     (conversationId: string) => {
@@ -217,6 +183,36 @@ export function MessagingCenter({ userId, userRole }: MessagingCenterProps) {
     },
     [selectedConversation?.id, supabase],
   );
+
+  useEffect(() => {
+    fetchConversations();
+    setupRealtimeSubscriptions();
+
+    return () => {
+      // Cleanup subscriptions
+      supabase.removeAllChannels();
+    };
+  }, [fetchConversations, setupRealtimeSubscriptions, supabase]);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      fetchMessages(selectedConversation.id);
+      markAsRead(selectedConversation.id);
+      subscribeToConversation(selectedConversation.id);
+    }
+  }, [
+    selectedConversation,
+    fetchMessages,
+    markAsRead,
+    subscribeToConversation,
+  ]);
+
+  useEffect(() => {
+    // Scroll to bottom when new messages arrive
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!messageInput.trim() || !selectedConversation) return;

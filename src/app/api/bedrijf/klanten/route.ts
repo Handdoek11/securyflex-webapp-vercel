@@ -187,8 +187,8 @@ export async function GET(request: NextRequest) {
 
         // Calculate estimated revenue (simplified)
         const totalOpdrachten = opdrachtStats._count.id || 0;
-        const avgHourlyRate = opdrachtStats._sum.uurtarief || 0;
-        const avgPersonnel = opdrachtStats._sum.aantalBeveiligers || 0;
+        const avgHourlyRate = opdrachtStats._sum?.uurtarief || 0;
+        const avgPersonnel = opdrachtStats._sum?.aantalBeveiligers || 0;
         const estimatedRevenue =
           totalOpdrachten > 0
             ? Number(avgHourlyRate) * avgPersonnel * 8 * totalOpdrachten // Estimate 8 hours per assignment

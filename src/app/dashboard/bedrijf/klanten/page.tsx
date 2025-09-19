@@ -316,7 +316,7 @@ export default function BedrijfKlantenPage() {
                     <Badge
                       variant={
                         client.status === "active"
-                          ? "success"
+                          ? "default"
                           : client.status === "prospect"
                             ? "warning"
                             : "secondary"

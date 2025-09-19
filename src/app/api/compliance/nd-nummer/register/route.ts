@@ -240,7 +240,7 @@ export async function POST(request: NextRequest) {
     console.error("ND-nummer registration error:", error);
 
     // Handle unique constraint violation
-    if (error.code === "P2002") {
+    if ((error as any).code === "P2002") {
       return NextResponse.json(
         { error: "Dit ND-nummer is al geregistreerd" },
         { status: 409 },
@@ -251,7 +251,9 @@ export async function POST(request: NextRequest) {
       {
         error: "Fout bij registratie van ND-nummer",
         details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development"
+            ? (error as Error).message
+            : undefined,
       },
       { status: 500 },
     );
@@ -348,6 +350,7 @@ export async function PUT(request: NextRequest) {
       ndNummerLaatsteControle: Date;
       ndNummerVervalDatum?: Date;
       ndNummerStatus?: NDNummerStatus;
+      ndNummerOpmerking?: string;
     } = {
       ndNummerLaatsteControle: new Date(),
     };
@@ -383,7 +386,9 @@ export async function PUT(request: NextRequest) {
       session.user.id,
       ipAddress,
       userAgent,
-      dbUpdateData.ndNummerVervalDatum || currentProfile.ndNummerVervalDatum,
+      dbUpdateData.ndNummerVervalDatum ||
+        currentProfile.ndNummerVervalDatum ||
+        new Date(),
     );
 
     return NextResponse.json({
@@ -403,7 +408,9 @@ export async function PUT(request: NextRequest) {
       {
         error: "Fout bij bijwerken ND-nummer",
         details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development"
+            ? (error as Error).message
+            : undefined,
       },
       { status: 500 },
     );

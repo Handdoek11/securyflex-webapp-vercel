@@ -256,12 +256,12 @@ export async function GET(request: NextRequest) {
           : 0;
 
     const currentRevenue =
-      Number(currentStats._sum.uurtarief || 0) *
-      Number(currentStats._sum.aantalBeveiligers || 0) *
+      Number(currentStats._sum?.uurtarief || 0) *
+      Number(currentStats._sum?.aantalBeveiligers || 0) *
       8; // Estimate 8 hours
     const previousRevenue =
-      Number(previousStats._sum.uurtarief || 0) *
-      Number(previousStats._sum.aantalBeveiligers || 0) *
+      Number(previousStats._sum?.uurtarief || 0) *
+      Number(previousStats._sum?.aantalBeveiligers || 0) *
       8;
     const revenueGrowth =
       previousRevenue > 0
@@ -358,10 +358,10 @@ export async function GET(request: NextRequest) {
         // Status breakdown
         statusBreakdown: {
           open: statusData.OPEN || 0,
-          assigned: statusData.ASSIGNED || 0,
-          in_progress: statusData.IN_PROGRESS || 0,
-          completed: statusData.COMPLETED || 0,
-          cancelled: statusData.CANCELLED || 0,
+          toegewezen: statusData.TOEGEWEZEN || 0,
+          bezig: statusData.BEZIG || 0,
+          afgerond: statusData.AFGEROND || 0,
+          geannuleerd: statusData.GEANNULEERD || 0,
         },
 
         // Team performance
